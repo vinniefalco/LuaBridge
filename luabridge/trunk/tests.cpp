@@ -90,7 +90,7 @@ void testConstAPtr (const A * a)
 {
 	cout << "testConstAPtr(A(\"" << const_cast<A*>(a)->getName() << "\"))\n";
 }
-shared_ptr<A> testSharedPtrA (shared_ptr<A> a)
+luabridge::shared_ptr<A> testSharedPtrA (luabridge::shared_ptr<A> a)
 {
 	cout << "testSharedPtrA(A(\"" << a->getName() << "\"))\n";
 	return a;

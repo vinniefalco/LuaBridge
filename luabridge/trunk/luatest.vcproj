@@ -139,17 +139,27 @@
 				RelativePath=".\luabridge.hpp">
 			</File>
 			<File
-				RelativePath=".\luabridge_impl.hpp">
+				RelativePath=".\shared_ptr-impl.hpp">
 			</File>
 			<File
 				RelativePath=".\shared_ptr.hpp">
 			</File>
 			<File
-				RelativePath=".\shared_ptr_impl.hpp">
-			</File>
-			<File
 				RelativePath=".\tests.hpp">
 			</File>
+			<Filter
+				Name="luabridge-impl"
+				Filter="">
+				<File
+					RelativePath=".\luabridge-impl\class.hpp">
+				</File>
+				<File
+					RelativePath=".\luabridge-impl\module.hpp">
+				</File>
+				<File
+					RelativePath=".\luabridge-impl\stack.hpp">
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"

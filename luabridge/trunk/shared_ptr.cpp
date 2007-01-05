@@ -1,8 +1,10 @@
-// shared_ptr.cpp
-// Implementation of shared_ptr.hpp
-// Copyright (C) 2007 by Nathan Reed.  All rights and priveleges reserved.
+/*
+ * shared_ptr.cpp - Copyright (C) 2007 by Nathan Reed
+ * Source for shared_ptr class template.
+ */
 
 #include "shared_ptr.hpp"
 
 // Definition of the container for refcounts - has to be in a source file, not the header
-refcounts_t refcounts_;
+luabridge::refcounts_t luabridge::refcounts_;
+

@@ -1,11 +1,14 @@
-// luabridge.hpp
-// Lightweight C++ to Lua binding library, allowing C++ functions and classes
-// to be made available to Lua scripts
-// Copyright (C) 2007 by Nathan Reed.  All rights and priveleges reserved.
+/*
+ * luabridge.hpp - Copyright (C) 2007 by Nathan Reed
+ * Lightweight C++ to Lua binding library, allowing C++ functions and classes
+ * to be made available to Lua scripts.
+ */
 
 #ifndef LUABRIDGE_HPP
 #define LUABRIDGE_HPP
 
+#include <cassert>
+#include <string>
 #include <lua.hpp>
 #include "shared_ptr.hpp"
 
@@ -62,7 +65,10 @@ namespace luabridge
 		class__<T>& method (const char *name, Ret (T::*func_ptr)(P1, P2));
 	};
 
-#	include "luabridge_impl.hpp"
+	// Include implementation files
+#	include "luabridge-impl/class.hpp"
+#	include "luabridge-impl/module.hpp"
+#	include "luabridge-impl/stack.hpp"
 }
 
 
