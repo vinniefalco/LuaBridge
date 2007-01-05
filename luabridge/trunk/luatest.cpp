@@ -8,61 +8,11 @@
 #include <iostream>
 #include <iomanip>
 #include <lua.hpp>
-#include "luabridge.hpp"
+#include "tests.hpp"
 
 using namespace std;
 
-void hello ();
-float pi ();
-void godel (bool truth);
-float square (float x);
-std::string upperCase (const char *str);
-
-void register_lua_funcs (lua_State *L);
 int traceback (lua_State *L);
-
-class B
-{
-	std::string name;
-	friend class A;
-public:
-	B (const char *name_ = "unnamed_object"): name(name_)
-	{
-		cout << "B::B called on '" << name << "'\n";
-	}
-	~B ()
-	{
-		cout << "B::~B called on '" << name << "'\n";
-	}
-};
-
-class A
-{
-	std::string name;
-public:
-	A (const char *name_ = "unnamed_object"): name(name_)
-	{
-		cout << "A::A called on '" << name << "'\n";
-	}
-	int foo (int x, const B &b)
-	{
-		cout << "A::foo called on '" << name << "', passed "
-			<< x << " and '" << b.name << "'\n";
-		return x*x;
-	}
-	int bar ()
-	{
-		return (int)name.length();
-	}
-	shared_ptr<A> baz (const char *name_)
-	{
-		return shared_ptr<A>(new A(name_));
-	}
-	~A ()
-	{
-		cout << "A::~A called on '" << name << "'\n";
-	}
-};
 
 int main (int argc, char **argv)
 {
@@ -113,59 +63,6 @@ int main (int argc, char **argv)
 
 	lua_close(L);
 	return 0;
-}
-
-// some functions that will be registered to Lua
-void hello ()
-{
-	cout << "Hello World!\n";
-}
-
-float pi ()
-{
-	return 3.141592654f;
-}
-
-void godel (bool truth)
-{
-	if (truth)
-		cout << "Godel's formula is TRUE.  Therefore, there exists a proof of its FALSITY.\n";
-	else
-		cout << "Godel's formula is FALSE.  Therefore, there exists a proof of its TRUTH.\n";
-}
-
-float square (float x)
-{
-	return x*x;
-}
-
-std::string upperCase (const char *str)
-{
-	std::string ret;
-	size_t len = strlen(str);
-	ret.reserve(len);
-	for (size_t i = 0; i < len; ++i)
-		ret += (char)toupper(str[i]);
-	return ret;
-}
-
-// add our own functions and stuff to the Lua environment
-void register_lua_funcs (lua_State *L)
-{
-	luabridge::module m(L);
-
-	m	.function("hello", &hello)
-		.function("pi", &pi)
-		.function("godel", &godel)
-		.function("square", &square)
-		.function("upperCase", &upperCase);
-	m.class_<A>("A")
-		.constructor<const char *>()
-		.method("foo", &A::foo)
-		.method("bar", &A::bar)
-		.method("baz", &A::baz);
-	m.class_<B>("B")
-		.constructor<const char *>();
 }
 
 // traceback function, adapted from lua.c

@@ -63,9 +63,7 @@ struct generic
 // has no idea of the ownership semantics of these objects.  You can only
 // push shared_ptrs, not naked pointers and references.
 
-// !!!UNDONE: I think this overload is unnecessary, since a T* can be
-// converted to a T* const.  But testing is needed to make sure.
-/*template <typename T>
+template <typename T>
 struct generic<T*>
 {
 	static void push (lua_State *L, T *data);
@@ -74,7 +72,7 @@ struct generic<T*>
 		return ((shared_ptr<T> *)
 			luaL_checkudata(L, index, classname<T>::name()))->get();
 	}
-};*/
+};
 
 template <typename T>
 struct generic<T* const>
@@ -214,6 +212,18 @@ struct generic<std::string>
 		return std::string(luaL_checkstring(L, index));
 	}
 };
+template <>
+struct generic<const std::string &>
+{
+	static void push (lua_State *L, const std::string &data)
+	{
+		lua_pushstring(L, data.c_str());
+	}
+	static std::string get (lua_State *L, int index)
+	{
+		return std::string(luaL_checkstring(L, index));
+	}
+};
 
 /****************************************************************************
  * module
@@ -226,9 +236,6 @@ struct generic<std::string>
  * of dynamic type checking and so forth.  They are registered to Lua as
  * C closures with the actual function pointer to call as an upvalue.
  */
-
-// !!!UNDONE: use typelists to remove necessity for 0, 1, 2 stuff
-// !!!UNDONE: figure out how to support overloading?
 
 template <typename Ret>
 struct dispatch0
@@ -613,3 +620,16 @@ class__<T>& class__<T>::method (const char *name, Ret (T::*func_ptr)(P1, P2))
 	lua_pop(L, 1);
 	return *this;
 }
+
+/*struct None {};
+template <typename T, typename U>
+struct Pair {};
+typedef Pair<int, Pair<float, Pair<char, None> > > myTypeList;
+
+template <typename T> struct Length {};
+template <> struct Length<None> { static const int val = 0; };
+template <typename U, typename V> struct Length<Pair<U, V> > { static const int val = Length<V>::val + 1; };
+
+template <int n> struct Fact { static const int val = n * Fact<n-1>::val; };
+template <> struct Fact<0> { static const int val = 1; };
+typedef Fact<-1> breakme;*/

@@ -20,8 +20,14 @@ namespace luabridge
 	public:
 		module (lua_State *L_): L(L_) {}
 
+		// !!!UNDONE: handle variables (global properties)
+
 		template <typename T>
 		class__<T> class_ (const char *name);
+		// !!!UNDONE: handle derived classes
+
+		// !!!UNDONE: use typelists to remove necessity for 0, 1, 2 stuff
+		// !!!UNDONE: support overloading (maybe)
 
 		template <typename Ret>
 		module& function (const char *name, Ret (*func_ptr)());
@@ -44,6 +50,9 @@ namespace luabridge
 		class__<T>& constructor ();
 		template <typename P1, typename P2>
 		class__<T>& constructor ();
+
+		// !!!UNDONE: handle const/virtual/static methods, and properties
+		// !!!UNDONE: allow inheriting Lua classes from C++ classes
 
 		template <typename Ret>
 		class__<T>& method (const char *name, Ret (T::*func_ptr)());

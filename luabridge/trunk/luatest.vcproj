@@ -127,6 +127,9 @@
 			<File
 				RelativePath=".\test.lua">
 			</File>
+			<File
+				RelativePath=".\tests.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -143,6 +146,9 @@
 			</File>
 			<File
 				RelativePath=".\shared_ptr_impl.hpp">
+			</File>
+			<File
+				RelativePath=".\tests.hpp">
 			</File>
 		</Filter>
 		<Filter
