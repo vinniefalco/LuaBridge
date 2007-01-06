@@ -44,9 +44,16 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname)
 		// No parent field?  We've failed; generate appropriate error
 		if (lua_isnil(L, -1))
 		{
-			// !!!UNDONE: create a real error message
+			// Lookup the __type field of the original metatable, so we can
+			// generate an informative error message
+			lua_getmetatable(L, idx);
+			lua_getfield(L, -1, "__type");
+
+			char buffer[256];
+			sprintf(buffer, "%s expected, got %s", tname,
+				lua_tostring(L, -1));
 			// luaL_argerror does not return
-			luaL_argerror(L, idx, "wrong object type");
+			luaL_argerror(L, idx, buffer);
 			return 0;
 		}
 
@@ -56,10 +63,6 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname)
 	
 	// Found a matching metatable; return the userdata
 	return lua_touserdata(L, idx);
-
-	/*luaL_argerror(L, idx, "(%s expected, got %s)");
-	luaL_error(L, "bad argument #%d to '%s' (%s expected, got %s)");
-	luaL_error(L, "calling '%s' on bad self (%s expected, got %s)");*/
 }
 
 /*

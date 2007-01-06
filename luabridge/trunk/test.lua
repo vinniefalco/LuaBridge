@@ -35,5 +35,3 @@ print("testSharedPtrA returned " .. result:getName());
 object2 = B("object2");
 object2:testInt(47);
 testAPtr(object2);
-object3 = C("object3");
-testAPtr(object3);

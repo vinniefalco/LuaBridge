@@ -78,6 +78,9 @@ class__<T>::class__ (lua_State *L_, const char *name): L(L_)
 	lua_pushstring(L, name);
 	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
 	lua_setfield(L, -2, "__gc");
+	// Set the __type metafield to the name of the class
+	lua_pushstring(L, name);
+	lua_setfield(L, -2, "__type");
 	lua_pop(L, 1);
 
 	classname<T>::set_name(name);
@@ -96,6 +99,9 @@ class__<T>::class__ (lua_State *L_, const char *name,
 	lua_pushstring(L, name);
 	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
 	lua_setfield(L, -2, "__gc");
+	// Set the __type metafield to the name of the class
+	lua_pushstring(L, name);
+	lua_setfield(L, -2, "__type");
 	// Set the __parent metafield to the base class's metatable
 	luaL_getmetatable(L, basename);
 	lua_setfield(L, -2, "__parent");

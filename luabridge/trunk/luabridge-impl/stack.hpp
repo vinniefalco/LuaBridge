@@ -3,7 +3,8 @@
  * Type-dispatch functions for manipulating the Lua stack.
  */
 
-/* These totally generic functions are unimplemented, causing a compiler
+/*
+ * These totally generic functions are unimplemented, causing a compiler
  * error if they are called.  We don't know how to send objects of arbitrary
  * types to and from Lua.  Following are specializations of this structure
  * that allow specific types to be handled in specific ways.
@@ -17,7 +18,8 @@ private:
 	static T get (lua_State *L, int index);
 };
 
-/* Pointers and references: getting is done by retrieving the address from
+/*
+ * Pointers and references: getting is done by retrieving the address from
  * the Lua-owned shared_ptr, but pushing is not allowed since luabridge
  * has no idea of the ownership semantics of these objects.  You can only
  * push shared_ptrs, not naked pointers and references.
@@ -62,7 +64,9 @@ public:
 	}
 };
 
-// shared_ptr: we can push these
+/*
+ * shared_ptr: we can push these
+ */
 
 template <typename T>
 struct tdstack <shared_ptr<T> >
@@ -88,7 +92,9 @@ struct tdstack <shared_ptr<T> >
 	}
 };
 
-// Primitive types, including const char * and std::string
+/*
+ * Primitive types, including const char * and std::string
+ */
 
 template <>
 struct tdstack <float>
