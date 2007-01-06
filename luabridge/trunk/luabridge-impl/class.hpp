@@ -22,7 +22,7 @@ struct classname
 };
 
 // Initial type names are unknown
-const char *classname_unknown = "(unknown type)";
+extern const char *classname_unknown;
 template <typename T>
 const char *classname<T>::name_ = classname_unknown;
 
@@ -41,13 +41,67 @@ struct classname<const T>
 };
 
 /*
+ * Lua-registerable C function template for destructors.  Objects are stored
+ * in Lua as userdata containing a shared_ptr, and this is registered as the
+ * __gc metamethod.  The expected classname is passed as an upvalue so that
+ * we can ensure that we are destructing the right kind of object.
+ */
+
+template <typename T>
+int destructor_dispatch (lua_State *L)
+{
+	((shared_ptr<T>*)checkclass(L, 1,
+		lua_tostring(L, lua_upvalueindex(1))))->release();
+	return 0;
+}
+
+/*
  * class__ constructors
  */
 
 template <typename T>
-class__<T>::class__ (lua_State *L_, const char *classname_): L(L_)
+class__<T>::class__ (lua_State *L_): L(L_)
 {
-	classname<T>::set_name(classname_);
+	assert(classname<T>::name() != classname_unknown);
+}
+
+template <typename T>
+class__<T>::class__ (lua_State *L_, const char *name): L(L_)
+{
+	// Create metatable for this class.  The metatable is stored in the Lua
+	// registry, keyed by the given class name.
+	luaL_newmetatable(L, name);
+	// Set subclass_indexer as the __index metamethod
+	lua_pushcfunction(L, &subclass_indexer);
+	lua_setfield(L, -2, "__index");
+	// Set the __gc metamethod to call the class destructor
+	lua_pushstring(L, name);
+	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
+	lua_setfield(L, -2, "__gc");
+	lua_pop(L, 1);
+
+	classname<T>::set_name(name);
+}
+
+template <typename T>
+class__<T>::class__ (lua_State *L_, const char *name,
+	const char *basename): L(L_)
+{
+	// Create metatable for this class
+	luaL_newmetatable(L, name);
+	// Set subclass_indexer as the __index metamethod
+	lua_pushcfunction(L, &subclass_indexer);
+	lua_setfield(L, -2, "__index");
+	// Set the __gc metamethod to call the class destructor
+	lua_pushstring(L, name);
+	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
+	lua_setfield(L, -2, "__gc");
+	// Set the __parent metafield to the base class's metatable
+	luaL_getmetatable(L, basename);
+	lua_setfield(L, -2, "__parent");
+	lua_pop(L, 1);
+
+	classname<T>::set_name(name);
 }
 
 /*
@@ -148,7 +202,7 @@ struct method_dispatch0
 	typedef Ret (T::*func_ptr_type) ();
 	static int apply (lua_State *L)
 	{
-		T *t = ((shared_ptr<T> *)luaL_checkudata(L, 1,
+		T *t = ((shared_ptr<T> *)checkclass(L, 1,
 			lua_tostring(L, lua_upvalueindex(1))))->get();
 		void *vp = lua_touserdata(L, lua_upvalueindex(2));
 		func_ptr_type f = *((func_ptr_type *)vp);
@@ -162,7 +216,7 @@ struct method_dispatch0<T, void>
 	typedef void (T::*func_ptr_type) ();
 	static int apply (lua_State *L)
 	{
-		T *t = ((shared_ptr<T> *)luaL_checkudata(L, 1,
+		T *t = ((shared_ptr<T> *)checkclass(L, 1,
 			lua_tostring(L, lua_upvalueindex(1))))->get();
 		void *vp = lua_touserdata(L, lua_upvalueindex(2));
 		func_ptr_type f = *((func_ptr_type *)vp);
@@ -177,7 +231,7 @@ struct method_dispatch1
 	typedef Ret (T::*func_ptr_type) (P1);
 	static int apply (lua_State *L)
 	{
-		T *t = ((shared_ptr<T> *)luaL_checkudata(L, 1,
+		T *t = ((shared_ptr<T> *)checkclass(L, 1,
 			lua_tostring(L, lua_upvalueindex(1))))->get();
 		void *vp = lua_touserdata(L, lua_upvalueindex(2));
 		func_ptr_type f = *((func_ptr_type *)vp);
@@ -191,7 +245,7 @@ struct method_dispatch1<T, void, P1>
 	typedef void (T::*func_ptr_type) (P1);
 	static int apply (lua_State *L)
 	{
-		T *t = ((shared_ptr<T> *)luaL_checkudata(L, 1,
+		T *t = ((shared_ptr<T> *)checkclass(L, 1,
 			lua_tostring(L, lua_upvalueindex(1))))->get();
 		void *vp = lua_touserdata(L, lua_upvalueindex(2));
 		func_ptr_type f = *((func_ptr_type *)vp);
@@ -206,7 +260,7 @@ struct method_dispatch2
 	typedef Ret (T::*func_ptr_type) (P1, P2);
 	static int apply (lua_State *L)
 	{
-		T *t = ((shared_ptr<T> *)luaL_checkudata(L, 1,
+		T *t = ((shared_ptr<T> *)checkclass(L, 1,
 			lua_tostring(L, lua_upvalueindex(1))))->get();
 		void *vp = lua_touserdata(L, lua_upvalueindex(2));
 		func_ptr_type f = *((func_ptr_type *)vp);
@@ -221,7 +275,7 @@ struct method_dispatch2<T, void, P1, P2>
 	typedef void (T::*func_ptr_type) (P1, P2);
 	static int apply (lua_State *L)
 	{
-		T *t = ((shared_ptr<T> *)luaL_checkudata(L, 1,
+		T *t = ((shared_ptr<T> *)checkclass(L, 1,
 			lua_tostring(L, lua_upvalueindex(1))))->get();
 		void *vp = lua_touserdata(L, lua_upvalueindex(2));
 		func_ptr_type f = *((func_ptr_type *)vp);

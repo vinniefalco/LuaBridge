@@ -32,7 +32,7 @@ public:
 	static T* get (lua_State *L, int index)
 	{
 		return ((shared_ptr<T> *)
-			luaL_checkudata(L, index, classname<T>::name()))->get();
+			checkclass(L, index, classname<T>::name()))->get();
 	}
 };
 
@@ -45,7 +45,7 @@ public:
 	static T* const get (lua_State *L, int index)
 	{
 		return ((shared_ptr<T> *)
-			luaL_checkudata(L, index, classname<T>::name()))->get();
+			checkclass(L, index, classname<T>::name()))->get();
 	}
 };
 
@@ -58,7 +58,7 @@ public:
 	static T& get (lua_State *L, int index)
 	{
 		return *((shared_ptr<T> *)
-			luaL_checkudata(L, index, classname<T>::name()))->get();
+			checkclass(L, index, classname<T>::name()))->get();
 	}
 };
 
@@ -84,7 +84,7 @@ struct tdstack <shared_ptr<T> >
 	static shared_ptr<T> get (lua_State *L, int index)
 	{
 		return *(shared_ptr<T> *)
-			luaL_checkudata(L, index, classname<T>::name());
+			checkclass(L, index, classname<T>::name());
 	}
 };
 

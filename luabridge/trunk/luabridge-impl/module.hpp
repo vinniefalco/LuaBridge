@@ -122,35 +122,21 @@ module& module::function (const char *name, Ret (*func_ptr)(P1, P2))
  * module's member functions that perform class registration.
  */
 
-// Lua-registerable C function template for destructors.  Objects are stored
-// in Lua as userdata containing a shared_ptr, and this is registered as the
-// __gc metamethod.  The expected classname is passed as an upvalue so that
-// we can ensure that we are destructing the right kind of object.
 template <typename T>
-int destructor_dispatch (lua_State *L)
+class__<T> module::class_ ()
 {
-	((shared_ptr<T>*)luaL_checkudata(L, 1,
-		lua_tostring(L, lua_upvalueindex(1))))->release();
-	return 0;
+	return class__<T>(L);
+}
+
+template <typename T, typename Base>
+class__<T> module::subclass (const char *name)
+{
+	assert(classname<Base>::name() != classname_unknown);
+	return class__<T>(L, name, classname<Base>::name());
 }
 
 template <typename T>
 class__<T> module::class_ (const char *name)
 {
-	// Create metatable for this class.  The metatable is stored in the Lua
-	// registry, keyed by the given class name.  If the metatable already
-	// exists, we re-open the same table, so we can append new methods.
-	luaL_newmetatable(L, name);
-	// Set the metatable as its own __index element - this will allow index
-	// operations on the userdata to be translated into index operations on
-	// the metatable
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
-	// Set the garbage collection function to call the class destructor
-	lua_pushstring(L, name);
-	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
-	lua_setfield(L, -2, "__gc");
-	lua_pop(L, 1);
-
 	return class__<T>(L, name);
 }

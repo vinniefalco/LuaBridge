@@ -15,20 +15,25 @@ function printtable (t)
 	end
 end
 
--- test functions registered from C
+-- test functions registered from C++
 testVoid();
 print("testInt returned " .. testInt(47));
 print("testFloat returned " .. testFloat(3.14159));
 print("testConstCharPtr returned \"" .. testConstCharPtr("Hello World!") .. "\"");
 print("testStdString returned \"" .. testStdString("Hello World!") .. "\"");
 
--- test classes registered from C
+-- test classes registered from C++
 object1 = A("object1");
-print("A:testInt returned " .. object1:testInt(47));
+print("object1:testInt returned " .. object1:testInt(47));
 testAPtr(object1);
 testAPtrConst(object1);
 testConstAPtr(object1);
 result = testSharedPtrA(object1);
-print("testSharedPtrA returned A(\"" .. result:getName() .. "\")");
+print("testSharedPtrA returned " .. result:getName());
 
+-- test subclass B of A
 object2 = B("object2");
+object2:testInt(47);
+testAPtr(object2);
+object3 = C("object3");
+testAPtr(object3);

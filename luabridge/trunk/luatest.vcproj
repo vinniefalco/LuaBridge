@@ -130,6 +130,13 @@
 			<File
 				RelativePath=".\tests.cpp">
 			</File>
+			<Filter
+				Name="luabridge-impl"
+				Filter="">
+				<File
+					RelativePath=".\luabridge-impl\luabridge.cpp">
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"

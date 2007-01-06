@@ -17,20 +17,22 @@ class A
 protected:
 	string name;
 public:
-	A (const string &name_): name(name_)
+	A (const string &name_)
 	{
-		cout << "A::A(\"" << name << "\")\n";
+		name = "A(\"" + name_ + "\")";
+		cout << "A::" << name << "\n";
 	}
-	~A ()
+	virtual ~A ()
 	{
-		cout << "A(\"" << name << "\")::~A\n";
+		cout << name << "::~A\n";
 	}
 
-	int testInt (int i) //const
+	virtual int testInt (int i) //const
 	{
-		cout << "A(\"" << name << "\")::testInt(" << i << ")\n";
+		cout << name << "::testInt(" << i << ")\n";
 		return i;
 	}
+
 	const char * getName () //const
 	{
 		return name.c_str();
@@ -42,11 +44,39 @@ class B: public A
 public:
 	B (const string &name_): A(name_)
 	{
-		cout << "B::B(\"" << name << "\")\n";
+		name = "B(\"" + name_ + "\")";
+		cout << "B::" << name << "\n";
 	}
-	~B ()
+	virtual ~B ()
 	{
-		cout << "B(\"" << name << "\")::~B\n";
+		cout << name << "::~B\n";
+	}
+
+	virtual int testInt (int i) //const
+	{
+		cout << name << "::testInt(" << i << ")\n";
+		return i;
+	}
+};
+
+class C
+{
+protected:
+	string name;
+public:
+	C (const string &name_)
+	{
+		name = "C(\"" + name_ + "\")";
+		cout << "C::" << name << "\n";
+	}
+	virtual ~C ()
+	{
+		cout << name << "::~C\n";
+	}
+
+	const char * getName () //const
+	{
+		return name.c_str();
 	}
 };
 
@@ -80,19 +110,19 @@ string testStdString (const string &str)
 
 void testAPtr (A * a)
 {
-	cout << "testAPtr(A(\"" << a->getName() << "\"))\n";
+	cout << "testAPtr(" << a->getName() << ")\n";
 }
 void testAPtrConst (A * const a)
 {
-	cout << "testAPtrConst(A(\"" << a->getName() << "\"))\n";
+	cout << "testAPtrConst(" << a->getName() << ")\n";
 }
 void testConstAPtr (const A * a)
 {
-	cout << "testConstAPtr(A(\"" << const_cast<A*>(a)->getName() << "\"))\n";
+	cout << "testConstAPtr(" << const_cast<A*>(a)->getName() << ")\n";
 }
 luabridge::shared_ptr<A> testSharedPtrA (luabridge::shared_ptr<A> a)
 {
-	cout << "testSharedPtrA(A(\"" << a->getName() << "\"))\n";
+	cout << "testSharedPtrA(" << a->getName() << ")\n";
 	return a;
 }
 
@@ -112,10 +142,12 @@ void register_lua_funcs (lua_State *L)
 		.method("testInt", &A::testInt)
 		.method("getName", &A::getName);
 
-	m.class_<B>("B")
+	m.subclass<B, A>("B")
 		.constructor<const string &>();
-		/*.method("testInt", &A::testInt)
-		.method("getName", &A::getName);*/
+
+	m.class_<C>("C")
+		.constructor<const string &>()
+		.method("getName", &C::getName);
 
 	m	.function("testAPtr", &testAPtr)
 		.function("testAPtrConst", &testAPtrConst)
