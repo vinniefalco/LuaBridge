@@ -90,6 +90,7 @@ namespace luabridge
 #	include "luabridge-impl/class.hpp"
 #	include "luabridge-impl/module.hpp"
 #	include "luabridge-impl/stack.hpp"
+#	include "luabridge-impl/typelist.hpp"
 }
 
 

@@ -166,6 +166,9 @@
 				<File
 					RelativePath=".\luabridge-impl\stack.hpp">
 				</File>
+				<File
+					RelativePath=".\luabridge-impl\typelist.hpp">
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
