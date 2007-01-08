@@ -260,7 +260,7 @@ struct fnptr <Ret (T::*) ()>
 	static Ret apply (T *obj, Ret (T::*fp) (), typevallist<params> &tvl)
 	{
 		tvl;
-		return obj->fp();
+		return (obj->*fp)();
 	}
 };
 
@@ -271,7 +271,7 @@ struct fnptr <Ret (T::*) (P1)>
 	typedef typelist<P1> params;
 	static Ret apply (T *obj, Ret (T::*fp) (P1), typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd);
+		return (obj->*fp)(tvl.hd);
 	}
 };
 
@@ -282,7 +282,7 @@ struct fnptr <Ret (T::*) (P1, P2)>
 	typedef typelist<P1, typelist<P2> > params;
 	static Ret apply (T *obj, Ret (T::*fp) (P1, P2), typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd, tvl.tl.hd);
+		return (obj->*fp)(tvl.hd, tvl.tl.hd);
 	}
 };
 
@@ -294,7 +294,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3)>
 	static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3),
 		typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
+		return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
 	}
 };
 
@@ -307,7 +307,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4)>
 	static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3, P4),
 		typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
+		return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
 	}
 };
 
@@ -321,7 +321,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
 	static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5),
 		typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+		return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
 			tvl.tl.tl.tl.tl.hd);
 	}
 };
@@ -343,7 +343,7 @@ struct fnptr <Ret (T::*) () const>
 		typevallist<params> &tvl)
 	{
 		tvl;
-		return obj->fp();
+		return (obj->*fp)();
 	}
 };
 
@@ -355,7 +355,7 @@ struct fnptr <Ret (T::*) (P1) const>
 	static Ret apply (const T *obj, Ret (T::*fp) (P1) const,
 		typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd);
+		return (obj->*fp)(tvl.hd);
 	}
 };
 
@@ -367,7 +367,7 @@ struct fnptr <Ret (T::*) (P1, P2) const>
 	static Ret apply (const T *obj, Ret (T::*fp) (P1, P2) const,
 		typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd, tvl.tl.hd);
+		return (obj->*fp)(tvl.hd, tvl.tl.hd);
 	}
 };
 
@@ -379,7 +379,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3) const>
 	static Ret apply (const T *obj, Ret (T::*fp) (P1, P2, P3) const,
 		typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
+		return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
 	}
 };
 
@@ -392,7 +392,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4) const>
 	static Ret apply (const T *obj, Ret (T::*fp) (P1, P2, P3, P4) const,
 		typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
+		return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
 	}
 };
 
@@ -406,7 +406,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5) const>
 	static Ret apply (const T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5) const,
 		typevallist<params> &tvl)
 	{
-		return obj->fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+		return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
 			tvl.tl.tl.tl.tl.hd);
 	}
 };

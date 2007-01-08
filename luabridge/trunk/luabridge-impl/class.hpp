@@ -202,138 +202,53 @@ class__<T>& class__<T>::constructor ()
  * args 2 and up.
  */
 
-template <typename T, typename Ret>
-struct method_dispatch0
+template <typename FnPtr, typename Ret = typename fnptr<FnPtr>::resulttype>
+struct method_proxy
 {
-	typedef Ret (T::*func_ptr_type) ();
-	static int apply (lua_State *L)
+	typedef typename fnptr<FnPtr>::classtype classtype;
+	typedef typename fnptr<FnPtr>::params params;
+	static int f (lua_State *L)
 	{
-		T *t = ((shared_ptr<T> *)checkclass(L, 1,
+		classtype *obj = ((shared_ptr<classtype> *)checkclass(L, 1,
 			lua_tostring(L, lua_upvalueindex(1))))->get();
-		void *vp = lua_touserdata(L, lua_upvalueindex(2));
-		func_ptr_type f = *((func_ptr_type *)vp);
-		tdstack<Ret>::push(L, (t->*f)());
+		FnPtr fp = *(FnPtr *)lua_touserdata(L, lua_upvalueindex(2));
+		arglist<params, 2> args(L);
+		tdstack<Ret>::push(L, fnptr<FnPtr>::apply(obj, fp, args));
 		return 1;
-	}
-};
-template <typename T>
-struct method_dispatch0<T, void>
-{
-	typedef void (T::*func_ptr_type) ();
-	static int apply (lua_State *L)
-	{
-		T *t = ((shared_ptr<T> *)checkclass(L, 1,
-			lua_tostring(L, lua_upvalueindex(1))))->get();
-		void *vp = lua_touserdata(L, lua_upvalueindex(2));
-		func_ptr_type f = *((func_ptr_type *)vp);
-		t->*f();
-		return 0;
 	}
 };
 
-template <typename T, typename Ret, typename P1>
-struct method_dispatch1
+template <typename FnPtr>
+struct method_proxy <FnPtr, void>
 {
-	typedef Ret (T::*func_ptr_type) (P1);
-	static int apply (lua_State *L)
+	typedef typename fnptr<FnPtr>::classtype classtype;
+	typedef typename fnptr<FnPtr>::params params;
+	static int f (lua_State *L)
 	{
-		T *t = ((shared_ptr<T> *)checkclass(L, 1,
+		classtype *obj = ((shared_ptr<classtype> *)checkclass(L, 1,
 			lua_tostring(L, lua_upvalueindex(1))))->get();
-		void *vp = lua_touserdata(L, lua_upvalueindex(2));
-		func_ptr_type f = *((func_ptr_type *)vp);
-		tdstack<Ret>::push(L, (t->*f)(tdstack<P1>::get(L, 2)));
+		FnPtr fp = *(FnPtr *)lua_touserdata(L, lua_upvalueindex(2));
+		arglist<params, 2> args(L);
+		fnptr<FnPtr>::apply(obj, fp, args);
 		return 1;
-	}
-};
-template <typename T, typename P1>
-struct method_dispatch1<T, void, P1>
-{
-	typedef void (T::*func_ptr_type) (P1);
-	static int apply (lua_State *L)
-	{
-		T *t = ((shared_ptr<T> *)checkclass(L, 1,
-			lua_tostring(L, lua_upvalueindex(1))))->get();
-		void *vp = lua_touserdata(L, lua_upvalueindex(2));
-		func_ptr_type f = *((func_ptr_type *)vp);
-		t->*f(tdstack<P1>::get(L, 2));
-		return 0;
-	}
-};
-
-template <typename T, typename Ret, typename P1, typename P2>
-struct method_dispatch2
-{
-	typedef Ret (T::*func_ptr_type) (P1, P2);
-	static int apply (lua_State *L)
-	{
-		T *t = ((shared_ptr<T> *)checkclass(L, 1,
-			lua_tostring(L, lua_upvalueindex(1))))->get();
-		void *vp = lua_touserdata(L, lua_upvalueindex(2));
-		func_ptr_type f = *((func_ptr_type *)vp);
-		tdstack<Ret>::push(L, (t->*f)(tdstack<P1>::get(L, 2),
-			tdstack<P2>::get(L, 3)));
-		return 1;
-	}
-};
-template <typename T, typename P1, typename P2>
-struct method_dispatch2<T, void, P1, P2>
-{
-	typedef void (T::*func_ptr_type) (P1, P2);
-	static int apply (lua_State *L)
-	{
-		T *t = ((shared_ptr<T> *)checkclass(L, 1,
-			lua_tostring(L, lua_upvalueindex(1))))->get();
-		void *vp = lua_touserdata(L, lua_upvalueindex(2));
-		func_ptr_type f = *((func_ptr_type *)vp);
-		t->*f(tdstack<P1>::get(L, 2), tdstack<P2>::get(L, 3));
-		return 0;
 	}
 };
 
 /*
- * class__'s member functions to register methods.  The method proxies are all
- * registered as values in the class's metatable.  Since the class's metatable
- * is listed as its own __index member, index operations on the userdata will
- * lookup the correct functions in the metatable.
+ * Perform method registration in a class.  The method proxies are all
+ * registered as values in the class's metatable, which is searched by the
+ * subclass_indexer function we've installed as __index metamethod.
  */
 
 template <typename T>
-template <typename Ret>
-class__<T>& class__<T>::method (const char *name, Ret (T::*func_ptr)())
+template <typename FnPtr>
+class__<T>& class__<T>::method (const char *name, FnPtr fp)
 {
 	luaL_getmetatable(L, classname<T>::name());
 	lua_pushstring(L, classname<T>::name());
-	void *v = lua_newuserdata(L, sizeof(func_ptr));
-	memcpy(v, &func_ptr, sizeof(func_ptr));
-	lua_pushcclosure(L, &method_dispatch0<T, Ret>::apply, 2);
-	lua_setfield(L, -2, name);
-	lua_pop(L, 1);
-	return *this;
-}
-
-template <typename T>
-template <typename Ret, typename P1>
-class__<T>& class__<T>::method (const char *name, Ret (T::*func_ptr)(P1))
-{
-	luaL_getmetatable(L, classname<T>::name());
-	lua_pushstring(L, classname<T>::name());
-	void *v = lua_newuserdata(L, sizeof(func_ptr));
-	memcpy(v, &func_ptr, sizeof(func_ptr));
-	lua_pushcclosure(L, &method_dispatch1<T, Ret, P1>::apply, 2);
-	lua_setfield(L, -2, name);
-	lua_pop(L, 1);
-	return *this;
-}
-
-template <typename T>
-template <typename Ret, typename P1, typename P2>
-class__<T>& class__<T>::method (const char *name, Ret (T::*func_ptr)(P1, P2))
-{
-	luaL_getmetatable(L, classname<T>::name());
-	lua_pushstring(L, classname<T>::name());
-	void *v = lua_newuserdata(L, sizeof(func_ptr));
-	memcpy(v, &func_ptr, sizeof(func_ptr));
-	lua_pushcclosure(L, &method_dispatch2<T, Ret, P1, P2>::apply, 2);
+	void *v = lua_newuserdata(L, sizeof(FnPtr));
+	memcpy(v, &fp, sizeof(FnPtr));
+	lua_pushcclosure(L, &method_proxy<FnPtr>::f, 2);
 	lua_setfield(L, -2, name);
 	lua_pop(L, 1);
 	return *this;

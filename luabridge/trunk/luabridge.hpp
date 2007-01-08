@@ -26,9 +26,7 @@ namespace luabridge
 		// !!!UNDONE: support variables (global properties)
 		// !!!UNDONE: support packages
 
-		/*
-		 * Class registration
-		 */
+		// Class registration
 
 		// For registering a class that hasn't been registered before
 		template <typename T>
@@ -40,10 +38,7 @@ namespace luabridge
 		template <typename T>
 		class__<T> class_ ();
 
-		/*
-		 * (Global) function registration
-		 */
-
+		// Function registration
 		// !!!UNDONE: support overloading (maybe)
 
 		template <typename FnPtr>
@@ -60,6 +55,7 @@ namespace luabridge
 		class__ (lua_State *L_, const char *name);
 		class__ (lua_State *L_, const char *name, const char *basename);
 
+		// Constructor registration
 		class__<T>& constructor ();
 		template <typename P1>
 		class__<T>& constructor ();
@@ -69,12 +65,10 @@ namespace luabridge
 		// !!!UNDONE: handle const and static methods, and properties
 		// !!!UNDONE: allow inheriting Lua classes from C++ classes
 
-		template <typename Ret>
-		class__<T>& method (const char *name, Ret (T::*func_ptr)());
-		template <typename Ret, typename P1>
-		class__<T>& method (const char *name, Ret (T::*func_ptr)(P1));
-		template <typename Ret, typename P1, typename P2>
-		class__<T>& method (const char *name, Ret (T::*func_ptr)(P1, P2));
+		// Method registration
+		template <typename FnPtr>
+		class__<T>& method (const char *name, FnPtr fp);
+
 	};
 
 	// Prototypes for implementation functions implemented in luabridge.cpp

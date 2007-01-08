@@ -15,10 +15,11 @@
 template <typename FnPtr, typename Ret = typename fnptr<FnPtr>::resulttype>
 struct function_proxy
 {
+	typedef typename fnptr<FnPtr>::params params;
 	static int f (lua_State *L)
 	{
 		FnPtr fp = (FnPtr)lua_touserdata(L, lua_upvalueindex(1));
-		arglist<typename fnptr<FnPtr>::params> args(L);
+		arglist<params> args(L);
 		tdstack<Ret>::push(L, fnptr<FnPtr>::apply(fp, args));
 		return 1;
 	}
@@ -27,10 +28,11 @@ struct function_proxy
 template <typename FnPtr>
 struct function_proxy <FnPtr, void>
 {
+	typedef typename fnptr<FnPtr>::params params;
 	static int f (lua_State *L)
 	{
 		FnPtr fp = (FnPtr)lua_touserdata(L, lua_upvalueindex(1));
-		arglist<typename fnptr<FnPtr>::params> args(L);
+		arglist<params> args(L);
 		fnptr<FnPtr>::apply(fp, args);
 		return 1;
 	}
