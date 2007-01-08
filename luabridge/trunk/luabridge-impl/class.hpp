@@ -111,48 +111,20 @@ class__<T>::class__ (lua_State *L_, const char *name,
 }
 
 /*
- * Lua-registerable C function templates for constructor proxies.  These are
+ * Lua-registerable C function template for constructor proxies.  These are
  * registered to Lua as global functions with the name of the class, with the
  * appropriate metatable passed as an upvalue.  They allocate a new userdata,
  * initialize it with a shared_ptr to an appropriately constructed new class
  * object, and set the metatable so that Lua can use the object.
  */
 
-template <typename T>
-int constructor_dispatch0 (lua_State *L)
+template <typename T, typename Params>
+int constructor_proxy (lua_State *L)
 {
 	// Allocate a new userdata and construct a T in-place there
 	void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
-	new(block) shared_ptr<T>(new T);
-
-	// Set the userdata's metatable
-	lua_pushvalue(L, lua_upvalueindex(1));
-	lua_setmetatable(L, -2);
-
-	return 1;
-}
-
-template <typename T, typename P1>
-int constructor_dispatch1 (lua_State *L)
-{
-	// Allocate a new userdata and construct a T in-place there
-	void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
-	new(block) shared_ptr<T>(new T(tdstack<P1>::get(L, 1)));
-
-	// Set the userdata's metatable
-	lua_pushvalue(L, lua_upvalueindex(1));
-	lua_setmetatable(L, -2);
-
-	return 1;
-}
-
-template <typename T, typename P1, typename P2>
-int constructor_dispatch2 (lua_State *L)
-{
-	// Allocate a new userdata and construct an A in-place there
-	void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
-	new(block) shared_ptr<T>(new T(tdstack<P1>::get(L, 1),
-		tdstack<P2>::get(L, 2)));
+	arglist<Params> args(L);
+	new(block) shared_ptr<T>(constructor<T, Params>::apply(args));
 
 	// Set the userdata's metatable
 	lua_pushvalue(L, lua_upvalueindex(1));
@@ -162,14 +134,16 @@ int constructor_dispatch2 (lua_State *L)
 }
 
 /*
- * class__'s member functions to register constructors.
+ * Perform constructor registration in a class.
  */
 
 template <typename T>
 class__<T>& class__<T>::constructor ()
 {
 	luaL_getmetatable(L, classname<T>::name());
-	lua_pushcclosure(L, &constructor_dispatch0<T>, 1);
+	lua_pushcclosure(L,
+		&constructor_proxy<T, nil>,
+		1);
 	lua_setglobal(L, classname<T>::name());
 	return *this;
 }
@@ -179,7 +153,9 @@ template <typename P1>
 class__<T>& class__<T>::constructor ()
 {
 	luaL_getmetatable(L, classname<T>::name());
-	lua_pushcclosure(L, &constructor_dispatch1<T, P1>, 1);
+	lua_pushcclosure(L,
+		&constructor_proxy<T, typelist<P1> >,
+		1);
 	lua_setglobal(L, classname<T>::name());
 	return *this;
 }
@@ -189,7 +165,45 @@ template <typename P1, typename P2>
 class__<T>& class__<T>::constructor ()
 {
 	luaL_getmetatable(L, classname<T>::name());
-	lua_pushcclosure(L, &constructor_dispatch2<T, P1, P2>, 1);
+	lua_pushcclosure(L,
+		&constructor_proxy<T, typelist_generator<P1, P2>::type>,
+		1);
+	lua_setglobal(L, classname<T>::name());
+	return *this;
+}
+
+template <typename T>
+template <typename P1, typename P2, typename P3>
+class__<T>& class__<T>::constructor ()
+{
+	luaL_getmetatable(L, classname<T>::name());
+	lua_pushcclosure(L,
+		&constructor_proxy<T, typelist_generator<P1, P2, P3>::type>,
+		1);
+	lua_setglobal(L, classname<T>::name());
+	return *this;
+}
+
+template <typename T>
+template <typename P1, typename P2, typename P3, typename P4>
+class__<T>& class__<T>::constructor ()
+{
+	luaL_getmetatable(L, classname<T>::name());
+	lua_pushcclosure(L,
+		&constructor_proxy<T, typelist_generator<P1, P2, P3, P4>::type>,
+		1);
+	lua_setglobal(L, classname<T>::name());
+	return *this;
+}
+
+template <typename T>
+template <typename P1, typename P2, typename P3, typename P4, typename P5>
+class__<T>& class__<T>::constructor ()
+{
+	luaL_getmetatable(L, classname<T>::name());
+	lua_pushcclosure(L,
+		&constructor_proxy<T, typelist_generator<P1, P2, P3, P4, P5>::type>,
+		1);
 	lua_setglobal(L, classname<T>::name());
 	return *this;
 }
