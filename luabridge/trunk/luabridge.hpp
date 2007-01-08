@@ -44,15 +44,10 @@ namespace luabridge
 		 * (Global) function registration
 		 */
 
-		// !!!UNDONE: use typelists to remove necessity for 0, 1, 2 stuff
 		// !!!UNDONE: support overloading (maybe)
 
-		template <typename Ret>
-		module& function (const char *name, Ret (*func_ptr)());
-		template <typename Ret, typename P1>
-		module& function (const char *name, Ret (*func_ptr)(P1));
-		template <typename Ret, typename P1, typename P2>
-		module& function (const char *name, Ret (*func_ptr)(P1, P2));
+		template <typename FnPtr>
+		module& function (const char *name, FnPtr fp);
 	};
 
 	// class__ performs registration for members of a class
@@ -87,10 +82,10 @@ namespace luabridge
 	int subclass_indexer (lua_State *L);
 
 	// Include implementation files
-#	include "luabridge-impl/class.hpp"
-#	include "luabridge-impl/module.hpp"
-#	include "luabridge-impl/stack.hpp"
 #	include "luabridge-impl/typelist.hpp"
+#	include "luabridge-impl/stack.hpp"
+#	include "luabridge-impl/module.hpp"
+#	include "luabridge-impl/class.hpp"
 }
 
 

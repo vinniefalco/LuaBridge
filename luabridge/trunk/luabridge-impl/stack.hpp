@@ -197,3 +197,29 @@ struct tdstack <const std::string &>
 		return std::string(luaL_checkstring(L, index));
 	}
 };
+
+/*
+ * Subclass of a type/value list, constructable from the Lua stack.
+ */
+
+template <typename Typelist, int start = 1>
+struct arglist {};
+
+template <int start>
+struct arglist <nil, start>:
+	public typevallist<nil>
+{
+	arglist (lua_State *L) { L; }
+};
+
+template <typename Head, typename Tail, int start>
+struct arglist <typelist<Head, Tail>, start>:
+	public typevallist<typelist<Head, Tail> >
+{
+	arglist (lua_State *L):
+		typevallist<typelist<Head, Tail> >
+			(tdstack<Head>::get(L, start),
+			arglist<Tail, start + 1>(L))
+	{}
+};
+
