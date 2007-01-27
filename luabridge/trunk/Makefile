@@ -62,6 +62,6 @@ src/testd src/test:
 # Cleanup
 clean:
 	rm -rf lib/libluabridged.a lib/libluabridge.a src/debug src/release \
-	*~ src/*~ include/*~ depend
+	*~ src/*~ include/*~ include/impl/*~ depend
 
 .PHONY: all clean luabridge test
