@@ -4,7 +4,8 @@
 all: luabridge test
 
 CXX := g++
-CXXFLAGS := -Wall -W -Wno-unknown-pragmas -Iinclude -I$(HOME)/include
+CXXFLAGS := -Wall -W -Wno-unknown-pragmas -Wno-ctor-dtor-privacy \
+    -Iinclude -I$(HOME)/include
 REL_FLAGS := -O3
 DBG_FLAGS := -g
 
@@ -35,7 +36,7 @@ src/test: $(TEST_REL_OBJS) $(LDLIBS) -lluabridge
 include depend
 depend: $(LUABRIDGE_SOURCES) $(TEST_SOURCES)
 	@set -e; rm -f $@; \
-	$(CXX) -MM $^ > $@.$$$$; \
+	$(CXX) $(CPPFLAGS) -MM $^ > $@.$$$$; \
 	sed 's,\([a-z]*\.o\)[ :]*,src/debug/\1 src/release/\1: ,g' \
 	< $@.$$$$ > $@; \
 	rm -f $@.$$$$

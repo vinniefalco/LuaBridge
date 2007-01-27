@@ -84,6 +84,10 @@ namespace luabridge
 	void *checkclass (lua_State *L, int idx, const char *tname);
 	int subclass_indexer (lua_State *L);
 
+	// Predeclare the classname struct since several implementation files use it
+	template <typename T>
+	struct classname;
+
 	// Include implementation files
 #	include "impl/typelist.hpp"
 #	include "impl/stack.hpp"
