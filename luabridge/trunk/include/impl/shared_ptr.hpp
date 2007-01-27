@@ -4,7 +4,11 @@
  */
  
 // Declaration of container for the refcounts
-typedef stdext::hash_map<void *, int> refcounts_t;
+#ifdef _MSC_VER
+	typedef stdext::hash_map<void *, int> refcounts_t;
+#else
+	typedef __gnu_cxx::hash_map<void *, int> refcounts_t;
+#endif
 extern refcounts_t refcounts_;
 
 /*
