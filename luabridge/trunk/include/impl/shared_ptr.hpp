@@ -7,7 +7,15 @@
 #ifdef _MSC_VER
 	typedef stdext::hash_map<void *, int> refcounts_t;
 #else
-	typedef __gnu_cxx::hash_map<void *, int> refcounts_t;
+	struct ptr_hash
+	{
+		size_t operator () (void *v) const
+		{
+			static __gnu_cxx::hash<unsigned int> H;
+			return H((unsigned int)v);
+		}
+	};
+	typedef __gnu_cxx::hash_map<void *, int, ptr_hash> refcounts_t;
 #endif
 extern refcounts_t refcounts_;
 

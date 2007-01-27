@@ -18,7 +18,8 @@ LUABRIDGE_SOURCES := src/luabridge.cpp src/shared_ptr.cpp
 LUABRIDGE_DBG_OBJS := $(LUABRIDGE_SOURCES:src/%.cpp=src/debug/%.o)
 LUABRIDGE_REL_OBJS := $(LUABRIDGE_SOURCES:src/%.cpp=src/release/%.o)
 
-luabridge: lib/. lib/libluabridged.a lib/libluabridge.a
+luabridge: lib/. src/debug/. src/release/. \
+    lib/libluabridged.a lib/libluabridge.a
 lib/libluabridged.a: $(LUABRIDGE_DBG_OBJS)
 lib/libluabridge.a: $(LUABRIDGE_REL_OBJS)
 
@@ -27,9 +28,9 @@ TEST_SOURCES := src/test.cpp
 TEST_DBG_OBJS := $(TEST_SOURCES:src/%.cpp=src/debug/%.o)
 TEST_REL_OBJS := $(TEST_SOURCES:src/%.cpp=src/release/%.o)
 
-test: src/testd src/test
-src/testd: $(TEST_DBG_OBJS) $(LDLIBS) -lluabridged
-src/test: $(TEST_REL_OBJS) $(LDLIBS) -lluabridge
+test: src/debug/. src/release/. src/testd src/test
+src/testd: $(TEST_DBG_OBJS) $(LDLIBS) lib/libluabridged.a
+src/test: $(TEST_REL_OBJS) $(LDLIBS) lib/libluabridge.a
 
 # Dependencies for source files on headers
 # The sed command replaces "%.o" with "src/debug/%.o src/release/%.o"
