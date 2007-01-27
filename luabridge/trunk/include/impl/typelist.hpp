@@ -25,55 +25,6 @@ template <typename Head, typename Tail = nil>
 struct typelist {};
 
 /*
- * Typelist generator.  This creates a typelist from a constant-arity sequence
- * of template parameters.  We implement it for up to 5 parameters here.
- */
-
-template
-<
-	typename T1 = void,
-	typename T2 = void,
-	typename T3 = void,
-	typename T4 = void,
-	typename T5 = void
->
-struct typelist_generator
-{
-	typedef typelist<T1, typelist<T2, typelist<T3, typelist<T4,
-		typelist<T5> > > > > type;
-};
-
-template <>
-struct typelist_generator <void, void, void, void, void>
-{
-	typedef nil type;
-};
-
-template <typename T1>
-struct typelist_generator <T1, void, void, void, void>
-{
-	typedef typelist<T1> type;
-};
-
-template <typename T1, typename T2>
-struct typelist_generator <T1, T2, void, void, void>
-{
-	typedef typelist<T1, typelist<T2> > type;
-};
-
-template <typename T1, typename T2, typename T3>
-struct typelist_generator <T1, T2, T3, void, void>
-{
-	typedef typelist<T1, typelist<T2, typelist<T3> > > type;
-};
-
-template <typename T1, typename T2, typename T3, typename T4>
-struct typelist_generator <T1, T2, T3, T4, void>
-{
-	typedef typelist<T1, typelist<T2, typelist<T3, typelist<T4> > > > type;
-};
-
-/*
  * Type/value list.
  */
 

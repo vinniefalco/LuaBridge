@@ -138,76 +138,12 @@ int constructor_proxy (lua_State *L)
  */
 
 template <typename T>
+template <typename FnPtr>
 class__<T>& class__<T>::constructor ()
 {
 	luaL_getmetatable(L, classname<T>::name());
 	lua_pushcclosure(L,
-		&constructor_proxy<T, nil>,
-		1);
-	lua_setglobal(L, classname<T>::name());
-	return *this;
-}
-
-template <typename T>
-template <typename P1>
-class__<T>& class__<T>::constructor ()
-{
-	luaL_getmetatable(L, classname<T>::name());
-	lua_pushcclosure(L,
-		&constructor_proxy<T, typelist<P1> >,
-		1);
-	lua_setglobal(L, classname<T>::name());
-	return *this;
-}
-
-template <typename T>
-template <typename P1, typename P2>
-class__<T>& class__<T>::constructor ()
-{
-	luaL_getmetatable(L, classname<T>::name());
-	lua_pushcclosure(L,
-		&constructor_proxy<T,
-		typename typelist_generator<P1, P2>::type>,
-		1);
-	lua_setglobal(L, classname<T>::name());
-	return *this;
-}
-
-template <typename T>
-template <typename P1, typename P2, typename P3>
-class__<T>& class__<T>::constructor ()
-{
-	luaL_getmetatable(L, classname<T>::name());
-	lua_pushcclosure(L,
-		&constructor_proxy<T,
-		typename typelist_generator<P1, P2, P3>::type>,
-		1);
-	lua_setglobal(L, classname<T>::name());
-	return *this;
-}
-
-template <typename T>
-template <typename P1, typename P2, typename P3, typename P4>
-class__<T>& class__<T>::constructor ()
-{
-	luaL_getmetatable(L, classname<T>::name());
-	lua_pushcclosure(L,
-		&constructor_proxy<T,
-		typename typelist_generator<P1, P2, P3, P4>::type>,
-		1);
-	lua_setglobal(L, classname<T>::name());
-	return *this;
-}
-
-template <typename T>
-template <typename P1, typename P2, typename P3, typename P4, typename P5>
-class__<T>& class__<T>::constructor ()
-{
-	luaL_getmetatable(L, classname<T>::name());
-	lua_pushcclosure(L,
-		&constructor_proxy<T,
-		typename typelist_generator<P1, P2, P3, P4, P5>::type>,
-		1);
+		&constructor_proxy<T, typename fnptr<FnPtr>::params>, 1);
 	lua_setglobal(L, classname<T>::name());
 	return *this;
 }

@@ -55,20 +55,10 @@ namespace luabridge
 		class__ (lua_State *L_, const char *name);
 		class__ (lua_State *L_, const char *name, const char *basename);
 
-		// Constructor registration.  This unfortunately requires an overload
-		// for each arity, since template default parameters aren't allowed
-		// on function templates.
-		class__<T>& constructor ();
-		template <typename P1>
-		class__<T>& constructor ();
-		template <typename P1, typename P2>
-		class__<T>& constructor ();
-		template <typename P1, typename P2, typename P3>
-		class__<T>& constructor ();
-		template <typename P1, typename P2, typename P3, typename P4>
-		class__<T>& constructor ();
-		template <typename P1, typename P2, typename P3, typename P4,
-			typename P5>
+		// Constructor registration.  The template parameter should be passed
+		// a function pointer type; only the argument list will be used (since
+		// you can't take the address of a ctor).
+		template <typename FnPtr>
 		class__<T>& constructor ();
 
 		// !!!UNDONE: handle const and static methods, and properties

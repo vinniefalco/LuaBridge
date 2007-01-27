@@ -218,15 +218,15 @@ void register_lua_funcs (lua_State *L)
 		.function("testStdString", &testStdString);
 
 	m.class_<A>("A")
-		.constructor<const string &>()
+		.constructor<void (*) (const string &)>()
 		.method("testInt", &A::testInt)
 		.method("getName", &A::getName);
 
 	m.subclass<B, A>("B")
-		.constructor<const string &>();
+		.constructor<void (*) (const string &)>();
 
 	m.class_<C>("C")
-		.constructor<const string &>()
+		.constructor<void (*) (const string &)>()
 		.method("getName", &C::getName);
 
 	m	.function("testAPtr", &testAPtr)
