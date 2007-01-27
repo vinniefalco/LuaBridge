@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="luabridge"
-	ProjectGUID="{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}"
+	Name="test"
+	ProjectGUID="{B5C37206-2763-4E3B-83D6-E15DE5DF4D2D}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -12,14 +12,14 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="lib"
+			OutputDirectory="src"
 			IntermediateDirectory="src/debug"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
@@ -30,8 +30,14 @@
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libluabridged.lib"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="lib/libluabridged.lib lua51.lib"
+				OutputFile="$(OutDir)/testd.exe"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/test.pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -47,19 +53,21 @@
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
 			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="lib"
+			OutputDirectory="src"
 			IntermediateDirectory="src/release"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="4"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -68,8 +76,15 @@
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libluabridge.lib"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="lib/libluabridge.lib lua51.lib"
+				OutputFile="$(OutDir)/test.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -84,6 +99,8 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
 			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
@@ -98,41 +115,11 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath=".\src\luabridge.cpp">
+				RelativePath=".\src\test.cpp">
 			</File>
 			<File
-				RelativePath=".\src\shared_ptr.cpp">
+				RelativePath=".\src\test.lua">
 			</File>
-		</Filter>
-		<Filter
-			Name="include"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
-			<File
-				RelativePath=".\include\luabridge.hpp">
-			</File>
-			<File
-				RelativePath=".\include\shared_ptr.hpp">
-			</File>
-			<Filter
-				Name="impl"
-				Filter="">
-				<File
-					RelativePath=".\include\impl\class.hpp">
-				</File>
-				<File
-					RelativePath=".\include\impl\module.hpp">
-				</File>
-				<File
-					RelativePath=".\include\impl\shared_ptr.hpp">
-				</File>
-				<File
-					RelativePath=".\include\impl\stack.hpp">
-				</File>
-				<File
-					RelativePath=".\include\impl\typelist.hpp">
-				</File>
-			</Filter>
 		</Filter>
 	</Files>
 	<Globals>
