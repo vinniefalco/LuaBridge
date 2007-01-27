@@ -108,6 +108,9 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}"
+			Name="luabridge"/>
 	</References>
 	<Files>
 		<Filter
