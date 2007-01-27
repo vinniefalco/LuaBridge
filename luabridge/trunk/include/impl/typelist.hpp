@@ -93,7 +93,7 @@ struct fnptr <Ret (*) ()>
 	typedef nil params;
 	static Ret apply (Ret (*fp) (), const typevallist<params> &tvl)
 	{
-		tvl;
+		(void)tvl;
 		return fp();
 	}
 };
@@ -173,7 +173,7 @@ struct fnptr <Ret (T::*) ()>
 	typedef nil params;
 	static Ret apply (T *obj, Ret (T::*fp) (), const typevallist<params> &tvl)
 	{
-		tvl;
+		(void)tvl;
 		return (obj->*fp)();
 	}
 };

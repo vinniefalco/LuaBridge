@@ -209,7 +209,7 @@ template <int start>
 struct arglist <nil, start>:
 	public typevallist<nil>
 {
-	arglist (lua_State *L) { L; }
+	arglist (lua_State *L) { (void)L; }
 };
 
 template <typename Head, typename Tail, int start>
