@@ -3,7 +3,7 @@
  * Source for shared_ptr class template.
  */
 
-#include "shared_ptr.hpp"
+#include "../include/shared_ptr.hpp"
 
 // Definition of the container for refcounts - has to be in a source file, not the header
 luabridge::refcounts_t luabridge::refcounts_;

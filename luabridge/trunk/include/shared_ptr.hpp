@@ -38,7 +38,7 @@ namespace luabridge
 	};
 
 	// Include implementation
-#	include "shared_ptr-impl.hpp"
+#	include "impl/shared_ptr.hpp"
 }
 
 #endif

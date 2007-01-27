@@ -3,7 +3,7 @@
  * Source for the luabridge library.
  */
 
-#include "../luabridge.hpp"
+#include "../include/luabridge.hpp"
 
 /*
  * Default name for unknown types

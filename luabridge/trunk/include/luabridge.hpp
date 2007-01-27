@@ -85,10 +85,10 @@ namespace luabridge
 	int subclass_indexer (lua_State *L);
 
 	// Include implementation files
-#	include "luabridge-impl/typelist.hpp"
-#	include "luabridge-impl/stack.hpp"
-#	include "luabridge-impl/module.hpp"
-#	include "luabridge-impl/class.hpp"
+#	include "impl/typelist.hpp"
+#	include "impl/stack.hpp"
+#	include "impl/module.hpp"
+#	include "impl/class.hpp"
 }
 
 
