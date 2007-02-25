@@ -4,18 +4,6 @@
  */
 
 /*
- * Things we need to do with typelists:
- *   1. Construct a run-time data structure with a value for each type in a
-          type list (a type/value list).
- *   2. Iterate over a type list so as to fill a type/value list.
- *   3. Convert a type/value list to a call of a given function pointer.
- *   4. Convert a type/value list to a call of a given member function
-          pointer on a given object.
- *   5. Convert a type/value list to a constructor call of a given type.
- *   6. Convert a function pointer type into a list of parameter types.
- */
-
-/*
  * Type list and definition of nil type list, which is void.
  */
 
@@ -82,14 +70,14 @@ struct fnptr {};
 
 /* Ordinary function pointers. */
 
-#define FNPTR_GLOBAL_TRAITS() \
+#define FNPTR_GLOBAL_TRAITS \
 	static const bool mfp = false;\
 	typedef Ret resulttype
 
 template <typename Ret>
 struct fnptr <Ret (*) ()>
 {
-	FNPTR_GLOBAL_TRAITS();
+	FNPTR_GLOBAL_TRAITS;
 	typedef nil params;
 	static Ret apply (Ret (*fp) (), const typevallist<params> &tvl)
 	{
@@ -101,7 +89,7 @@ struct fnptr <Ret (*) ()>
 template <typename Ret, typename P1>
 struct fnptr <Ret (*) (P1)>
 {
-	FNPTR_GLOBAL_TRAITS();
+	FNPTR_GLOBAL_TRAITS;
 	typedef typelist<P1> params;
 	static Ret apply (Ret (*fp) (P1), const typevallist<params> &tvl)
 	{
@@ -112,7 +100,7 @@ struct fnptr <Ret (*) (P1)>
 template <typename Ret, typename P1, typename P2>
 struct fnptr <Ret (*) (P1, P2)>
 {
-	FNPTR_GLOBAL_TRAITS();
+	FNPTR_GLOBAL_TRAITS;
 	typedef typelist<P1, typelist<P2> > params;
 	static Ret apply (Ret (*fp) (P1, P2), const typevallist<params> &tvl)
 	{
@@ -123,7 +111,7 @@ struct fnptr <Ret (*) (P1, P2)>
 template <typename Ret, typename P1, typename P2, typename P3>
 struct fnptr <Ret (*) (P1, P2, P3)>
 {
-	FNPTR_GLOBAL_TRAITS();
+	FNPTR_GLOBAL_TRAITS;
 	typedef typelist<P1, typelist<P2, typelist<P3> > > params;
 	static Ret apply (Ret (*fp) (P1, P2, P3), const typevallist<params> &tvl)
 	{
@@ -134,7 +122,7 @@ struct fnptr <Ret (*) (P1, P2, P3)>
 template <typename Ret, typename P1, typename P2, typename P3, typename P4>
 struct fnptr <Ret (*) (P1, P2, P3, P4)>
 {
-	FNPTR_GLOBAL_TRAITS();
+	FNPTR_GLOBAL_TRAITS;
 	typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
 	static Ret apply (Ret (*fp) (P1, P2, P3, P4),
 		const typevallist<params> &tvl)
@@ -147,7 +135,7 @@ template <typename Ret, typename P1, typename P2, typename P3, typename P4,
 	typename P5>
 struct fnptr <Ret (*) (P1, P2, P3, P4, P5)>
 {
-	FNPTR_GLOBAL_TRAITS();
+	FNPTR_GLOBAL_TRAITS;
 	typedef typelist<P1, typelist<P2, typelist<P3,
 		typelist<P4, typelist<P5> > > > > params;
 	static Ret apply (Ret (*fp) (P1, P2, P3, P4, P5),
@@ -160,7 +148,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5)>
 
 /* Non-const member function pointers. */
 
-#define FNPTR_MFP_TRAITS() \
+#define FNPTR_MFP_TRAITS \
 	static const bool mfp = true;\
 	static const bool const_mfp = false;\
 	typedef T classtype;\
@@ -169,7 +157,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5)>
 template <typename T, typename Ret>
 struct fnptr <Ret (T::*) ()>
 {
-	FNPTR_MFP_TRAITS();
+	FNPTR_MFP_TRAITS;
 	typedef nil params;
 	static Ret apply (T *obj, Ret (T::*fp) (), const typevallist<params> &tvl)
 	{
@@ -181,7 +169,7 @@ struct fnptr <Ret (T::*) ()>
 template <typename T, typename Ret, typename P1>
 struct fnptr <Ret (T::*) (P1)>
 {
-	FNPTR_MFP_TRAITS();
+	FNPTR_MFP_TRAITS;
 	typedef typelist<P1> params;
 	static Ret apply (T *obj, Ret (T::*fp) (P1),
 		const typevallist<params> &tvl)
@@ -193,7 +181,7 @@ struct fnptr <Ret (T::*) (P1)>
 template <typename T, typename Ret, typename P1, typename P2>
 struct fnptr <Ret (T::*) (P1, P2)>
 {
-	FNPTR_MFP_TRAITS();
+	FNPTR_MFP_TRAITS;
 	typedef typelist<P1, typelist<P2> > params;
 	static Ret apply (T *obj, Ret (T::*fp) (P1, P2),
 		const typevallist<params> &tvl)
@@ -205,7 +193,7 @@ struct fnptr <Ret (T::*) (P1, P2)>
 template <typename T, typename Ret, typename P1, typename P2, typename P3>
 struct fnptr <Ret (T::*) (P1, P2, P3)>
 {
-	FNPTR_MFP_TRAITS();
+	FNPTR_MFP_TRAITS;
 	typedef typelist<P1, typelist<P2, typelist<P3> > > params;
 	static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3),
 		const typevallist<params> &tvl)
@@ -218,7 +206,7 @@ template <typename T, typename Ret, typename P1, typename P2, typename P3,
 	typename P4>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4)>
 {
-	FNPTR_MFP_TRAITS();
+	FNPTR_MFP_TRAITS;
 	typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
 	static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3, P4),
 		const typevallist<params> &tvl)
@@ -231,7 +219,7 @@ template <typename T, typename Ret, typename P1, typename P2, typename P3,
 	typename P4, typename P5>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
 {
-	FNPTR_MFP_TRAITS();
+	FNPTR_MFP_TRAITS;
 	typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4,
 		typelist<P5> > > > > params;
 	static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5),
@@ -244,7 +232,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
 
 /* Const member function pointers. */
 
-#define FNPTR_CONST_MFP_TRAITS() \
+#define FNPTR_CONST_MFP_TRAITS \
 	static const bool mfp = true;\
 	static const bool const_mfp = true;\
 	typedef T classtype;\
@@ -253,7 +241,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
 template <typename T, typename Ret>
 struct fnptr <Ret (T::*) () const>
 {
-	FNPTR_CONST_MFP_TRAITS();
+	FNPTR_CONST_MFP_TRAITS;
 	typedef nil params;
 	static Ret apply (const T *obj, Ret (T::*fp) () const,
 		const typevallist<params> &tvl)
@@ -266,7 +254,7 @@ struct fnptr <Ret (T::*) () const>
 template <typename T, typename Ret, typename P1>
 struct fnptr <Ret (T::*) (P1) const>
 {
-	FNPTR_CONST_MFP_TRAITS();
+	FNPTR_CONST_MFP_TRAITS;
 	typedef typelist<P1> params;
 	static Ret apply (const T *obj, Ret (T::*fp) (P1) const,
 		const typevallist<params> &tvl)
@@ -278,7 +266,7 @@ struct fnptr <Ret (T::*) (P1) const>
 template <typename T, typename Ret, typename P1, typename P2>
 struct fnptr <Ret (T::*) (P1, P2) const>
 {
-	FNPTR_CONST_MFP_TRAITS();
+	FNPTR_CONST_MFP_TRAITS;
 	typedef typelist<P1, typelist<P2> > params;
 	static Ret apply (const T *obj, Ret (T::*fp) (P1, P2) const,
 		const typevallist<params> &tvl)
@@ -290,7 +278,7 @@ struct fnptr <Ret (T::*) (P1, P2) const>
 template <typename T, typename Ret, typename P1, typename P2, typename P3>
 struct fnptr <Ret (T::*) (P1, P2, P3) const>
 {
-	FNPTR_CONST_MFP_TRAITS();
+	FNPTR_CONST_MFP_TRAITS;
 	typedef typelist<P1, typelist<P2, typelist<P3> > > params;
 	static Ret apply (const T *obj, Ret (T::*fp) (P1, P2, P3) const,
 		const typevallist<params> &tvl)
@@ -303,7 +291,7 @@ template <typename T, typename Ret, typename P1, typename P2, typename P3,
 	typename P4>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4) const>
 {
-	FNPTR_CONST_MFP_TRAITS();
+	FNPTR_CONST_MFP_TRAITS;
 	typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
 	static Ret apply (const T *obj, Ret (T::*fp) (P1, P2, P3, P4) const,
 		const typevallist<params> &tvl)
@@ -316,7 +304,7 @@ template <typename T, typename Ret, typename P1, typename P2, typename P3,
 	typename P4, typename P5>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5) const>
 {
-	FNPTR_CONST_MFP_TRAITS();
+	FNPTR_CONST_MFP_TRAITS;
 	typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4,
 		typelist<P5> > > > > params;
 	static Ret apply (const T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5) const,

@@ -1,6 +1,8 @@
 /*
  * shared_ptr.hpp - Copyright (C) 2007 by Nathan Reed
  * Smart pointer with reference counting.
+ * This is compatible with boost::shared_ptr, in the sense that it implements
+ * a strict subset of boost_shared_ptr's functionality.
  */
 
 #ifndef SHARED_PTR_HPP
@@ -37,7 +39,7 @@ namespace luabridge
 		T* operator * () const;
 		T* operator -> () const;
 
-		void release ();
+		void reset ();
 		~shared_ptr ();
 	};
 

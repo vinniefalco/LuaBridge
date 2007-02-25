@@ -68,7 +68,7 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname)
 /*
  * Index metamethod for C++ classes exposed to Lua.  This searches the
  * metatable for the given key, but if it can't find it, it looks for a
- * __parent key and delgates the lookup to that.
+ * __parent key and delegates the lookup to that.
  */
 
 int luabridge::subclass_indexer (lua_State *L)

@@ -10,7 +10,10 @@
 #include <cassert>
 #include <string>
 #include <lua.hpp>
-#include "shared_ptr.hpp"
+
+#ifndef USE_OTHER_SHARED_PTR
+#	include "shared_ptr.hpp"
+#endif
 
 namespace luabridge
 {

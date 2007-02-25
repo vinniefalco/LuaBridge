@@ -72,7 +72,7 @@ T* shared_ptr<T>::operator -> () const
 }
 
 template <typename T>
-void shared_ptr<T>::release ()
+void shared_ptr<T>::reset ()
 {
 	if (!ptr) return;
 	if (--refcounts_[ptr] <= 0)
@@ -83,6 +83,6 @@ void shared_ptr<T>::release ()
 template <typename T>
 shared_ptr<T>::~shared_ptr ()
 {
-	release();
+	reset();
 }
 
