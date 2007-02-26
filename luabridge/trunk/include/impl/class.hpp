@@ -51,7 +51,7 @@ template <typename T>
 int destructor_dispatch (lua_State *L)
 {
 	((shared_ptr<T>*)checkclass(L, 1,
-		lua_tostring(L, lua_upvalueindex(1))))->release();
+		lua_tostring(L, lua_upvalueindex(1))))->reset();
 	return 0;
 }
 
