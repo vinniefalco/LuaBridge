@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "luabridge", "luabridge.vcproj", "{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test.vcproj", "{B5C37206-2763-4E3B-83D6-E15DE5DF4D2D}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}.Debug.ActiveCfg = Debug|Win32
+		{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}.Debug.Build.0 = Debug|Win32
+		{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}.Release.ActiveCfg = Release|Win32
+		{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}.Release.Build.0 = Release|Win32
+		{B5C37206-2763-4E3B-83D6-E15DE5DF4D2D}.Debug.ActiveCfg = Debug|Win32
+		{B5C37206-2763-4E3B-83D6-E15DE5DF4D2D}.Debug.Build.0 = Debug|Win32
+		{B5C37206-2763-4E3B-83D6-E15DE5DF4D2D}.Release.ActiveCfg = Release|Win32
+		{B5C37206-2763-4E3B-83D6-E15DE5DF4D2D}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
