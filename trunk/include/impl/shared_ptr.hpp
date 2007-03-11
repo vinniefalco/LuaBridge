@@ -47,7 +47,7 @@ template <typename T>
 template <typename U>
 shared_ptr<T>& shared_ptr<T>::operator = (const shared_ptr<U>& rhs)
 {
-	release();
+	reset();
 	ptr = static_cast<T*>(rhs.ptr);
 	++refcounts_[ptr];
 	return *this;
