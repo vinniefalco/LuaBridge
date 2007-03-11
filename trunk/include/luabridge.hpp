@@ -80,6 +80,7 @@ namespace luabridge
 	// Predeclare the classname struct since several implementation files use it
 	template <typename T>
 	struct classname;
+	extern const char *classname_unknown;
 
 	// Include implementation files
 #	include "impl/typelist.hpp"

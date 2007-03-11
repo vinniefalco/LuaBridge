@@ -22,7 +22,6 @@ struct classname
 };
 
 // Initial type names are unknown
-extern const char *classname_unknown;
 template <typename T>
 const char *classname<T>::name_ = classname_unknown;
 
