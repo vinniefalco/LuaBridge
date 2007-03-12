@@ -5,12 +5,16 @@ Copyright (C) 2007 by Nathan Reed.  All rights and priveleges reserved.
 Introduction
 ------------
 
-luabridge is a lightweight, dependency-free library for binding Lua to C++.
-It is written against Lua 5.1.1 and compiles in Microsoft Visual C++ 7.1 or
-higher and in g++ 3.3.5 or higher.
+luabridge is a lightweight, dependency-free library for binding Lua to C++,
+written against Lua 5.1.1.
 
 Compiling
 ---------
+
+luabridge compiles correctly in g++ 3, g++ 4, MSVC 7.1, and MSVC C++ 8.0.
+Because of the advanced template features it uses, I can't guarantee luabridge
+will compile correctly with anything else, but it is written in standard-
+compliant C++, so if you have a compliant compiler you *should* be fine.
 
 Compiling should be very simple.  Ensure that Lua is installed and its headers
 are in your include path.  If you are using MSVC, load the provided solution
@@ -124,12 +128,10 @@ luabridge v0.1 does not support:
  * STL list types, like std::vector, std::list, or std::map
  * Inheriting Lua classes from C++ classes
 
-Development is continuing, and new releases will be published at:
-https://svn.cs.pomona.edu/reedbeta/luabridge/tags/
-The latest unstable version is always available at:
-https://svn.cs.pomona.edu/reedbeta/luabridge/trunk
-The subversion repository is world-readable, so you can checkout and even view
-logs and prior revisions if you are so inclined.
+Development is continuing, and new releases will be published at the project
+website: http://luabridge.sourceforge.net
+The latest unstable version is always available for SVN checkout at:
+https://luabridge.svn.sourceforge.net/svnroot/luabridge/trunk
 
 If you are interested in contributing to luabridge, please contact me at:
-nathaniel dot reed at gmail dot com.
+nathaniel dot reed at gmail dot com, or send email to me through sourceforge.
