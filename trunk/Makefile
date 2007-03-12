@@ -11,7 +11,10 @@ DBG_FLAGS := -g
 
 LDFLAGS := -L$(HOME)/lib
 VPATH := $(HOME)/lib
-LDLIBS := -llua
+# Let the name of the lua library be given as an environment variable.
+# UNDONE: figure out how to determine this automatically.
+LUA_NAME ?= lua
+LDLIBS := -l$(LUA_NAME)
 
 # Dependencies for libluabridge
 LUABRIDGE_SOURCES := src/luabridge.cpp src/shared_ptr.cpp

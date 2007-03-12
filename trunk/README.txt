@@ -19,7 +19,12 @@ compliant C++, so if you have a compliant compiler you *should* be fine.
 Compiling should be very simple.  Ensure that Lua is installed and its headers
 are in your include path.  If you are using MSVC, load the provided solution
 file and click build.  Otherwise, a Makefile is provided; just enter the
-directory where you have installed luabridge and type `make'.
+directory where you have untarred luabridge and type `make'.
+
+One option you may have to set manually is the name of the Lua library.  On
+some systems it is called 'lua' (liblua.a, liblua.so) and on others 'lua5.1'
+(liblua5.1.a, liblua5.1.so).  Setting the make variable LUA_NAME lets you
+specify this.  The default is 'lua'.
 
 Using luabridge
 ---------------
