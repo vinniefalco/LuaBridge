@@ -74,9 +74,10 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname)
 int luabridge::subclass_indexer (lua_State *L)
 {
 	// Attempt to lookup the key in the metatable
+	// (using a rawget so we don't invoke __index again)
 	lua_getmetatable(L, 1);
 	lua_pushvalue(L, 2);
-	lua_gettable(L, -2);
+	lua_rawget(L, -2);
 	// Did we get a non-nil result?  If so, return it
 	if (!lua_isnil(L, -1))
 		return 1;

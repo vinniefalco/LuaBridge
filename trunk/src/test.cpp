@@ -117,6 +117,11 @@ public:
 	{
 		return name.c_str();
 	}
+
+	static void testStatic ()
+	{
+		cout << "A::testStatic()\n";
+	}
 };
 
 class B: public A
@@ -137,6 +142,12 @@ public:
 		cout << name << "::testInt(" << i << ")\n";
 		return i;
 	}
+
+	static void testStatic2 ()
+	{
+		cout << "B::testStatic2()\n";
+	}
+
 };
 
 class C
@@ -220,10 +231,12 @@ void register_lua_funcs (lua_State *L)
 	m.class_<A>("A")
 		.constructor<void (*) (const string &)>()
 		.method("testInt", &A::testInt)
-		.method("getName", &A::getName);
+		.method("getName", &A::getName)
+		.static_method("testStatic", &A::testStatic);
 
 	m.subclass<B, A>("B")
-		.constructor<void (*) (const string &)>();
+		.constructor<void (*) (const string &)>()
+		.static_method("testStatic2", &B::testStatic2);
 
 	m.class_<C>("C")
 		.constructor<void (*) (const string &)>()

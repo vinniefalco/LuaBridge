@@ -82,6 +82,19 @@ class__<T>::class__ (lua_State *L_, const char *name): L(L_)
 	lua_setfield(L, -2, "__type");
 	lua_pop(L, 1);
 
+	// Create static table for this class.  This is stored in the global
+	// environment, keyed by the given class name.  Its __call metamethod
+	// will be the constructor, and it will also contain static members.
+	lua_newtable(L);
+	// Set it as its own metatable
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	// Set subclass_indexer as the __index metamethod
+	lua_pushcfunction(L, &subclass_indexer);
+	lua_setfield(L, -2, "__index");
+	// Install it in the global environment
+	lua_setglobal(L, name);
+
 	classname<T>::set_name(name);
 }
 
@@ -106,6 +119,22 @@ class__<T>::class__ (lua_State *L_, const char *name,
 	lua_setfield(L, -2, "__parent");
 	lua_pop(L, 1);
 
+	// Create static table for this class.  This is stored in the global
+	// environment, keyed by the given class name.  Its __call metamethod
+	// will be the constructor, and it will also contain static members.
+	lua_newtable(L);
+	// Set it as its own metatable
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	// Set subclass_indexer as the __index metamethod
+	lua_pushcfunction(L, &subclass_indexer);
+	lua_setfield(L, -2, "__index");
+	// Set the __parent metafield to the base class's static table
+	lua_getglobal(L, basename);
+	lua_setfield(L, -2, "__parent");
+	// Install it in the global environment
+	lua_setglobal(L, name);
+
 	classname<T>::set_name(name);
 }
 
@@ -122,7 +151,7 @@ int constructor_proxy (lua_State *L)
 {
 	// Allocate a new userdata and construct a T in-place there
 	void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
-	arglist<Params> args(L);
+	arglist<Params, 2> args(L);
 	new(block) shared_ptr<T>(constructor<T, Params>::apply(args));
 
 	// Set the userdata's metatable
@@ -140,10 +169,15 @@ template <typename T>
 template <typename FnPtr>
 class__<T>& class__<T>::constructor ()
 {
+	// Get a reference to the class's static table
+	lua_getglobal(L, classname<T>::name());
+	// Push the constructor proxy, with the class's metatable as an upvalue
 	luaL_getmetatable(L, classname<T>::name());
 	lua_pushcclosure(L,
 		&constructor_proxy<T, typename fnptr<FnPtr>::params>, 1);
-	lua_setglobal(L, classname<T>::name());
+	// Set the constructor proxy as the __call metamethod of the static table
+	lua_setfield(L, -2, "__call");
+	lua_pop(L, 1);
 	return *this;
 }
 
@@ -202,6 +236,24 @@ class__<T>& class__<T>::method (const char *name, FnPtr fp)
 	void *v = lua_newuserdata(L, sizeof(FnPtr));
 	memcpy(v, &fp, sizeof(FnPtr));
 	lua_pushcclosure(L, &method_proxy<FnPtr>::f, 2);
+	lua_setfield(L, -2, name);
+	lua_pop(L, 1);
+	return *this;
+}
+
+/*
+ * Static method registration.  Method proxies are registered as values
+ * in the class's static table.  We use the global function proxies defined
+ * in module.hpp, since static methods are really just hidden globals.
+ */
+
+template <typename T>
+template <typename FnPtr>
+class__<T>& class__<T>::static_method (const char *name, FnPtr fp)
+{
+	lua_getglobal(L, classname<T>::name());
+	lua_pushlightuserdata(L, (void *)fp);
+	lua_pushcclosure(L, &function_proxy<FnPtr>::f, 1);
 	lua_setfield(L, -2, name);
 	lua_pop(L, 1);
 	return *this;

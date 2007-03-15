@@ -71,6 +71,9 @@ namespace luabridge
 		template <typename FnPtr>
 		class__<T>& method (const char *name, FnPtr fp);
 
+		// Static method registration
+		template <typename FnPtr>
+		class__<T>& static_method (const char *name, FnPtr fp);
 	};
 
 	// Prototypes for implementation functions implemented in luabridge.cpp

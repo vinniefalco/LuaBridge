@@ -22,6 +22,11 @@ print("testFloat returned " .. testFloat(3.14159));
 print("testConstCharPtr returned \"" .. testConstCharPtr("Hello World!") .. "\"");
 print("testStdString returned \"" .. testStdString("Hello World!") .. "\"");
 
+-- test static methods of classes registered from C++
+A.testStatic();
+B.testStatic();
+B.testStatic2();
+
 -- test classes registered from C++
 object1 = A("object1");
 print("object1:testInt returned " .. object1:testInt(47));
