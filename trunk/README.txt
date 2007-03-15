@@ -11,7 +11,7 @@ written against Lua 5.1.1.
 Compiling
 ---------
 
-luabridge compiles correctly in g++ 3, g++ 4, MSVC 7.1, and MSVC C++ 8.0.
+luabridge compiles correctly in g++ 3, g++ 4, MSVC 7.1, and MSVC 8.0.
 Because of the advanced template features it uses, I can't guarantee luabridge
 will compile correctly with anything else, but it is written in standard-
 compliant C++, so if you have a compliant compiler you *should* be fine.
@@ -113,7 +113,7 @@ need to write
 or
 
 	namespace luabridge {
-		using boost:;shared_ptr;
+		using boost::shared_ptr;
 	}
 
 to make the other shared_ptr visible to luabridge.
