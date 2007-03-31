@@ -59,8 +59,9 @@ global scope to Lua scripts executed by L.  Overloading of function names is
 currently not supported.
 
 Supported types for parameters and returns are:
- * Primitive types: int, bool, float, double (all converted to/from
-	  Lua_number, since Lua does not distinguish different number types)
+ * Primitive types: int, float, double (all converted to/from
+	  Lua_number, since Lua does not distinguish different number types),
+	  bool
  * Strings: const char * and std::string
  * Objects: pointers, references, and shared_ptrs to objects of registered
 	  classes (more about shared_ptrs later)
@@ -72,7 +73,7 @@ C++ classes can be registered with Lua as follows:
 		.method("method1", &MyClass::method1)
 		.method("method2", &MyClass::method2);
 
-	m	.subclass_<MySubclass, MyBaseClass>("MySubclass")
+	m	.subclass<MySubclass, MyBaseClass>("MySubclass")
 		.constructor<...>
 		...
 
@@ -124,7 +125,7 @@ Limitations of luabridge
 luabridge v0.1 does not support:
  * More than 5 parameters on a function or method (although this can be
    increased by editing include/impl/typelist.hpp)
- * Static methods on classes
+ * Static methods on classes (fixed in v0.2)
  * const methods on classes
  * Overloading operators
  * Overloaded functions, methods, or constructors
@@ -135,7 +136,7 @@ luabridge v0.1 does not support:
 
 Development is continuing, and new releases will be published at the project
 website: http://luabridge.sourceforge.net
-The latest unstable version is always available for SVN checkout at:
+The latest (unstable) version is always available for SVN checkout at:
 https://luabridge.svn.sourceforge.net/svnroot/luabridge/trunk
 
 If you are interested in contributing to luabridge, please contact me at:
