@@ -60,7 +60,7 @@ currently not supported.
 
 Supported types for parameters and returns are:
  * Primitive types: int, bool, float, double (all converted to/from
-	  Lua_number, since Lua does not distinguish different number types
+	  Lua_number, since Lua does not distinguish different number types)
  * Strings: const char * and std::string
  * Objects: pointers, references, and shared_ptrs to objects of registered
 	  classes (more about shared_ptrs later)
