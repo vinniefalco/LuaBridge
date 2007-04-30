@@ -39,11 +39,8 @@ src/test: $(TEST_REL_OBJS) $(LDLIBS) lib/libluabridge.a
 # The sed command replaces "%.o" with "src/debug/%.o src/release/%.o"
 include depend
 depend: $(LUABRIDGE_SOURCES) $(TEST_SOURCES)
-	@set -e; rm -f $@; \
-	$(CXX) $(CPPFLAGS) -MM $^ > $@.$$$$; \
-	sed 's,\([a-z]*\.o\)[ :]*,src/debug/\1 src/release/\1: ,g' \
-	< $@.$$$$ > $@; \
-	rm -f $@.$$$$
+	$(CXX) $(CPPFLAGS) -MM $^ | \
+	sed 's,\([a-z]*\)\.o: ,src/debug/\1.o src/release/\1.o: ,g' > $@
 
 # Rule for making directories
 %/.:
