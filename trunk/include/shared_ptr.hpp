@@ -38,6 +38,7 @@ namespace luabridge
 		T* get () const;
 		T* operator * () const;
 		T* operator -> () const;
+		long use_count () const;
 
 		void reset ();
 		~shared_ptr ();

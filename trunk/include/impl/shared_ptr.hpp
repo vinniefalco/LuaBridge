@@ -72,6 +72,12 @@ T* shared_ptr<T>::operator -> () const
 }
 
 template <typename T>
+long shared_ptr<T>::use_count () const
+{
+	return refcounts_[ptr];
+}
+
+template <typename T>
 void shared_ptr<T>::reset ()
 {
 	if (!ptr) return;
