@@ -18,7 +18,8 @@ const char *luabridge::classname_unknown = "(unknown type)";
  * Works like the luaL_checkudata function, but better.
  */
 
-void *luabridge::checkclass (lua_State *L, int idx, const char *tname)
+void *luabridge::checkclass (lua_State *L, int idx, const char *tname,
+	bool exact)
 {
 	// If idx is relative to the top of the stack, convert it into an index
 	// relative to the bottom of the stack, so we can push our own stuff
@@ -34,6 +35,24 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname)
 
 	// Lookup the metatable of the given userdata
 	lua_getmetatable(L, idx);
+	
+	// If exact match required, simply test for identity.
+	if (exact)
+	{
+		if (lua_rawequal(L, -1, -2))
+			return lua_touserdata(L, idx);
+		else
+		{
+			// Generate an informative error message
+			lua_getfield(L, -1, "__type");
+			char buffer[256];
+			snprintf(buffer, 256, "%s expected, got %s", tname,
+				lua_tostring(L, -1));
+			// luaL_argerror does not return
+			luaL_argerror(L, idx, buffer);
+			return 0;
+		}
+	}
 
 	// Navigate up the chain of parents if necessary
 	while (!lua_rawequal(L, -1, -2))
@@ -50,7 +69,7 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname)
 			lua_getfield(L, -1, "__type");
 
 			char buffer[256];
-			sprintf(buffer, "%s expected, got %s", tname,
+			snprintf(buffer, 256, "%s expected, got %s", tname,
 				lua_tostring(L, -1));
 			// luaL_argerror does not return
 			luaL_argerror(L, idx, buffer);

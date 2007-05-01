@@ -57,8 +57,12 @@ struct classname <const T>
 template <typename T>
 int destructor_dispatch (lua_State *L)
 {
-	((shared_ptr<T>*)checkclass(L, 1,
-		lua_tostring(L, lua_upvalueindex(1))))->reset();
+	void *obj = checkclass(L, 1, lua_tostring(L, lua_upvalueindex(1)), true);
+	const char * classname = lua_tostring(L, lua_upvalueindex(1));
+	shared_ptr<T> &ptr = *((shared_ptr<T> *)obj);
+	std::cout << "destructor_dispatch called on " << classname << " at "
+		<< ptr.get() << '\n';
+	ptr.~shared_ptr();
 	return 0;
 }
 
@@ -209,7 +213,7 @@ class__<T>::class__ (lua_State *L_, const char *name,
 template <typename T, typename Params>
 int constructor_proxy (lua_State *L)
 {
-	// Allocate a new userdata and construct a T in-place there
+	// Allocate a new userdata and construct a shared_ptr<T> in-place there
 	void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
 	arglist<Params, 2> args(L);
 	new(block) shared_ptr<T>(constructor<T, Params>::apply(args));
