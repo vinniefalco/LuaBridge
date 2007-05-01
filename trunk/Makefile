@@ -6,6 +6,10 @@ all: release debug
 release: luabridge-release test-release
 debug: luabridge-debug test-debug
 
+# Target for running the test program
+test: test-release
+	src/test src/test.lua
+
 CXX := g++
 CXXFLAGS := -Wall -W -Wno-unknown-pragmas -Wno-ctor-dtor-privacy \
     -Iinclude -I$(HOME)/include
@@ -70,4 +74,4 @@ clean:
 	*~ src/*~ include/*~ include/impl/*~ depend
 
 .PHONY: default all release debug clean luabridge-release luabridge-debug \
-	test-release test-debug
+	test-release test-debug test
