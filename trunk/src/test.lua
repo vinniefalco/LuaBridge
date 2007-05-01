@@ -16,7 +16,7 @@ function printtable (t)
 end
 
 -- test functions registered from C++
-testVoid();
+--[[testVoid();
 print("testInt returned " .. testInt(47));
 print("testFloat returned " .. testFloat(3.14159));
 print("testConstCharPtr returned \"" .. testConstCharPtr("Hello World!") .. "\"");
@@ -25,7 +25,7 @@ print("testStdString returned \"" .. testStdString("Hello World!") .. "\"");
 -- test static methods of classes registered from C++
 A.testStatic();
 B.testStatic();
-B.testStatic2();
+B.testStatic2();]]--
 
 -- test classes registered from C++
 object1 = A("object1");
@@ -40,3 +40,5 @@ print("testSharedPtrA returned " .. result:getName());
 object2 = B("object2");
 object2:testInt(47);
 testAPtr(object2);
+result = testSharedPtrA(object2);
+print("testSharedPtrA returned " .. result:getName());

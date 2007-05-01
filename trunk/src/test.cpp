@@ -100,16 +100,16 @@ public:
 	A (const string &name_)
 	{
 		name = "A(\"" + name_ + "\")";
-		cout << "A::" << name << "\n";
+		cout << "A::" << name << " at " << this << '\n';
 	}
 	virtual ~A ()
 	{
-		cout << name << "::~A\n";
+		cout << name << ".~A\n";
 	}
 
 	virtual int testInt (int i) //const
 	{
-		cout << name << "::testInt(" << i << ")\n";
+		cout << name << ".testInt(" << i << ")\n";
 		return i;
 	}
 
@@ -130,16 +130,16 @@ public:
 	B (const string &name_): A(name_)
 	{
 		name = "B(\"" + name_ + "\")";
-		cout << "B::" << name << "\n";
+		cout << "B::" << name << " at " << this << '\n';
 	}
 	virtual ~B ()
 	{
-		cout << name << "::~B\n";
+		cout << name << ".~B\n";
 	}
 
 	virtual int testInt (int i) //const
 	{
-		cout << name << "::testInt(" << i << ")\n";
+		cout << name << ".testInt(" << i << ")\n";
 		return i;
 	}
 
@@ -158,11 +158,11 @@ public:
 	C (const string &name_)
 	{
 		name = "C(\"" + name_ + "\")";
-		cout << "C::" << name << "\n";
+		cout << "C::" << name << " at " << this << '\n';
 	}
 	virtual ~C ()
 	{
-		cout << name << "::~C\n";
+		cout << name << ".~C\n";
 	}
 
 	const char * getName () //const
