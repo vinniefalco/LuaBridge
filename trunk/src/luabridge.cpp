@@ -4,6 +4,11 @@
  */
 
 #include "../include/luabridge.hpp"
+#include <cstdio>
+
+#ifdef _MSC_VER
+#	define snprintf _snprintf
+#endif
 
 /*
  * Default name for unknown types
