@@ -4,7 +4,7 @@
  */
 
 /*
- * Container for registered class names, with disambiguation for const types
+ * Container for registered class names, with awareness of const types
  */
 
 template <typename T>
@@ -14,6 +14,10 @@ struct classname
 	static const char *name ()
 	{
 		return classname<T>::name_;
+	}
+	static bool is_const ()
+	{
+		return false;
 	}
 	static void set_name (const char *name)
 	{
@@ -27,11 +31,15 @@ const char *classname<T>::name_ = classname_unknown;
 
 // Specialization for const types, mapping to same names
 template <typename T>
-struct classname<const T>
+struct classname <const T>
 {
 	static const char *name ()
 	{
 		return classname<T>::name_;
+	}
+	static bool is_const ()
+	{
+		return true;
 	}
 	static void set_name (const char *name)
 	{
@@ -67,9 +75,15 @@ class__<T>::class__ (lua_State *L_): L(L_)
 template <typename T>
 class__<T>::class__ (lua_State *L_, const char *name): L(L_)
 {
+	assert(!classname<T>::is_const());
+	classname<T>::set_name(name);
+
 	// Create metatable for this class.  The metatable is stored in the Lua
 	// registry, keyed by the given class name.
 	luaL_newmetatable(L, name);
+	// Set it as its own metatable
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
 	// Set subclass_indexer as the __index metamethod
 	lua_pushcfunction(L, &subclass_indexer);
 	lua_setfield(L, -2, "__index");
@@ -80,6 +94,26 @@ class__<T>::class__ (lua_State *L_, const char *name): L(L_)
 	// Set the __type metafield to the name of the class
 	lua_pushstring(L, name);
 	lua_setfield(L, -2, "__type");
+
+	// Create const metatable for this class.  This is identical to the
+	// previous metatable, except that it has "const " prepended to the __type
+	// field.  Const methods will be added to the const metatable, non-const
+	// methods to the normal metatable.
+	std::string constname = std::string("const ") + name;
+	luaL_newmetatable(L, constname.c_str());
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushcfunction(L, &subclass_indexer);
+	lua_setfield(L, -2, "__index");
+	lua_pushstring(L, constname.c_str());
+	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
+	lua_setfield(L, -2, "__gc");
+	lua_pushstring(L, constname.c_str());
+	lua_setfield(L, -2, "__type");
+
+	// Set __const metafield to point to the const metatable
+	lua_setfield(L, -2, "__const");
+	// Pop the original metatable
 	lua_pop(L, 1);
 
 	// Create static table for this class.  This is stored in the global
@@ -94,16 +128,20 @@ class__<T>::class__ (lua_State *L_, const char *name): L(L_)
 	lua_setfield(L, -2, "__index");
 	// Install it in the global environment
 	lua_setglobal(L, name);
-
-	classname<T>::set_name(name);
 }
 
 template <typename T>
 class__<T>::class__ (lua_State *L_, const char *name,
 	const char *basename): L(L_)
 {
+	assert(!classname<T>::is_const());
+	classname<T>::set_name(name);
+
 	// Create metatable for this class
 	luaL_newmetatable(L, name);
+	// Set it as its own metatable
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
 	// Set subclass_indexer as the __index metamethod
 	lua_pushcfunction(L, &subclass_indexer);
 	lua_setfield(L, -2, "__index");
@@ -117,6 +155,30 @@ class__<T>::class__ (lua_State *L_, const char *name,
 	// Set the __parent metafield to the base class's metatable
 	luaL_getmetatable(L, basename);
 	lua_setfield(L, -2, "__parent");
+
+	// Create const metatable for this class.  This is identical to the
+	// previous metatable, except that it has "const " prepended to the __type
+	// field, and its __parent field points to the const metatable of the
+	// parent class.  Const methods will be added to the const metatable,
+	// non-const methods to the normal metatable.
+	std::string constname = std::string("const ") + name;
+	luaL_newmetatable(L, constname.c_str());
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushcfunction(L, &subclass_indexer);
+	lua_setfield(L, -2, "__index");
+	lua_pushstring(L, constname.c_str());
+	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
+	lua_setfield(L, -2, "__gc");
+	lua_pushstring(L, constname.c_str());
+	lua_setfield(L, -2, "__type");
+	std::string base_constname = std::string("const ") + basename;
+	luaL_getmetatable(L, base_constname.c_str());
+	lua_setfield(L, -2, "__parent");
+
+	// Set __const metafield to point to the const metatable
+	lua_setfield(L, -2, "__const");
+	// Pop the original metatable
 	lua_pop(L, 1);
 
 	// Create static table for this class.  This is stored in the global
@@ -134,8 +196,6 @@ class__<T>::class__ (lua_State *L_, const char *name,
 	lua_setfield(L, -2, "__parent");
 	// Install it in the global environment
 	lua_setglobal(L, name);
-
-	classname<T>::set_name(name);
 }
 
 /*
