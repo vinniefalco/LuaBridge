@@ -64,7 +64,7 @@ namespace luabridge
 		template <typename FnPtr>
 		class__<T>& constructor ();
 
-		// !!!UNDONE: handle const and static methods, and properties
+		// !!!UNDONE: handle const methods, and properties
 		// !!!UNDONE: allow inheriting Lua classes from C++ classes
 
 		// Method registration

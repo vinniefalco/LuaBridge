@@ -7,7 +7,7 @@
 #include <cstdio>
 
 #ifdef _MSC_VER
-#	define snprintf _snprintf
+#	define snprintf _snprintf_s
 #endif
 
 /*
