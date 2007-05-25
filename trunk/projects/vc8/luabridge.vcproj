@@ -16,8 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="lib"
-			IntermediateDirectory="src/debug"
+			OutputDirectory="../../lib"
+			IntermediateDirectory="../../src/debug"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -80,8 +80,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="lib"
-			IntermediateDirectory="src/release"
+			OutputDirectory="../../lib"
+			IntermediateDirectory="../../src/release"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -149,11 +149,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\luabridge.cpp"
+				RelativePath="..\..\src\luabridge.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\shared_ptr.cpp"
+				RelativePath="..\..\src\shared_ptr.cpp"
 				>
 			</File>
 		</Filter>
@@ -163,48 +163,48 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\include\luabridge.hpp"
+				RelativePath="..\..\include\luabridge.hpp"
 				>
 			</File>
 			<File
-				RelativePath=".\include\shared_ptr.hpp"
+				RelativePath="..\..\include\shared_ptr.hpp"
 				>
 			</File>
 			<Filter
 				Name="impl"
 				>
 				<File
-					RelativePath=".\include\impl\class.hpp"
+					RelativePath="..\..\include\impl\class.hpp"
 					>
 				</File>
 				<File
-					RelativePath=".\include\impl\module.hpp"
+					RelativePath="..\..\include\impl\module.hpp"
 					>
 				</File>
 				<File
-					RelativePath=".\include\impl\shared_ptr.hpp"
+					RelativePath="..\..\include\impl\shared_ptr.hpp"
 					>
 				</File>
 				<File
-					RelativePath=".\include\impl\stack.hpp"
+					RelativePath="..\..\include\impl\stack.hpp"
 					>
 				</File>
 				<File
-					RelativePath=".\include\impl\typelist.hpp"
+					RelativePath="..\..\include\impl\typelist.hpp"
 					>
 				</File>
 			</Filter>
 		</Filter>
 		<File
-			RelativePath=".\LICENSE.txt"
+			RelativePath="..\..\LICENSE.txt"
 			>
 		</File>
 		<File
-			RelativePath=".\Makefile"
+			RelativePath="..\..\Makefile"
 			>
 		</File>
 		<File
-			RelativePath=".\README.txt"
+			RelativePath="..\..\README.txt"
 			>
 		</File>
 	</Files>

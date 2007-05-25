@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="src"
-			IntermediateDirectory="src/debug"
+			OutputDirectory="../../src"
+			IntermediateDirectory="../../src/debug"
 			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
@@ -31,7 +31,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="lib/libluabridged.lib lua51.lib"
+				AdditionalDependencies="../../lib/libluabridged.lib lua5.1.lib"
 				OutputFile="$(OutDir)/testd.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="TRUE"
@@ -61,8 +61,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="src"
-			IntermediateDirectory="src/release"
+			OutputDirectory="../../src"
+			IntermediateDirectory="../../src/release"
 			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
@@ -77,7 +77,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="lib/libluabridge.lib lua51.lib"
+				AdditionalDependencies="../../lib/libluabridge.lib lua5.1.lib"
 				OutputFile="$(OutDir)/test.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="TRUE"
@@ -118,10 +118,10 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath=".\src\test.cpp">
+				RelativePath="..\..\src\test.cpp">
 			</File>
 			<File
-				RelativePath=".\src\test.lua">
+				RelativePath="..\..\src\test.lua">
 			</File>
 		</Filter>
 	</Files>

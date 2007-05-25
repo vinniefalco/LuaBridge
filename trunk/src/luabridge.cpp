@@ -7,7 +7,11 @@
 #include <cstdio>
 
 #ifdef _MSC_VER
-#	define snprintf _snprintf_s
+#	if (_MSC_VER >= 1400)
+#		define snprintf _snprintf_s
+#	else
+#		define snprintf _snprintf
+#	endif
 #endif
 
 /*
