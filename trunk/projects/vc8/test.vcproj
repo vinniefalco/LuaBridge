@@ -61,7 +61,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="lua5.1.lib ../../lib/libluabridged.lib"
-				OutputFile="$OutDir/testd.exe"
+				OutputFile="$(OutDir)/testd.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
