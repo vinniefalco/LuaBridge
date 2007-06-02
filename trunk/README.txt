@@ -1,47 +1,47 @@
-luabridge v0.1
+Luabridge v0.1
 Readme - 1 March 2007
 Copyright (C) 2007 by Nathan Reed.  All rights and priveleges reserved.
 
 Introduction
 ------------
 
-luabridge is a lightweight, dependency-free library for binding Lua to C++,
-written against Lua 5.1.1.
+Luabridge is a lightweight, dependency-free library for binding Lua to C++,
+written against Lua 5.1.2.
 
 Compiling
 ---------
 
-luabridge compiles correctly in g++ 3, g++ 4, MSVC 7.1, and MSVC 8.0.
-Because of the advanced template features it uses, I can't guarantee luabridge
+Luabridge compiles correctly in g++ 3, g++ 4, MSVC 7.1, and MSVC 8.0.
+Because of the advanced template features it uses, I can't guarantee Luabridge
 will compile correctly with anything else, but it is written in standard-
 compliant C++, so if you have a compliant compiler you *should* be fine.
 
 Compiling should be very simple.  Ensure that Lua is installed and its headers
 are in your include path.  If you are using MSVC, load the provided solution
 file and click build.  Otherwise, a Makefile is provided; just enter the
-directory where you have untarred luabridge and type `make'.
+directory where you have untarred Luabridge and type `make'.
 
 One option you may have to set manually is the name of the Lua library.  On
 some systems it is called 'lua' (liblua.a, liblua.so) and on others 'lua5.1'
 (liblua5.1.a, liblua5.1.so).  Setting the make variable LUA_NAME lets you
 specify this.  The default is 'lua'.
 
-Using luabridge
+Using Luabridge
 ---------------
 
-luabridge is based on C++ template metaprogramming.  It contains template code
+Luabridge is based on C++ template metaprogramming.  It contains template code
 to automatically generate at compile-time the various Lua API calls necessary
 to export your program's classes and functions to the Lua environment.
 
-You will need to ensure that luabridge's include directory is in your include
+You will need to ensure that Luabridge's include directory is in your include
 path.  The only file that needs to be included is luabridge.hpp; it will
 include all the implementation files.  You will also need to link with
 libluabridge (release version) or libluabridged (debug version), which will be
 made in the lib directory.  These are static libraries containing the small
-amount of common binary code in luabridge.
+amount of common binary code in Luabridge.
 
 If L is a pointer to an instance of lua_State, the following code creates a
-luabridge module for registering C++ functions and classes to L:
+Luabridge module for registering C++ functions and classes to L:
 
 	luabridge::module m(L);
 
@@ -53,7 +53,7 @@ Functions can then be registered as follows:
 The "function" function returns a reference to m, so you can chain many
 function definitions together.  The first argument is the name by which the
 function will be available in Lua, and the second is the function's address.
-luabridge will automatically detect the number (up to 5, by default) and type
+Luabridge will automatically detect the number (up to 5, by default) and type
 of the parameters.  Functions registered this way will be available at the
 global scope to Lua scripts executed by L.  Overloading of function names is
 currently not supported.
@@ -82,7 +82,7 @@ a global function with name given as argument to class_.  The object returned
 can then be used to register the constructor (no overloading is supported, so
 there can only be one constructor) and methods.
 
-luabridge cannot automatically determine the number and types of constructor
+Luabridge cannot automatically determine the number and types of constructor
 parameters like it can for functions and methods, so you must provide them.
 This is done by letting the "constructor" function take a template parameter,
 which must be a function pointer type.  The parameter types will be extracted
@@ -98,13 +98,13 @@ registered, and its base class.  Inherited methods do not have to be
 re-declared and will function normally in Lua.  If a class has a base class
 that is *not* registered to Lua, there is no need to declare it as a subclass.
 
-luabridge uses a built-in reference counted smart pointer implementation 
+Luabridge uses a built-in reference counted smart pointer implementation 
 called shared_ptr for memory management.  It is necessary that all objects
 that are created by Lua or exposed to Lua are referred to using shared_ptr
 in C++, since C++ code may not be able to predict how long a Lua reference
 to an object may last.  shared_ptr is declared in the luabridge namespace and
 implements a strict subset of boost::shared_ptr's functionality.  If desired,
-luabridge will use another shared_ptr implementation rather than its own;
+Luabridge will use another shared_ptr implementation rather than its own;
 simply #define USE_OTHER_SHARED_PTR before including luabridge.hpp to enable
 this.  shared_ptr must be visible to the luabridge namespace, i.e. you will
 need to write
@@ -117,12 +117,12 @@ or
 		using boost::shared_ptr;
 	}
 
-to make the other shared_ptr visible to luabridge.
+to make the other shared_ptr visible to Luabridge.
 
-Limitations of luabridge
+Limitations of Luabridge
 ------------------------
 
-luabridge v0.1 does not support:
+Luabridge v0.1 does not support:
  * More than 5 parameters on a function or method (although this can be
    increased by editing include/impl/typelist.hpp)
  * Static methods on classes (fixed in v0.2)
@@ -139,5 +139,5 @@ website: http://luabridge.sourceforge.net
 The latest (unstable) version is always available for SVN checkout at:
 https://luabridge.svn.sourceforge.net/svnroot/luabridge/trunk
 
-If you are interested in contributing to luabridge, please contact me at:
+If you are interested in contributing to Luabridge, please contact me at:
 nathaniel dot reed at gmail dot com, or send email to me through sourceforge.

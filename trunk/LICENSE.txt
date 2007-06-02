@@ -1,4 +1,4 @@
-luabridge is copyrighted (C) 2007 by Nathan Reed.
+Luabridge is copyrighted (C) 2007 by Nathan Reed.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
