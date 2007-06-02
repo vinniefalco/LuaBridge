@@ -60,10 +60,66 @@ int destructor_dispatch (lua_State *L)
 	void *obj = checkclass(L, 1, lua_tostring(L, lua_upvalueindex(1)), true);
 	const char * classname = lua_tostring(L, lua_upvalueindex(1));
 	shared_ptr<T> &ptr = *((shared_ptr<T> *)obj);
-	std::cout << "destructor_dispatch called on " << classname << " at "
-		<< ptr.get() << '\n';
+	//std::cout << "destructor_dispatch called on " << classname << " at "
+	//	<< ptr.get() << '\n';
 	ptr.~shared_ptr();
 	return 0;
+}
+
+/*
+ * Functions for metatable construction.  These functions create a metatable and
+ * leave it in the top element of the Lua stack (in addition to registering it
+ * wherever it needs to be registered).
+ */
+
+template <typename T>
+void create_metatable (lua_State *L, const char *name)
+{
+	luaL_newmetatable(L, name);
+	// Set it as its own metatable
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	// Set subclass_indexer as the __index metamethod
+	lua_pushcfunction(L, &subclass_indexer);
+	lua_setfield(L, -2, "__index");
+	// Set the __gc metamethod to call the class destructor
+	lua_pushstring(L, name);
+	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
+	lua_setfield(L, -2, "__gc");
+	// Set the __type metafield to the name of the class
+	lua_pushstring(L, name);
+	lua_setfield(L, -2, "__type");
+}
+
+template <typename T>
+void create_const_metatable (lua_State *L, const char *name)
+{
+	std::string constname = std::string("const ") + name;
+	luaL_newmetatable(L, constname.c_str());
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushcfunction(L, &subclass_indexer);
+	lua_setfield(L, -2, "__index");
+	lua_pushstring(L, constname.c_str());
+	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
+	lua_setfield(L, -2, "__gc");
+	lua_pushstring(L, constname.c_str());
+	lua_setfield(L, -2, "__type");
+}
+
+template <typename T>
+void create_static_table (lua_State *L, const char *name)
+{
+	lua_newtable(L);
+	// Set it as its own metatable
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	// Set subclass_indexer as the __index metamethod
+	lua_pushcfunction(L, &subclass_indexer);
+	lua_setfield(L, -2, "__index");
+	// Install it in the global environment
+	lua_pushvalue(L, -1);
+	lua_setglobal(L, name);
 }
 
 /*
@@ -84,36 +140,13 @@ class__<T>::class__ (lua_State *L_, const char *name): L(L_)
 
 	// Create metatable for this class.  The metatable is stored in the Lua
 	// registry, keyed by the given class name.
-	luaL_newmetatable(L, name);
-	// Set it as its own metatable
-	lua_pushvalue(L, -1);
-	lua_setmetatable(L, -2);
-	// Set subclass_indexer as the __index metamethod
-	lua_pushcfunction(L, &subclass_indexer);
-	lua_setfield(L, -2, "__index");
-	// Set the __gc metamethod to call the class destructor
-	lua_pushstring(L, name);
-	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
-	lua_setfield(L, -2, "__gc");
-	// Set the __type metafield to the name of the class
-	lua_pushstring(L, name);
-	lua_setfield(L, -2, "__type");
+	create_metatable<T>(L, name);
 
 	// Create const metatable for this class.  This is identical to the
 	// previous metatable, except that it has "const " prepended to the __type
 	// field.  Const methods will be added to the const metatable, non-const
 	// methods to the normal metatable.
-	std::string constname = std::string("const ") + name;
-	luaL_newmetatable(L, constname.c_str());
-	lua_pushvalue(L, -1);
-	lua_setmetatable(L, -2);
-	lua_pushcfunction(L, &subclass_indexer);
-	lua_setfield(L, -2, "__index");
-	lua_pushstring(L, constname.c_str());
-	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
-	lua_setfield(L, -2, "__gc");
-	lua_pushstring(L, constname.c_str());
-	lua_setfield(L, -2, "__type");
+	create_const_metatable<T>(L, name);
 
 	// Set __const metafield to point to the const metatable
 	lua_setfield(L, -2, "__const");
@@ -123,15 +156,8 @@ class__<T>::class__ (lua_State *L_, const char *name): L(L_)
 	// Create static table for this class.  This is stored in the global
 	// environment, keyed by the given class name.  Its __call metamethod
 	// will be the constructor, and it will also contain static members.
-	lua_newtable(L);
-	// Set it as its own metatable
-	lua_pushvalue(L, -1);
-	lua_setmetatable(L, -2);
-	// Set subclass_indexer as the __index metamethod
-	lua_pushcfunction(L, &subclass_indexer);
-	lua_setfield(L, -2, "__index");
-	// Install it in the global environment
-	lua_setglobal(L, name);
+	create_static_table<T>(L, name);
+	lua_pop(L, 1);
 }
 
 template <typename T>
@@ -142,40 +168,14 @@ class__<T>::class__ (lua_State *L_, const char *name,
 	classname<T>::set_name(name);
 
 	// Create metatable for this class
-	luaL_newmetatable(L, name);
-	// Set it as its own metatable
-	lua_pushvalue(L, -1);
-	lua_setmetatable(L, -2);
-	// Set subclass_indexer as the __index metamethod
-	lua_pushcfunction(L, &subclass_indexer);
-	lua_setfield(L, -2, "__index");
-	// Set the __gc metamethod to call the class destructor
-	lua_pushstring(L, name);
-	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
-	lua_setfield(L, -2, "__gc");
-	// Set the __type metafield to the name of the class
-	lua_pushstring(L, name);
-	lua_setfield(L, -2, "__type");
+	create_metatable<T>(L, name);
 	// Set the __parent metafield to the base class's metatable
 	luaL_getmetatable(L, basename);
 	lua_setfield(L, -2, "__parent");
 
-	// Create const metatable for this class.  This is identical to the
-	// previous metatable, except that it has "const " prepended to the __type
-	// field, and its __parent field points to the const metatable of the
-	// parent class.  Const methods will be added to the const metatable,
-	// non-const methods to the normal metatable.
-	std::string constname = std::string("const ") + name;
-	luaL_newmetatable(L, constname.c_str());
-	lua_pushvalue(L, -1);
-	lua_setmetatable(L, -2);
-	lua_pushcfunction(L, &subclass_indexer);
-	lua_setfield(L, -2, "__index");
-	lua_pushstring(L, constname.c_str());
-	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
-	lua_setfield(L, -2, "__gc");
-	lua_pushstring(L, constname.c_str());
-	lua_setfield(L, -2, "__type");
+	// Create const metatable for this class.  Its __parent field will points
+	// to the const metatable of the parent class.
+	create_const_metatable<T>(L, name);
 	std::string base_constname = std::string("const ") + basename;
 	luaL_getmetatable(L, base_constname.c_str());
 	lua_setfield(L, -2, "__parent");
@@ -185,21 +185,12 @@ class__<T>::class__ (lua_State *L_, const char *name,
 	// Pop the original metatable
 	lua_pop(L, 1);
 
-	// Create static table for this class.  This is stored in the global
-	// environment, keyed by the given class name.  Its __call metamethod
-	// will be the constructor, and it will also contain static members.
-	lua_newtable(L);
-	// Set it as its own metatable
-	lua_pushvalue(L, -1);
-	lua_setmetatable(L, -2);
-	// Set subclass_indexer as the __index metamethod
-	lua_pushcfunction(L, &subclass_indexer);
-	lua_setfield(L, -2, "__index");
+	// Create static table for this class
+	create_static_table<T>(L, name);
 	// Set the __parent metafield to the base class's static table
 	lua_getglobal(L, basename);
 	lua_setfield(L, -2, "__parent");
-	// Install it in the global environment
-	lua_setglobal(L, name);
+	lua_pop(L, 1);
 }
 
 /*

@@ -100,7 +100,7 @@ public:
 	A (const string &name_)
 	{
 		name = "A(\"" + name_ + "\")";
-		cout << "A::" << name << " at " << this << '\n';
+		cout << "A::" << name << '\n';
 	}
 	virtual ~A ()
 	{
@@ -130,7 +130,7 @@ public:
 	B (const string &name_): A(name_)
 	{
 		name = "B(\"" + name_ + "\")";
-		cout << "B::" << name << " at " << this << '\n';
+		cout << "B::" << name << '\n';
 	}
 	virtual ~B ()
 	{
