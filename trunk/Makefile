@@ -45,7 +45,7 @@ src/testd: $(TEST_DBG_OBJS) $(LDLIBS) lib/libluabridged.a
 
 # Dependencies for source files on headers
 # The sed command replaces "%.o" with "src/debug/%.o src/release/%.o"
-include depend
+-include depend
 depend: $(LUABRIDGE_SOURCES) $(TEST_SOURCES)
 	$(CXX) $(CPPFLAGS) -MM $^ | \
 	sed 's,\([a-z]*\)\.o: ,src/debug/\1.o src/release/\1.o: ,g' > $@
