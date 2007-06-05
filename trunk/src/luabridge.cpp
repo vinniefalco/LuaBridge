@@ -111,7 +111,8 @@ int luabridge::subclass_indexer (lua_State *L)
 		return 1;
 	// Look for a __parent key
 	lua_pop(L, 1);
-	lua_getfield(L, -1, "__parent");
+	lua_pushstring(L, "__parent");
+	lua_rawget(L, -2);
 	// No __parent key?  Return nil
 	if (lua_isnil(L, -1))
 		return 1;

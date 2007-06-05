@@ -92,25 +92,64 @@ int traceback (lua_State *L)
 /*
  * Test classes
  */
+
+bool g_success = true;
+
+bool testSucceeded ()
+{
+	bool b = g_success;
+	g_success = false;
+	return b;
+}
+
+typedef int fn_type;
+enum {
+	FN_CTOR,
+	FN_DTOR,
+	FN_STATIC,
+	FN_VIRTUAL,
+	NUM_FN_TYPES
+};
+
+struct fn_called {
+	bool called[NUM_FN_TYPES];
+	fn_called () { memset(called, 0, NUM_FN_TYPES * sizeof(bool)); }
+};
+
+fn_called A_functions, B_functions;
+
+bool testAFnCalled (fn_type f)
+{
+	bool b = A_functions.called[f];
+	A_functions.called[f] = false;
+	return b;
+}
+
+bool testBFnCalled (fn_type f)
+{
+	bool b = B_functions.called[f];
+	B_functions.called[f] = false;
+	return b;
+}
+
 class A
 {
 protected:
 	string name;
+	mutable bool success;
 public:
-	A (const string &name_)
+	A (const string &name_): name(name_), success(false)
 	{
-		name = "A(\"" + name_ + "\")";
-		cout << "A::" << name << '\n';
+		A_functions.called[FN_CTOR] = true;
 	}
 	virtual ~A ()
 	{
-		cout << name << ".~A\n";
+		A_functions.called[FN_DTOR] = true;
 	}
 
-	virtual int testInt (int i) //const
+	virtual void testVirtual () //const
 	{
-		cout << name << ".testInt(" << i << ")\n";
-		return i;
+		A_functions.called[FN_VIRTUAL] = true;
 	}
 
 	const char * getName () //const
@@ -118,9 +157,21 @@ public:
 		return name.c_str();
 	}
 
+	void setSuccess () const
+	{
+		success = true;
+	}
+
+	bool testSucceeded () // const
+	{
+		bool b = success;
+		success = false;
+		return b;
+	}
+
 	static void testStatic ()
 	{
-		cout << "A::testStatic()\n";
+		A_functions.called[FN_STATIC] = true;
 	}
 };
 
@@ -129,92 +180,92 @@ class B: public A
 public:
 	B (const string &name_): A(name_)
 	{
-		name = "B(\"" + name_ + "\")";
-		cout << "B::" << name << '\n';
+		B_functions.called[FN_CTOR] = true;
 	}
 	virtual ~B ()
 	{
-		cout << name << ".~B\n";
+		B_functions.called[FN_DTOR] = true;
 	}
 
-	virtual int testInt (int i) //const
+	virtual void testVirtual () //const
 	{
-		cout << name << ".testInt(" << i << ")\n";
-		return i;
+		B_functions.called[FN_VIRTUAL] = true;
 	}
 
 	static void testStatic2 ()
 	{
-		cout << "B::testStatic2()\n";
+		B_functions.called[FN_STATIC] = true;
 	}
 
-};
-
-class C
-{
-protected:
-	string name;
-public:
-	C (const string &name_)
-	{
-		name = "C(\"" + name_ + "\")";
-		cout << "C::" << name << " at " << this << '\n';
-	}
-	virtual ~C ()
-	{
-		cout << name << ".~C\n";
-	}
-
-	const char * getName () //const
-	{
-		return name.c_str();
-	}
 };
 
 /*
  * Test functions
  */
-void testVoid ()
+
+int testRetInt ()
 {
-	cout << "testVoid()\n";
+	return 47;
 }
-int testInt (int i)
+float testRetFloat ()
 {
-	cout << "testInt(" << i << ")\n";
-	return i;
+	return 47.0f;
 }
-float testFloat (float f)
+const char * testRetConstCharPtr ()
 {
-	cout << "testFloat(" << f << ")\n";
-	return f;
+	return "Hello, world";
 }
-const char * testConstCharPtr (const char *str)
+string testRetStdString ()
 {
-	cout << "testConstCharPtr(\"" << str << "\")\n";
-	return str;
-}
-string testStdString (const string &str)
-{
-	cout << "testStdString(\"" << str << "\")\n";
-	return str;
+	static string ret("Hello, world");
+	return ret;
 }
 
-void testAPtr (A * a)
+void testParamInt (int a)
 {
-	cout << "testAPtr(" << a->getName() << ")\n";
+	g_success = (a == 47);
 }
-void testAPtrConst (A * const a)
+void testParamBool (bool b)
 {
-	cout << "testAPtrConst(" << a->getName() << ")\n";
+	g_success = b;
 }
-void testConstAPtr (const A * a)
+void testParamFloat (float f)
 {
-	cout << "testConstAPtr(" << const_cast<A*>(a)->getName() << ")\n";
+	g_success = (f == 47.0f);
 }
-luabridge::shared_ptr<A> testSharedPtrA (luabridge::shared_ptr<A> a)
+void testParamConstCharPtr (const char *str)
 {
-	cout << "testSharedPtrA(" << a->getName() << ")\n";
-	return a;
+	g_success = !strcmp(str, "Hello, world");
+}
+void testParamStdString (string str)
+{
+	g_success = !strcmp(str.c_str(), "Hello, world");
+}
+void testParamStdStringRef (const string &str)
+{
+	g_success = !strcmp(str.c_str(), "Hello, world");
+}
+
+void testParamAPtr (A * a)
+{
+	a->setSuccess();
+}
+void testParamAPtrConst (A * const a)
+{
+	a->setSuccess();
+}
+void testParamConstAPtr (const A * a)
+{
+	a->setSuccess();
+}
+void testParamSharedPtrA (luabridge::shared_ptr<A> a)
+{
+	a->setSuccess();
+}
+luabridge::shared_ptr<A> testRetSharedPtrA ()
+{
+	static luabridge::shared_ptr<A> sp_A(new A("from C"));
+	return sp_A;
 }
 
 // add our own functions and classes to a Lua environment
@@ -222,29 +273,35 @@ void register_lua_funcs (lua_State *L)
 {
 	luabridge::module m(L);
 
-	m	.function("testVoid", &testVoid)
-		.function("testInt", &testInt)
-		.function("testFloat", &testFloat)
-		.function("testConstCharPtr", &testConstCharPtr)
-		.function("testStdString", &testStdString);
+	m	.function("testSucceeded", &testSucceeded)
+		.function("testAFnCalled", &testAFnCalled)
+		.function("testBFnCalled", &testBFnCalled)
+		.function("testRetInt", &testRetInt)
+		.function("testRetFloat", &testRetFloat)
+		.function("testRetConstCharPtr", &testRetConstCharPtr)
+		.function("testRetStdString", &testRetStdString)
+		.function("testParamInt", &testParamInt)
+		.function("testParamBool", &testParamBool)
+		.function("testParamFloat", &testParamFloat)
+		.function("testParamConstCharPtr", &testParamConstCharPtr)
+		.function("testParamStdString", &testParamStdString)
+		.function("testParamStdStringRef", &testParamStdStringRef);
 
 	m.class_<A>("A")
 		.constructor<void (*) (const string &)>()
-		.method("testInt", &A::testInt)
+		.method("testVirtual", &A::testVirtual)
 		.method("getName", &A::getName)
+		.method("testSucceeded", &A::testSucceeded)
 		.static_method("testStatic", &A::testStatic);
 
 	m.subclass<B, A>("B")
 		.constructor<void (*) (const string &)>()
 		.static_method("testStatic2", &B::testStatic2);
 
-	m.class_<C>("C")
-		.constructor<void (*) (const string &)>()
-		.method("getName", &C::getName);
-
-	m	.function("testAPtr", &testAPtr)
-		.function("testAPtrConst", &testAPtrConst)
-		.function("testConstAPtr", &testConstAPtr)
-		.function("testSharedPtrA", &testSharedPtrA);
+	m	.function("testParamAPtr", &testParamAPtr)
+		.function("testParamAPtrConst", &testParamAPtrConst)
+		.function("testParamConstAPtr", &testParamConstAPtr)
+		.function("testParamSharedPtrA", &testParamSharedPtrA)
+		.function("testRetSharedPtrA", &testRetSharedPtrA);
 }
 
