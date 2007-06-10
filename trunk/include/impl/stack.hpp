@@ -39,6 +39,20 @@ public:
 };
 
 template <typename T>
+struct tdstack <const T *>
+{
+private:
+	static void push (lua_State *L, const T *data);
+public:
+	static const T* get (lua_State *L, int index)
+	{
+		std::string constname = std::string("const ") + classname<T>::name();
+		return ((shared_ptr<const T> *)
+			checkclass(L, index, constname.c_str()))->get();
+	}
+};
+
+template <typename T>
 struct tdstack <T* const>
 {
 private:
@@ -52,6 +66,20 @@ public:
 };
 
 template <typename T>
+struct tdstack <const T* const>
+{
+private:
+	static void push (lua_State *L, const T * const data);
+public:
+	static const T* const get (lua_State *L, int index)
+	{
+		std::string constname = std::string("const ") + classname<T>::name();
+		return ((shared_ptr<const T> *)
+			checkclass(L, index, constname.c_str()))->get();
+	}
+};
+
+template <typename T>
 struct tdstack <T&>
 {
 private:
@@ -61,6 +89,20 @@ public:
 	{
 		return *((shared_ptr<T> *)
 			checkclass(L, index, classname<T>::name()))->get();
+	}
+};
+
+template <typename T>
+struct tdstack <const T&>
+{
+private:
+	static void push (lua_State *L, const T &data);
+public:
+	static const T& get (lua_State *L, int index)
+	{
+		std::string constname = std::string("const ") + classname<T>::name();
+		return *((shared_ptr<const T> *)
+			checkclass(L, index, constname.c_str()))->get();
 	}
 };
 
@@ -105,10 +147,10 @@ struct tdstack <shared_ptr<const T> >
 
 		// Allocate a new userdata and construct the pointer in-place there
 		void *block = lua_newuserdata(L, sizeof(shared_ptr<const T>));
-		new(block) shared_ptr<T>(data);
+		new(block) shared_ptr<const T>(data);
 
 		// Set the userdata's metatable
-		std::string constname = std::string("const ") + name;
+		std::string constname = std::string("const ") + classname<T>::name();
 		luaL_getmetatable(L, constname.c_str());
 		lua_setmetatable(L, -2);
 	}

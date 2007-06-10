@@ -5,7 +5,7 @@
  
 // Declaration of container for the refcounts
 #ifdef _MSC_VER
-	typedef stdext::hash_map<void *, int> refcounts_t;
+	typedef stdext::hash_map<const void *, int> refcounts_t;
 #else
 	struct ptr_hash
 	{
@@ -15,7 +15,7 @@
 			return H((unsigned int)v);
 		}
 	};
-	typedef __gnu_cxx::hash_map<void *, int, ptr_hash> refcounts_t;
+	typedef __gnu_cxx::hash_map<const void *, int, ptr_hash> refcounts_t;
 #endif
 extern refcounts_t refcounts_;
 
@@ -30,15 +30,14 @@ shared_ptr<T>::shared_ptr (T* ptr_): ptr(ptr_)
 }
 
 template <typename T>
-shared_ptr<T>::shared_ptr (const shared_ptr<T>& rhs): ptr(rhs.ptr)
+shared_ptr<T>::shared_ptr (const shared_ptr<T>& rhs): ptr(rhs.get())
 {
 	++refcounts_[ptr];
 }
 
 template <typename T>
 template <typename U>
-shared_ptr<T>::shared_ptr (const shared_ptr<U>& rhs):
-	ptr(static_cast<T*>(rhs.ptr))
+shared_ptr<T>::shared_ptr (const shared_ptr<U>& rhs): ptr(rhs.get())
 {
 	++refcounts_[ptr];
 }
@@ -48,7 +47,7 @@ template <typename U>
 shared_ptr<T>& shared_ptr<T>::operator = (const shared_ptr<U>& rhs)
 {
 	reset();
-	ptr = static_cast<T*>(rhs.ptr);
+	ptr = static_cast<T*>(rhs.get());
 	++refcounts_[ptr];
 	return *this;
 }

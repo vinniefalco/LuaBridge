@@ -69,4 +69,11 @@ testParamSharedPtrA(object2);			assert(object2:testSucceeded());
 
 result = testRetSharedPtrA();			assert(result:getName() == "from C");
 
+-- test constness
+
+constA = testRetSharedPtrConstA();		assert(constA:getName() == "const A");
+assert(constA.testVirtual == nil);
+testParamConstAPtr(constA);				assert(constA:testSucceeded());
+assert(pcall(testParamAPtr, constA) == false, "attempt to call nil value");
+
 print("All tests succeeded.");

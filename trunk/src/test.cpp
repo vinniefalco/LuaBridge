@@ -267,6 +267,11 @@ luabridge::shared_ptr<A> testRetSharedPtrA ()
 	static luabridge::shared_ptr<A> sp_A(new A("from C"));
 	return sp_A;
 }
+luabridge::shared_ptr<const A> testRetSharedPtrConstA ()
+{
+	static luabridge::shared_ptr<A> sp_A(new A("const A"));
+	return sp_A;
+}
 
 // add our own functions and classes to a Lua environment
 void register_lua_funcs (lua_State *L)
@@ -302,6 +307,7 @@ void register_lua_funcs (lua_State *L)
 		.function("testParamAPtrConst", &testParamAPtrConst)
 		.function("testParamConstAPtr", &testParamConstAPtr)
 		.function("testParamSharedPtrA", &testParamSharedPtrA)
-		.function("testRetSharedPtrA", &testRetSharedPtrA);
+		.function("testRetSharedPtrA", &testRetSharedPtrA)
+		.function("testRetSharedPtrConstA", &testRetSharedPtrConstA);
 }
 
