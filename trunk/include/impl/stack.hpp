@@ -156,7 +156,9 @@ struct tdstack <shared_ptr<const T> >
 	}
 	static shared_ptr<const T> get (lua_State *L, int index)
 	{
-		return tdstack<shared_ptr<T> >::get(L, index);
+		std::string constname = std::string("const ") + classname<T>::name();
+		return *(shared_ptr<const T> *)
+			checkclass(L, index, constname.c_str());
 	}
 };
 
