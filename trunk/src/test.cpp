@@ -147,12 +147,12 @@ public:
 		A_functions.called[FN_DTOR] = true;
 	}
 
-	virtual void testVirtual () //const
+	virtual void testVirtual ()
 	{
 		A_functions.called[FN_VIRTUAL] = true;
 	}
 
-	const char * getName () //const
+	const char * getName () const
 	{
 		return name.c_str();
 	}
@@ -162,7 +162,7 @@ public:
 		success = true;
 	}
 
-	bool testSucceeded () // const
+	bool testSucceeded () const
 	{
 		bool b = success;
 		success = false;
@@ -187,7 +187,7 @@ public:
 		B_functions.called[FN_DTOR] = true;
 	}
 
-	virtual void testVirtual () //const
+	virtual void testVirtual ()
 	{
 		B_functions.called[FN_VIRTUAL] = true;
 	}

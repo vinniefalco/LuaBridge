@@ -60,8 +60,6 @@ int destructor_dispatch (lua_State *L)
 	void *obj = checkclass(L, 1, lua_tostring(L, lua_upvalueindex(1)), true);
 	const char * classname = lua_tostring(L, lua_upvalueindex(1));
 	shared_ptr<T> &ptr = *((shared_ptr<T> *)obj);
-	//std::cout << "destructor_dispatch called on " << classname << " at "
-	//	<< ptr.get() << '\n';
 	ptr.~shared_ptr();
 	return 0;
 }
@@ -286,8 +284,12 @@ template <typename T>
 template <typename FnPtr>
 class__<T>& class__<T>::method (const char *name, FnPtr fp)
 {
-	luaL_getmetatable(L, classname<T>::name());
-	lua_pushstring(L, classname<T>::name());
+	assert(fnptr<FnPtr>::mfp);
+	std::string metatable_name = classname<T>::name();
+	if (fnptr<FnPtr>::const_mfp)
+		metatable_name = "const " + metatable_name;
+	luaL_getmetatable(L, metatable_name.c_str());
+	lua_pushstring(L, metatable_name.c_str());
 	void *v = lua_newuserdata(L, sizeof(FnPtr));
 	memcpy(v, &fp, sizeof(FnPtr));
 	lua_pushcclosure(L, &method_proxy<FnPtr>::f, 2);
@@ -306,6 +308,7 @@ template <typename T>
 template <typename FnPtr>
 class__<T>& class__<T>::static_method (const char *name, FnPtr fp)
 {
+	assert(!fnptr<FnPtr>::mfp);
 	lua_getglobal(L, classname<T>::name());
 	lua_pushlightuserdata(L, (void *)fp);
 	lua_pushcclosure(L, &function_proxy<FnPtr>::f, 1);

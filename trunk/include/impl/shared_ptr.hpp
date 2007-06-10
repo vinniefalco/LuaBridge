@@ -27,14 +27,12 @@ template <typename T>
 shared_ptr<T>::shared_ptr (T* ptr_): ptr(ptr_)
 {
 	++refcounts_[ptr];
-	//std::cout << "refcount now " << refcounts_[ptr] << " on " << ptr << '\n';
 }
 
 template <typename T>
 shared_ptr<T>::shared_ptr (const shared_ptr<T>& rhs): ptr(rhs.ptr)
 {
 	++refcounts_[ptr];
-	//std::cout << "refcount now " << refcounts_[ptr] << " on " << ptr << '\n';
 }
 
 template <typename T>
@@ -43,7 +41,6 @@ shared_ptr<T>::shared_ptr (const shared_ptr<U>& rhs):
 	ptr(static_cast<T*>(rhs.ptr))
 {
 	++refcounts_[ptr];
-	//std::cout << "refcount now " << refcounts_[ptr] << " on " << ptr << '\n';
 }
 
 template <typename T>
@@ -53,7 +50,6 @@ shared_ptr<T>& shared_ptr<T>::operator = (const shared_ptr<U>& rhs)
 	reset();
 	ptr = static_cast<T*>(rhs.ptr);
 	++refcounts_[ptr];
-	//std::cout << "refcount now " << refcounts_[ptr] << " on " << ptr << '\n';
 	return *this;
 }
 
@@ -87,7 +83,6 @@ void shared_ptr<T>::reset ()
 	if (!ptr) return;
 	if (--refcounts_[ptr] <= 0)
 		delete ptr;
-	//std::cout << "refcount now " << refcounts_[ptr] << " on " << ptr << '\n';
 	ptr = 0;
 }
 
@@ -96,4 +91,3 @@ shared_ptr<T>::~shared_ptr ()
 {
 	reset();
 }
-

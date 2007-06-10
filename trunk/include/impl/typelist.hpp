@@ -236,7 +236,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
 	static const bool mfp = true;\
 	static const bool const_mfp = true;\
 	typedef T classtype;\
-	typedef Ret ret
+	typedef Ret resulttype
 
 template <typename T, typename Ret>
 struct fnptr <Ret (T::*) () const>

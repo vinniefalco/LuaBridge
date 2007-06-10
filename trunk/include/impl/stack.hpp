@@ -65,7 +65,9 @@ public:
 };
 
 /*
- * shared_ptr: we can push these
+ * shared_ptr: we can push these.
+ * There is a specialization for const types, which produces a Lua userdata
+ * whose metatable is the class's const metatable.
  */
 
 template <typename T>
@@ -89,6 +91,30 @@ struct tdstack <shared_ptr<T> >
 	{
 		return *(shared_ptr<T> *)
 			checkclass(L, index, classname<T>::name());
+	}
+};
+
+template <typename T>
+struct tdstack <shared_ptr<const T> >
+{
+	static void push (lua_State *L, shared_ptr<const T> data)
+	{
+		// Make sure we don't try to push ptrs to objects of
+		// unregistered classes or primitive types
+		assert(classname<T>::name() != classname_unknown);
+
+		// Allocate a new userdata and construct the pointer in-place there
+		void *block = lua_newuserdata(L, sizeof(shared_ptr<const T>));
+		new(block) shared_ptr<T>(data);
+
+		// Set the userdata's metatable
+		std::string constname = std::string("const ") + name;
+		luaL_getmetatable(L, constname.c_str());
+		lua_setmetatable(L, -2);
+	}
+	static shared_ptr<const T> get (lua_State *L, int index)
+	{
+		return tdstack<shared_ptr<T> >::get(L, index);
 	}
 };
 
