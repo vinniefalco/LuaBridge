@@ -246,7 +246,7 @@ struct fnptr <Ret (T::*) () const>
 	static Ret apply (const T *obj, Ret (T::*fp) () const,
 		const typevallist<params> &tvl)
 	{
-		tvl;
+		(void)tvl;
 		return (obj->*fp)();
 	}
 };
@@ -329,7 +329,7 @@ struct constructor <T, nil>
 {
 	static T* apply (const typevallist<nil> &tvl)
 	{
-		tvl;
+		(void)tvl;
 		return new T;
 	}
 };

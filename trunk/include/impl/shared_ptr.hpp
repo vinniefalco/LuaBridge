@@ -9,7 +9,7 @@
 #else
 	struct ptr_hash
 	{
-		size_t operator () (void *v) const
+		size_t operator () (const void * const v) const
 		{
 			static __gnu_cxx::hash<unsigned int> H;
 			return H((unsigned int)v);
