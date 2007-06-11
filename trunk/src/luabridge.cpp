@@ -126,6 +126,7 @@ int luabridge::subclass_indexer (lua_State *L)
 	// Did we get a non-nil result?  If so, return it
 	if (!lua_isnil(L, -1))
 		return 1;
+	
 	// Look for a __const key
 	lua_pop(L, 1);
 	lua_pushstring(L, "__const");
@@ -139,6 +140,7 @@ int luabridge::subclass_indexer (lua_State *L)
 			return 1;
 		lua_pop(L, 1);
 	}
+	
 	// Look for a __parent key
 	lua_pop(L, 1);
 	lua_pushstring(L, "__parent");

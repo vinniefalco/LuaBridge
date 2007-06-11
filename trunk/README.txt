@@ -125,13 +125,15 @@ Limitations of Luabridge
 Luabridge v0.1 does not support:
  * More than 5 parameters on a function or method (although this can be
    increased by editing include/impl/typelist.hpp)
+ * Returning objects from functions, other than through a shared_ptr
+ * Passing objects to functions by value
  * Static methods on classes (fixed in v0.2)
- * const methods on classes
+ * const methods on classes (fixed in v0.2)
  * Overloading operators
  * Overloaded functions, methods, or constructors
  * Properties
  * Packages (Lua namespaces)
- * STL list types, like std::vector, std::list, or std::map
+ * Automatic conversion between STL container types and Lua tables
  * Inheriting Lua classes from C++ classes
 
 Development is continuing, and new releases will be published at the project
