@@ -59,7 +59,7 @@ int destructor_dispatch (lua_State *L)
 {
 	void *obj = checkclass(L, 1, lua_tostring(L, lua_upvalueindex(1)), true);
 	shared_ptr<T> &ptr = *((shared_ptr<T> *)obj);
-	ptr.~shared_ptr();
+	ptr.~shared_ptr<T>();
 	return 0;
 }
 
