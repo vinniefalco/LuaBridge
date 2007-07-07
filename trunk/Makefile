@@ -10,18 +10,19 @@ debug: luabridge-debug test-debug
 test: test-release
 	src/test src/test.lua
 
+# C++ compiler options
 CXX := g++
-CXXFLAGS := -Wall -W -Wno-unknown-pragmas -Wno-ctor-dtor-privacy \
-    -Iinclude -I$(HOME)/include
+CXXFLAGS := -Wall -W -Wno-unknown-pragmas -Wno-ctor-dtor-privacy -Iinclude
 REL_FLAGS := -O3
 DBG_FLAGS := -g
 
-LDFLAGS := -L$(HOME)/lib
-VPATH := $(HOME)/lib
+# Linker options
+LDFLAGS :=			# No linker flags at present
 # Let the name of the lua library be given as an environment variable.
 # UNDONE: figure out how to determine this automatically.
 LUA_NAME ?= lua
 LDLIBS := -l$(LUA_NAME)
+VPATH := $(LIBRARY_PATH) $(LD_LIBRARY_PATH)
 
 # Dependencies for libluabridge
 LUABRIDGE_SOURCES := src/luabridge.cpp src/shared_ptr.cpp
@@ -48,7 +49,7 @@ src/testd: $(TEST_DBG_OBJS) $(LDLIBS) lib/libluabridged.a
 -include depend
 depend: $(LUABRIDGE_SOURCES) $(TEST_SOURCES)
 	$(CXX) $(CPPFLAGS) -MM $^ | \
-	sed 's,\([a-z]*\)\.o: ,src/debug/\1.o src/release/\1.o: ,g' > $@
+	sed 's,\([a-zA-Z0-9._-]*\)\.o:,src/debug/\1.o src/release/\1.o:,' > $@
 
 # Rule for making directories
 %/.:
