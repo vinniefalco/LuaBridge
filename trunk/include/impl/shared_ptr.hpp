@@ -1,5 +1,5 @@
 /*
- * shared_ptr-impl.hpp - Copyright (C) 2007 by Nathan Reed
+ * shared_ptr.hpp - Copyright (C) 2007 by Nathan Reed
  * Implementation of shared_ptr class template.
  */
  

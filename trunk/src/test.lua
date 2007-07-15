@@ -55,7 +55,7 @@ object1:testVirtual();					assert(testAFnCalled(FN_VIRTUAL));
 object2 = B("object2");					assert(testAFnCalled(FN_CTOR) and testBFnCalled(FN_CTOR));
 object2:testVirtual();					assert(testBFnCalled(FN_VIRTUAL) and not testAFnCalled(FN_VIRTUAL));
 
--- test functions taking and returning classes
+-- test functions taking and returning objects
 
 testParamAPtr(object1);					assert(object1:testSucceeded());
 testParamAPtrConst(object1);			assert(object1:testSucceeded());
