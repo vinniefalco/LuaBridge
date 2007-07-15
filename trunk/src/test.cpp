@@ -108,6 +108,7 @@ enum {
 	FN_DTOR,
 	FN_STATIC,
 	FN_VIRTUAL,
+	FN_PROPGET,
 	NUM_FN_TYPES
 };
 
@@ -138,7 +139,7 @@ protected:
 	string name;
 	mutable bool success;
 public:
-	A (const string &name_): name(name_), success(false)
+	A (const string &name_): name(name_), success(false), testProp(47)
 	{
 		A_functions.called[FN_CTOR] = true;
 	}
@@ -172,6 +173,13 @@ public:
 	static void testStatic ()
 	{
 		A_functions.called[FN_STATIC] = true;
+	}
+
+	int testProp;
+	int testPropGet () const
+	{
+		A_functions.called[FN_PROPGET] = true;
+		return testProp;
 	}
 };
 
@@ -297,6 +305,8 @@ void register_lua_funcs (lua_State *L)
 		.method("testVirtual", &A::testVirtual)
 		.method("getName", &A::getName)
 		.method("testSucceeded", &A::testSucceeded)
+		.property_ro("testProp", &A::testProp)
+		.property_ro("testProp2", &A::testPropGet)
 		.static_method("testStatic", &A::testStatic);
 
 	m.subclass<B, A>("B")

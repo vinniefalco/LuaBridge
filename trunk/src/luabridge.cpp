@@ -33,7 +33,7 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname,
 	// If idx is relative to the top of the stack, convert it into an index
 	// relative to the bottom of the stack, so we can push our own stuff
 	if (idx < 0)
-		idx = lua_gettop(L) + idx + 1;
+		idx += lua_gettop(L) + 1;
 
 	// Check that the thing on the stack is indeed a userdata
 	if (!lua_isuserdata(L, idx))
@@ -57,8 +57,7 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname,
 		else
 		{
 			// Generate an informative error message
-			lua_pushstring(L, "__type");
-			lua_rawget(L, -2);
+			rawgetfield(L, -1, "__type");
 			char buffer[256];
 			snprintf(buffer, 256, "%s expected, got %s", tname,
 				lua_tostring(L, -1));
@@ -72,8 +71,7 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname,
 	while (!lua_rawequal(L, -1, -2))
 	{
 		// Check for equality to the const metatable
-		lua_pushstring(L, "__const");
-		lua_rawget(L, -2);
+		rawgetfield(L, -1, "__const");
 		if (!lua_isnil(L, -1))
 		{
 			if (lua_rawequal(L, -1, -3))
@@ -82,8 +80,7 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname,
 		lua_pop(L, 1);
 
 		// Look for the metatable's parent field
-		lua_pushstring(L, "__parent");
-		lua_rawget(L, -2);
+		rawgetfield(L, -1, "__parent");
 
 		// No parent field?  We've failed; generate appropriate error
 		if (lua_isnil(L, -1))
@@ -91,8 +88,7 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname,
 			// Lookup the __type field of the original metatable, so we can
 			// generate an informative error message
 			lua_getmetatable(L, idx);
-			lua_pushstring(L, "__type");
-			lua_rawget(L, -2);
+			rawgetfield(L, -1, "__type");
 
 			char buffer[256];
 			snprintf(buffer, 256, "%s expected, got %s", tname,
@@ -126,11 +122,29 @@ int luabridge::subclass_indexer (lua_State *L)
 	// Did we get a non-nil result?  If so, return it
 	if (!lua_isnil(L, -1))
 		return 1;
+
+	// Look for a __props key
+	lua_pop(L, 1);
+	rawgetfield(L, -1, "__props");
+	// If we found a __props key, look up the value in that
+	if (!lua_isnil(L, -1))
+	{
+		lua_pushvalue(L, 2);
+		lua_rawget(L, -2);
+		// If we got a non-nil result, call it and return its value(s)
+		if (!lua_isnil(L, -1))
+		{
+			int top = lua_gettop(L);
+			lua_pushvalue(L, 1);
+			lua_call(L, 1, LUA_MULTRET);
+			return lua_gettop(L) - top + 1;
+		}
+		lua_pop(L, 1);
+	}
 	
 	// Look for a __const key
 	lua_pop(L, 1);
-	lua_pushstring(L, "__const");
-	lua_rawget(L, -2);
+	rawgetfield(L, -1, "__const");
 	// If we found a __const key, do a raw lookup in that table
 	if (!lua_isnil(L, -1))
 	{
@@ -143,8 +157,7 @@ int luabridge::subclass_indexer (lua_State *L)
 	
 	// Look for a __parent key
 	lua_pop(L, 1);
-	lua_pushstring(L, "__parent");
-	lua_rawget(L, -2);
+	rawgetfield(L, -1, "__parent");
 	// No __parent key?  Return nil
 	if (lua_isnil(L, -1))
 		return 1;

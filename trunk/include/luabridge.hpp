@@ -19,7 +19,7 @@ namespace luabridge
 {
 	template <typename T> class class__;
 
-	// module encapsulates a Lua state and performs registration tasks
+	// module performs registration tasks in a given Lua state
 	class module
 	{
 		lua_State *L;
@@ -64,17 +64,46 @@ namespace luabridge
 		template <typename FnPtr>
 		class__<T>& constructor ();
 
-		// !!!UNDONE: handle properties
-		// !!!UNDONE: allow inheriting Lua classes from C++ classes
-
 		// Method registration
 		template <typename FnPtr>
 		class__<T>& method (const char *name, FnPtr fp);
 
+		// Property registration.  Properties can be read/write (rw)
+		// or read-only (ro).  Varieties that access member pointers directly
+		// and varieties that access through function calls are provided.
+		template <typename U>
+		class__<T>& property_ro (const char *name, U T::* mp);
+		template <typename U>
+		class__<T>& property_ro (const char *name, U (T::*get) () const);
+		template <typename U>
+		class__<T>& property_rw (const char *name, U T::* mp);
+		template <typename U>
+		class__<T>& property_rw (const char *name,
+			U (T::*get) () const, void (T::*set) (U));
+
+		// !!!UNDONE: allow inheriting Lua classes from C++ classes
+
 		// Static method registration
 		template <typename FnPtr>
 		class__<T>& static_method (const char *name, FnPtr fp);
+
+		// !!!UNDONE: static properties
 	};
+
+	// Convenience functions: like lua_getfield and lua_setfield, but raw
+	inline void rawgetfield (lua_State *L, int idx, const char *key)
+	{
+		lua_pushstring(L, key);
+		if (idx < 0) --idx;
+		lua_rawget(L, idx);
+	}
+	inline void rawsetfield (lua_State *L, int idx, const char *key)
+	{
+		lua_pushstring(L, key);
+		lua_insert(L, -2);
+		if (idx < 0) --idx;
+		lua_rawset(L, idx);
+	}
 
 	// Prototypes for implementation functions implemented in luabridge.cpp
 	void *checkclass (lua_State *L, int idx, const char *tname,

@@ -78,14 +78,17 @@ void create_metatable (lua_State *L, const char *name)
 	lua_setmetatable(L, -2);
 	// Set subclass_indexer as the __index metamethod
 	lua_pushcfunction(L, &subclass_indexer);
-	lua_setfield(L, -2, "__index");
+	rawsetfield(L, -2, "__index");
 	// Set the __gc metamethod to call the class destructor
 	lua_pushstring(L, name);
 	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
-	lua_setfield(L, -2, "__gc");
+	rawsetfield(L, -2, "__gc");
 	// Set the __type metafield to the name of the class
 	lua_pushstring(L, name);
-	lua_setfield(L, -2, "__type");
+	rawsetfield(L, -2, "__type");
+	// Create the __props metafield as an empty table
+	lua_newtable(L);
+	rawsetfield(L, -2, "__props");
 }
 
 template <typename T>
@@ -96,12 +99,14 @@ void create_const_metatable (lua_State *L, const char *name)
 	lua_pushvalue(L, -1);
 	lua_setmetatable(L, -2);
 	lua_pushcfunction(L, &subclass_indexer);
-	lua_setfield(L, -2, "__index");
+	rawsetfield(L, -2, "__index");
 	lua_pushstring(L, constname.c_str());
 	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
-	lua_setfield(L, -2, "__gc");
+	rawsetfield(L, -2, "__gc");
 	lua_pushstring(L, constname.c_str());
-	lua_setfield(L, -2, "__type");
+	rawsetfield(L, -2, "__type");
+	lua_newtable(L);
+	rawsetfield(L, -2, "__props");
 }
 
 template <typename T>
@@ -113,7 +118,7 @@ void create_static_table (lua_State *L, const char *name)
 	lua_setmetatable(L, -2);
 	// Set subclass_indexer as the __index metamethod
 	lua_pushcfunction(L, &subclass_indexer);
-	lua_setfield(L, -2, "__index");
+	rawsetfield(L, -2, "__index");
 	// Install it in the global environment
 	lua_pushvalue(L, -1);
 	lua_setglobal(L, name);
@@ -146,7 +151,7 @@ class__<T>::class__ (lua_State *L_, const char *name): L(L_)
 	create_const_metatable<T>(L, name);
 
 	// Set __const metafield to point to the const metatable
-	lua_setfield(L, -2, "__const");
+	rawsetfield(L, -2, "__const");
 	// Pop the original metatable
 	lua_pop(L, 1);
 
@@ -168,17 +173,17 @@ class__<T>::class__ (lua_State *L_, const char *name,
 	create_metatable<T>(L, name);
 	// Set the __parent metafield to the base class's metatable
 	luaL_getmetatable(L, basename);
-	lua_setfield(L, -2, "__parent");
+	rawsetfield(L, -2, "__parent");
 
 	// Create const metatable for this class.  Its __parent field will points
 	// to the const metatable of the parent class.
 	create_const_metatable<T>(L, name);
 	std::string base_constname = std::string("const ") + basename;
 	luaL_getmetatable(L, base_constname.c_str());
-	lua_setfield(L, -2, "__parent");
+	rawsetfield(L, -2, "__parent");
 
 	// Set __const metafield to point to the const metatable
-	lua_setfield(L, -2, "__const");
+	rawsetfield(L, -2, "__const");
 	// Pop the original metatable
 	lua_pop(L, 1);
 
@@ -186,7 +191,7 @@ class__<T>::class__ (lua_State *L_, const char *name,
 	create_static_table<T>(L, name);
 	// Set the __parent metafield to the base class's static table
 	lua_getglobal(L, basename);
-	lua_setfield(L, -2, "__parent");
+	rawsetfield(L, -2, "__parent");
 	lua_pop(L, 1);
 }
 
@@ -228,7 +233,7 @@ class__<T>& class__<T>::constructor ()
 	lua_pushcclosure(L,
 		&constructor_proxy<T, typename fnptr<FnPtr>::params>, 1);
 	// Set the constructor proxy as the __call metamethod of the static table
-	lua_setfield(L, -2, "__call");
+	rawsetfield(L, -2, "__call");
 	lua_pop(L, 1);
 	return *this;
 }
@@ -269,7 +274,7 @@ struct method_proxy <FnPtr, void>
 		FnPtr fp = *(FnPtr *)lua_touserdata(L, lua_upvalueindex(2));
 		arglist<params, 2> args(L);
 		fnptr<FnPtr>::apply(obj, fp, args);
-		return 1;
+		return 0;
 	}
 };
 
@@ -292,8 +297,82 @@ class__<T>& class__<T>::method (const char *name, FnPtr fp)
 	void *v = lua_newuserdata(L, sizeof(FnPtr));
 	memcpy(v, &fp, sizeof(FnPtr));
 	lua_pushcclosure(L, &method_proxy<FnPtr>::f, 2);
-	lua_setfield(L, -2, name);
+	rawsetfield(L, -2, name);
 	lua_pop(L, 1);
+	return *this;
+}
+
+/*
+ * Lua-registerable C function templates for getting and setting the value of
+ * an object member through a member pointer; used as property proxies.
+ * These work similiarly to the method proxies above.
+ */
+
+template <typename T, typename U>
+int propget_proxy (lua_State *L)
+{
+	T *obj = ((shared_ptr<T> *)checkclass(L, 1,
+		lua_tostring(L, lua_upvalueindex(1))))->get();
+	U T::* mp = *(U T::**)lua_touserdata(L, lua_upvalueindex(2));
+	tdstack<U>::push(L, obj->*mp);
+	return 1;
+}
+
+template <typename T, typename U>
+int propset_proxy (lua_State *L)
+{
+	T *obj = ((shared_ptr<T> *)checkclass(L, 1,
+		lua_tostring(L, lua_upvalueindex(1))))->get();
+	U T::* mp = *(U T::**)lua_touserdata(L, lua_upvalueindex(2));
+	U value = tdstack<U>::get(L, 2);
+	obj->*mp = value;
+	return 0;
+}
+
+/* Property registration.  Properties are stored in the class's __props
+ * metafield, with the property name as the get-function and property name
+ * + "_set" as the set-function.  Note that property getters are stored
+ * both in the regular metatable and the const metatable.
+ */
+
+template <typename T>
+template <typename U>
+class__<T>& class__<T>::property_ro (const char *name, U T::* mp)
+{
+	luaL_getmetatable(L, classname<T>::name());
+	std::string constname = std::string("const ") + classname<T>::name();
+	luaL_getmetatable(L, constname.c_str());
+	rawgetfield(L, -2, "__props");
+	rawgetfield(L, -2, "__props");
+	lua_pushstring(L, constname.c_str());
+	void *v = lua_newuserdata(L, sizeof(U T::*));
+	memcpy(v, &mp, sizeof(U T::*));
+	lua_pushcclosure(L, &propget_proxy<T, U>, 2);
+	lua_pushvalue(L, -1);
+	rawsetfield(L, -3, name);
+	rawsetfield(L, -3, name);
+	lua_pop(L, 4);
+	return *this;
+}
+
+template <typename T>
+template <typename U>
+class__<T>& class__<T>::property_ro (const char *name, U (T::*get) () const)
+{
+	typedef U (T::*FnPtr) () const;
+	luaL_getmetatable(L, classname<T>::name());
+	std::string constname = std::string("const ") + classname<T>::name();
+	luaL_getmetatable(L, constname.c_str());
+	rawgetfield(L, -2, "__props");
+	rawgetfield(L, -2, "__props");
+	lua_pushstring(L, constname.c_str());
+	void *v = lua_newuserdata(L, sizeof(FnPtr));
+	memcpy(v, &get, sizeof(FnPtr));
+	lua_pushcclosure(L, &method_proxy<FnPtr>::f, 2);
+	lua_pushvalue(L, -1);
+	rawsetfield(L, -3, name);
+	rawsetfield(L, -3, name);
+	lua_pop(L, 4);
 	return *this;
 }
 
@@ -311,7 +390,7 @@ class__<T>& class__<T>::static_method (const char *name, FnPtr fp)
 	lua_getglobal(L, classname<T>::name());
 	lua_pushlightuserdata(L, (void *)fp);
 	lua_pushcclosure(L, &function_proxy<FnPtr>::f, 1);
-	lua_setfield(L, -2, name);
+	rawsetfield(L, -2, name);
 	lua_pop(L, 1);
 	return *this;
 }

@@ -34,7 +34,7 @@ struct function_proxy <FnPtr, void>
 		FnPtr fp = (FnPtr)lua_touserdata(L, lua_upvalueindex(1));
 		arglist<params> args(L);
 		fnptr<FnPtr>::apply(fp, args);
-		return 1;
+		return 0;
 	}
 };
 

@@ -5,7 +5,8 @@ FN_CTOR = 0
 FN_DTOR = 1
 FN_STATIC = 2
 FN_VIRTUAL = 3
-NUM_FN_TYPES = 4
+FN_PROPGET = 4
+NUM_FN_TYPES = 5
 
 -- function to print contents of a table
 function printtable (t)
@@ -75,5 +76,10 @@ constA = testRetSharedPtrConstA();		assert(constA:getName() == "const A");
 assert(constA.testVirtual == nil);
 testParamConstAPtr(constA);				assert(constA:testSucceeded());
 assert(pcall(testParamAPtr, constA) == false, "attempt to call nil value");
+
+-- test properties
+
+assert(object1.testProp == 47);			assert(not testAFnCalled(FN_PROPGET));
+assert(object1.testProp2 == 47);		assert(testAFnCalled(FN_PROPGET));
 
 print("All tests succeeded.");
