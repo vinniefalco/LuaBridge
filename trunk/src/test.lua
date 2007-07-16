@@ -81,5 +81,12 @@ assert(pcall(testParamAPtr, constA) == false, "attempt to call nil value");
 
 assert(object1.testProp == 47);			assert(not testAFnCalled(FN_PROPGET));
 assert(object1.testProp2 == 47);		assert(testAFnCalled(FN_PROPGET));
+assert(object2.testProp == 47);			assert(not testAFnCalled(FN_PROPGET));
+assert(object2.testProp2 == 47);		assert(testAFnCalled(FN_PROPGET));
+
+object1.testProp = 48;
+assert(object1.testProp == 48);
+object1.testProp2 = 48;
+assert(object1.testProp2 == 48);
 
 print("All tests succeeded.");

@@ -73,12 +73,12 @@ template <typename T>
 void create_metatable (lua_State *L, const char *name)
 {
 	luaL_newmetatable(L, name);
-	// Set it as its own metatable
-	lua_pushvalue(L, -1);
-	lua_setmetatable(L, -2);
-	// Set subclass_indexer as the __index metamethod
-	lua_pushcfunction(L, &subclass_indexer);
+	// Set indexer as the __index metamethod
+	lua_pushcfunction(L, &indexer);
 	rawsetfield(L, -2, "__index");
+	// Set newindexer as the __newindex metamethod
+	lua_pushcfunction(L, &newindexer);
+	rawsetfield(L, -2, "__newindex");
 	// Set the __gc metamethod to call the class destructor
 	lua_pushstring(L, name);
 	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
@@ -86,9 +86,11 @@ void create_metatable (lua_State *L, const char *name)
 	// Set the __type metafield to the name of the class
 	lua_pushstring(L, name);
 	rawsetfield(L, -2, "__type");
-	// Create the __props metafield as an empty table
+	// Create the __propget and __propset metafields as empty tables
 	lua_newtable(L);
-	rawsetfield(L, -2, "__props");
+	rawsetfield(L, -2, "__propget");
+	lua_newtable(L);
+	rawsetfield(L, -2, "__propset");
 }
 
 template <typename T>
@@ -96,17 +98,17 @@ void create_const_metatable (lua_State *L, const char *name)
 {
 	std::string constname = std::string("const ") + name;
 	luaL_newmetatable(L, constname.c_str());
-	lua_pushvalue(L, -1);
-	lua_setmetatable(L, -2);
-	lua_pushcfunction(L, &subclass_indexer);
+	lua_pushcfunction(L, &indexer);
 	rawsetfield(L, -2, "__index");
+	lua_pushcfunction(L, &newindexer);
+	rawsetfield(L, -2, "__newindex");
 	lua_pushstring(L, constname.c_str());
 	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
 	rawsetfield(L, -2, "__gc");
 	lua_pushstring(L, constname.c_str());
 	rawsetfield(L, -2, "__type");
 	lua_newtable(L);
-	rawsetfield(L, -2, "__props");
+	rawsetfield(L, -2, "__propget");
 }
 
 template <typename T>
@@ -116,9 +118,17 @@ void create_static_table (lua_State *L, const char *name)
 	// Set it as its own metatable
 	lua_pushvalue(L, -1);
 	lua_setmetatable(L, -2);
-	// Set subclass_indexer as the __index metamethod
-	lua_pushcfunction(L, &subclass_indexer);
+	// Set indexer as the __index metamethod
+	lua_pushcfunction(L, &indexer);
 	rawsetfield(L, -2, "__index");
+	// Set newindexer as the __newindex metamethod
+	lua_pushcfunction(L, &newindexer);
+	rawsetfield(L, -2, "__newindex");
+	// Create the __propget and __propset metafields as empty tables
+	lua_newtable(L);
+	rawsetfield(L, -2, "__propget");
+	lua_newtable(L);
+	rawsetfield(L, -2, "__propset");
 	// Install it in the global environment
 	lua_pushvalue(L, -1);
 	lua_setglobal(L, name);
@@ -146,8 +156,8 @@ class__<T>::class__ (lua_State *L_, const char *name): L(L_)
 
 	// Create const metatable for this class.  This is identical to the
 	// previous metatable, except that it has "const " prepended to the __type
-	// field.  Const methods will be added to the const metatable, non-const
-	// methods to the normal metatable.
+	// field, and has no __propset field.  Const methods will be added to the
+	// const metatable, non-const methods to the normal metatable.
 	create_const_metatable<T>(L, name);
 
 	// Set __const metafield to point to the const metatable
@@ -175,7 +185,7 @@ class__<T>::class__ (lua_State *L_, const char *name,
 	luaL_getmetatable(L, basename);
 	rawsetfield(L, -2, "__parent");
 
-	// Create const metatable for this class.  Its __parent field will points
+	// Create const metatable for this class.  Its __parent field will point
 	// to the const metatable of the parent class.
 	create_const_metatable<T>(L, name);
 	std::string base_constname = std::string("const ") + basename;
@@ -281,7 +291,7 @@ struct method_proxy <FnPtr, void>
 /*
  * Perform method registration in a class.  The method proxies are all
  * registered as values in the class's metatable, which is searched by the
- * subclass_indexer function we've installed as __index metamethod.
+ * indexer function we've installed as __index metamethod.
  */
 
 template <typename T>
@@ -329,7 +339,7 @@ int propset_proxy (lua_State *L)
 	return 0;
 }
 
-/* Property registration.  Properties are stored in the class's __props
+/* Property registration.  Properties are stored in the class's __propget
  * metafield, with the property name as the get-function and property name
  * + "_set" as the set-function.  Note that property getters are stored
  * both in the regular metatable and the const metatable.
@@ -342,8 +352,8 @@ class__<T>& class__<T>::property_ro (const char *name, U T::* mp)
 	luaL_getmetatable(L, classname<T>::name());
 	std::string constname = std::string("const ") + classname<T>::name();
 	luaL_getmetatable(L, constname.c_str());
-	rawgetfield(L, -2, "__props");
-	rawgetfield(L, -2, "__props");
+	rawgetfield(L, -2, "__propget");
+	rawgetfield(L, -2, "__propget");
 	lua_pushstring(L, constname.c_str());
 	void *v = lua_newuserdata(L, sizeof(U T::*));
 	memcpy(v, &mp, sizeof(U T::*));
@@ -359,13 +369,13 @@ template <typename T>
 template <typename U>
 class__<T>& class__<T>::property_ro (const char *name, U (T::*get) () const)
 {
-	typedef U (T::*FnPtr) () const;
 	luaL_getmetatable(L, classname<T>::name());
 	std::string constname = std::string("const ") + classname<T>::name();
 	luaL_getmetatable(L, constname.c_str());
-	rawgetfield(L, -2, "__props");
-	rawgetfield(L, -2, "__props");
+	rawgetfield(L, -2, "__propget");
+	rawgetfield(L, -2, "__propget");
 	lua_pushstring(L, constname.c_str());
+	typedef U (T::*FnPtr) () const;
 	void *v = lua_newuserdata(L, sizeof(FnPtr));
 	memcpy(v, &get, sizeof(FnPtr));
 	lua_pushcclosure(L, &method_proxy<FnPtr>::f, 2);
@@ -373,6 +383,40 @@ class__<T>& class__<T>::property_ro (const char *name, U (T::*get) () const)
 	rawsetfield(L, -3, name);
 	rawsetfield(L, -3, name);
 	lua_pop(L, 4);
+	return *this;
+}
+
+template <typename T>
+template <typename U>
+class__<T>& class__<T>::property_rw (const char *name, U T::* mp)
+{
+	property_ro(name, mp);
+	luaL_getmetatable(L, classname<T>::name());
+	rawgetfield(L, -1, "__propset");
+	lua_pushstring(L, classname<T>::name());
+	void *v = lua_newuserdata(L, sizeof(U T::*));
+	memcpy(v, &mp, sizeof(U T::*));
+	lua_pushcclosure(L, &propset_proxy<T, U>, 2);
+	rawsetfield(L, -2, name);
+	lua_pop(L, 2);
+	return *this;
+}
+
+template <typename T>
+template <typename U>
+class__<T>& class__<T>::property_rw (const char *name,
+	U (T::*get) () const, void (T::*set) (U))
+{
+	property_ro(name, get);
+	luaL_getmetatable(L, classname<T>::name());
+	rawgetfield(L, -1, "__propset");
+	lua_pushstring(L, classname<T>::name());
+	typedef void (T::*FnPtr) (U);
+	void *v = lua_newuserdata(L, sizeof(FnPtr));
+	memcpy(v, &set, sizeof(FnPtr));
+	lua_pushcclosure(L, &method_proxy<FnPtr>::f, 2);
+	rawsetfield(L, -2, name);
+	lua_pop(L, 2);
 	return *this;
 }
 

@@ -109,6 +109,7 @@ enum {
 	FN_STATIC,
 	FN_VIRTUAL,
 	FN_PROPGET,
+	FN_PROPSET,
 	NUM_FN_TYPES
 };
 
@@ -180,6 +181,11 @@ public:
 	{
 		A_functions.called[FN_PROPGET] = true;
 		return testProp;
+	}
+	void testPropSet (int x)
+	{
+		A_functions.called[FN_PROPSET] = true;
+		testProp = x;
 	}
 };
 
@@ -305,8 +311,8 @@ void register_lua_funcs (lua_State *L)
 		.method("testVirtual", &A::testVirtual)
 		.method("getName", &A::getName)
 		.method("testSucceeded", &A::testSucceeded)
-		.property_ro("testProp", &A::testProp)
-		.property_ro("testProp2", &A::testPropGet)
+		.property_rw("testProp", &A::testProp)
+		.property_rw("testProp2", &A::testPropGet, &A::testPropSet)
 		.static_method("testStatic", &A::testStatic);
 
 	m.subclass<B, A>("B")

@@ -108,7 +108,8 @@ namespace luabridge
 	// Prototypes for implementation functions implemented in luabridge.cpp
 	void *checkclass (lua_State *L, int idx, const char *tname,
 		bool exact = false);
-	int subclass_indexer (lua_State *L);
+	int indexer (lua_State *L);
+	int newindexer (lua_State *L);
 
 	// Predeclare classname struct since several implementation files use it
 	template <typename T>

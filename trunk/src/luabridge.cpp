@@ -112,58 +112,101 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname,
  * __parent key and delegates the lookup to that.
  */
 
-int luabridge::subclass_indexer (lua_State *L)
+int luabridge::indexer (lua_State *L)
 {
-	// Attempt to lookup the key in the metatable
-	// (using a rawget so we don't invoke __index again)
 	lua_getmetatable(L, 1);
-	lua_pushvalue(L, 2);
-	lua_rawget(L, -2);
-	// Did we get a non-nil result?  If so, return it
-	if (!lua_isnil(L, -1))
-		return 1;
 
-	// Look for a __props key
-	lua_pop(L, 1);
-	rawgetfield(L, -1, "__props");
-	// If we found a __props key, look up the value in that
-	if (!lua_isnil(L, -1))
-	{
+	do {
+		// Look for the key in the metatable
 		lua_pushvalue(L, 2);
 		lua_rawget(L, -2);
-		// If we got a non-nil result, call it and return its value(s)
-		if (!lua_isnil(L, -1))
-		{
-			int top = lua_gettop(L);
-			lua_pushvalue(L, 1);
-			lua_call(L, 1, LUA_MULTRET);
-			return lua_gettop(L) - top + 1;
-		}
-		lua_pop(L, 1);
-	}
-	
-	// Look for a __const key
-	lua_pop(L, 1);
-	rawgetfield(L, -1, "__const");
-	// If we found a __const key, do a raw lookup in that table
-	if (!lua_isnil(L, -1))
-	{
-		lua_pushvalue(L, 2);
-		lua_rawget(L, -2);
+		// Did we get a non-nil result?  If so, return it
 		if (!lua_isnil(L, -1))
 			return 1;
 		lua_pop(L, 1);
-	}
+
+		// Look for the key in the __propget metafield
+		rawgetfield(L, -1, "__propget");
+		if (!lua_isnil(L, -1))
+		{
+			lua_pushvalue(L, 2);
+			lua_rawget(L, -2);
+			// If we got a non-nil result, call it and return its value
+			if (!lua_isnil(L, -1))
+			{
+				assert(lua_isfunction(L, -1));
+				int top = lua_gettop(L);
+				lua_pushvalue(L, 1);
+				lua_call(L, 1, 1);
+				return 1;
+			}
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1);
+		
+		// Look for the key in the __const metafield
+		rawgetfield(L, -1, "__const");
+		if (!lua_isnil(L, -1))
+		{
+			lua_pushvalue(L, 2);
+			lua_rawget(L, -2);
+			if (!lua_isnil(L, -1))
+				return 1;
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1);
+		
+		// Look for a __parent metafield; if it doesn't exist, return nil;
+		// otherwise, repeat the lookup on it.
+		rawgetfield(L, -1, "__parent");
+		if (lua_isnil(L, -1))
+			return 1;
+		lua_remove(L, -2);
+	} while (true);
 	
-	// Look for a __parent key
-	lua_pop(L, 1);
-	rawgetfield(L, -1, "__parent");
-	// No __parent key?  Return nil
-	if (lua_isnil(L, -1))
-		return 1;
-	// Found a __parent, send the lookup to it
-	lua_pushvalue(L, 2);
-	lua_gettable(L, -2);
-	return 1;
+	// Control never gets here
+	return 0;
 }
 
+/*
+ * Newindex metamethod for supporting properties.
+ */
+
+int luabridge::newindexer (lua_State *L)
+{
+	lua_getmetatable(L, 1);
+
+	do {
+		// Look for the key in the __propset metafield
+		rawgetfield(L, -1, "__propset");
+		if (!lua_isnil(L, -1))
+		{
+			lua_pushvalue(L, 2);
+			lua_rawget(L, -2);
+			// If we got a non-nil result, call it
+			if (!lua_isnil(L, -1))
+			{
+				assert(lua_isfunction(L, -1));
+				lua_pushvalue(L, 1);
+				lua_pushvalue(L, 3);
+				lua_call(L, 2, 0);
+				return 0;
+			}
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1);
+
+		// Look for a __parent metafield; if it doesn't exist, error;
+		// otherwise, repeat the lookup on it.
+		rawgetfield(L, -1, "__parent");
+		if (lua_isnil(L, -1))
+		{
+			return luaL_error(L, "attempt to set %s, which isn't a property",
+				lua_tostring(L, 2));
+		}
+		lua_remove(L, -2);
+	} while (true);
+
+	// Control never gets here
+	return 0;
+}
