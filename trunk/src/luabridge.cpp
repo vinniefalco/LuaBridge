@@ -135,7 +135,6 @@ int luabridge::indexer (lua_State *L)
 			if (!lua_isnil(L, -1))
 			{
 				assert(lua_isfunction(L, -1));
-				int top = lua_gettop(L);
 				lua_pushvalue(L, 1);
 				lua_call(L, 1, 1);
 				return 1;
