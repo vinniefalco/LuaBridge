@@ -17,6 +17,9 @@ void register_lua_funcs (lua_State *L);
 
 int main (int argc, char **argv)
 {
+	(void)argc;
+	(void)argv;
+
 	// Create the Lua state
 	lua_State *L = luaL_newstate();
 
