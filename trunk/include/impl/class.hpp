@@ -464,7 +464,7 @@ class__<T>& class__<T>::static_property_ro (const char *name, U (*get) ())
 {
 	lua_getglobal(L, classname<T>::name());
 	rawgetfield(L, -1, "__propget");
-	lua_pushlightuserdata(L, get);
+	lua_pushlightuserdata(L, (void *)get);
 	lua_pushcclosure(L, &function_proxy<U (*) ()>::f, 1);
 	rawsetfield(L, -2, name);
 	lua_pop(L, 2);
@@ -493,7 +493,7 @@ class__<T>& class__<T>::static_property_rw (const char *name, U (*get) (),
 	static_property_ro(name, get);
 	lua_getglobal(L, classname<T>::name());
 	rawgetfield(L, -1, "__propset");
-	lua_pushlightuserdata(L, set);
+	lua_pushlightuserdata(L, (void *)set);
 	lua_pushcclosure(L, &function_proxy<void (*) (U)>::f, 1);
 	rawsetfield(L, -2, name);
 	lua_pop(L, 2);
