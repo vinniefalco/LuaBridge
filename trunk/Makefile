@@ -8,7 +8,7 @@ debug: luabridge-debug test-debug
 
 # Target for running the test program
 test: test-release
-	src/test src/test.lua
+	src/test
 
 # C++ compiler options
 CXX := g++

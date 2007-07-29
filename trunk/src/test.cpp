@@ -35,29 +35,17 @@ int main (int argc, char **argv)
 	int errfunc_index = lua_gettop(L);
 
 	// Execute lua files in order
-	if (argc > 1)
+	if (luaL_loadfile(L, "src/test.lua") != 0)
 	{
-		for (int i = 1; i < argc; ++i)
-		{
-			if (luaL_loadfile(L, argv[i]) != 0)
-			{
-				// compile-time error
-				cerr << lua_tostring(L, -1) << endl;
-				lua_close(L);
-				return 1;
-			}
-			else if (lua_pcall(L, 0, 0, errfunc_index) != 0)
-			{
-				// runtime error
-				cerr << lua_tostring(L, -1) << endl;
-				lua_close(L);
-				return 1;
-			}
-		}
+		// compile-time error
+		cerr << lua_tostring(L, -1) << endl;
+		lua_close(L);
+		return 1;
 	}
-	else
+	else if (lua_pcall(L, 0, 0, errfunc_index) != 0)
 	{
-		cerr << "luatest: no input files.\n";
+		// runtime error
+		cerr << lua_tostring(L, -1) << endl;
 		lua_close(L);
 		return 1;
 	}
