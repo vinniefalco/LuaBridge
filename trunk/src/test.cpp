@@ -71,7 +71,7 @@ int main (int argc, char **argv)
 int traceback (lua_State *L)
 {
 	// look up Lua's 'debug.traceback' function
-	lua_getfield(L, LUA_GLOBALSINDEX, "debug");
+	lua_getglobal(L, "debug");
 	if (!lua_istable(L, -1))
 	{
 		lua_pop(L, 1);
@@ -110,6 +110,8 @@ enum {
 	FN_VIRTUAL,
 	FN_PROPGET,
 	FN_PROPSET,
+	FN_STATIC_PROPGET,
+	FN_STATIC_PROPSET,
 	NUM_FN_TYPES
 };
 
@@ -187,7 +189,21 @@ public:
 		A_functions.called[FN_PROPSET] = true;
 		testProp = x;
 	}
+
+	static int testStaticProp;
+	static int testStaticPropGet ()
+	{
+		A_functions.called[FN_STATIC_PROPGET] = true;
+		return testStaticProp;
+	}
+	static void testStaticPropSet (int x)
+	{
+		A_functions.called[FN_STATIC_PROPSET] = true;
+		testStaticProp = x;
+	}
 };
+
+int A::testStaticProp = 47;
 
 class B: public A
 {
@@ -313,7 +329,10 @@ void register_lua_funcs (lua_State *L)
 		.method("testSucceeded", &A::testSucceeded)
 		.property_rw("testProp", &A::testProp)
 		.property_rw("testProp2", &A::testPropGet, &A::testPropSet)
-		.static_method("testStatic", &A::testStatic);
+		.static_method("testStatic", &A::testStatic)
+		.static_property_rw("testStaticProp", &A::testStaticProp)
+		.static_property_rw("testStaticProp2", &A::testStaticPropGet,
+			&A::testStaticPropSet);
 
 	m.subclass<B, A>("B")
 		.constructor<void (*) (const string &)>()

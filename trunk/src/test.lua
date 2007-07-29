@@ -6,7 +6,10 @@ FN_DTOR = 1
 FN_STATIC = 2
 FN_VIRTUAL = 3
 FN_PROPGET = 4
-NUM_FN_TYPES = 5
+FN_PROPSET = 5
+FN_STATIC_PROPGET = 6
+FN_STATIC_PROPSET = 7
+NUM_FN_TYPES = 8
 
 -- function to print contents of a table
 function printtable (t)
@@ -48,6 +51,13 @@ A.testStatic();							assert(testAFnCalled(FN_STATIC));
 B.testStatic();							assert(testAFnCalled(FN_STATIC));
 B.testStatic2();						assert(testBFnCalled(FN_STATIC));
 
+-- test static properties of classes registered from C++
+
+assert(A.testStaticProp == 47);
+assert(A.testStaticProp2 == 47);		assert(testAFnCalled(FN_STATIC_PROPGET));
+A.testStaticProp = 48;					assert(A.testStaticProp == 48);
+A.testStaticProp2 = 49;					assert(testAFnCalled(FN_STATIC_PROPSET) and A.testStaticProp2 == 49);
+
 -- test classes registered from C++
 
 object1 = A("object1");					assert(testAFnCalled(FN_CTOR));
@@ -79,14 +89,12 @@ assert(pcall(testParamAPtr, constA) == false, "attempt to call nil value");
 
 -- test properties
 
-assert(object1.testProp == 47);			assert(not testAFnCalled(FN_PROPGET));
+assert(object1.testProp == 47);
 assert(object1.testProp2 == 47);		assert(testAFnCalled(FN_PROPGET));
-assert(object2.testProp == 47);			assert(not testAFnCalled(FN_PROPGET));
+assert(object2.testProp == 47);
 assert(object2.testProp2 == 47);		assert(testAFnCalled(FN_PROPGET));
 
-object1.testProp = 48;
-assert(object1.testProp == 48);
-object1.testProp2 = 48;
-assert(object1.testProp2 == 48);
+object1.testProp = 48;					assert(object1.testProp == 48);
+object1.testProp2 = 49;					assert(testAFnCalled(FN_PROPSET) and object1.testProp2 == 49);
 
 print("All tests succeeded.");

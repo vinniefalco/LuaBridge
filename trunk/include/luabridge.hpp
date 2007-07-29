@@ -26,8 +26,12 @@ namespace luabridge
 	public:
 		module (lua_State *L_): L(L_) {}
 
+		// Function registration
+
+		template <typename FnPtr>
+		module& function (const char *name, FnPtr fp);
+
 		// !!!UNDONE: support variables (global properties)
-		// !!!UNDONE: support packages
 
 		// Class registration
 
@@ -41,11 +45,7 @@ namespace luabridge
 		template <typename T>
 		class__<T> class_ ();
 
-		// Function registration
-		// !!!UNDONE: support overloading (maybe)
-
-		template <typename FnPtr>
-		module& function (const char *name, FnPtr fp);
+		// !!!UNDONE: support namespaces
 	};
 
 	// class__ performs registration for members of a class
@@ -81,13 +81,22 @@ namespace luabridge
 		class__<T>& property_rw (const char *name,
 			U (T::*get) () const, void (T::*set) (U));
 
-		// !!!UNDONE: allow inheriting Lua classes from C++ classes
-
 		// Static method registration
 		template <typename FnPtr>
 		class__<T>& static_method (const char *name, FnPtr fp);
 
-		// !!!UNDONE: static properties
+		// Static property registration
+		template <typename U>
+		class__<T>& static_property_ro (const char *name, U *data);
+		template <typename U>
+		class__<T>& static_property_ro (const char *name, U (*get) ());
+		template <typename U>
+		class__<T>& static_property_rw (const char *name, U *data);
+		template <typename U>
+		class__<T>& static_property_rw (const char *name, U (*get) (),
+		                                void (*set) (U));
+
+		// !!!UNDONE: allow inheriting Lua classes from C++ classes
 	};
 
 	// Convenience functions: like lua_getfield and lua_setfield, but raw
@@ -110,6 +119,7 @@ namespace luabridge
 		bool exact = false);
 	int indexer (lua_State *L);
 	int newindexer (lua_State *L);
+	int m_newindexer (lua_State *L);
 
 	// Predeclare classname struct since several implementation files use it
 	template <typename T>

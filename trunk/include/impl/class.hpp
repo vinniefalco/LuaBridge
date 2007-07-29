@@ -76,8 +76,8 @@ void create_metatable (lua_State *L, const char *name)
 	// Set indexer as the __index metamethod
 	lua_pushcfunction(L, &indexer);
 	rawsetfield(L, -2, "__index");
-	// Set newindexer as the __newindex metamethod
-	lua_pushcfunction(L, &newindexer);
+	// Set m_newindexer as the __newindex metamethod
+	lua_pushcfunction(L, &m_newindexer);
 	rawsetfield(L, -2, "__newindex");
 	// Set the __gc metamethod to call the class destructor
 	lua_pushstring(L, name);
@@ -100,7 +100,7 @@ void create_const_metatable (lua_State *L, const char *name)
 	luaL_newmetatable(L, constname.c_str());
 	lua_pushcfunction(L, &indexer);
 	rawsetfield(L, -2, "__index");
-	lua_pushcfunction(L, &newindexer);
+	lua_pushcfunction(L, &m_newindexer);
 	rawsetfield(L, -2, "__newindex");
 	lua_pushstring(L, constname.c_str());
 	lua_pushcclosure(L, &destructor_dispatch<T>, 1);
@@ -314,12 +314,13 @@ class__<T>& class__<T>::method (const char *name, FnPtr fp)
 
 /*
  * Lua-registerable C function templates for getting and setting the value of
- * an object member through a member pointer; used as property proxies.
- * These work similiarly to the method proxies above.
+ * an object member through a member pointer; similiar to the global property
+ * proxies, but they take both the expected classname for type-checking and
+ * the member pointer as upvalues.
  */
 
 template <typename T, typename U>
-int propget_proxy (lua_State *L)
+int m_propget_proxy (lua_State *L)
 {
 	T *obj = ((shared_ptr<T> *)checkclass(L, 1,
 		lua_tostring(L, lua_upvalueindex(1))))->get();
@@ -329,13 +330,12 @@ int propget_proxy (lua_State *L)
 }
 
 template <typename T, typename U>
-int propset_proxy (lua_State *L)
+int m_propset_proxy (lua_State *L)
 {
 	T *obj = ((shared_ptr<T> *)checkclass(L, 1,
 		lua_tostring(L, lua_upvalueindex(1))))->get();
 	U T::* mp = *(U T::**)lua_touserdata(L, lua_upvalueindex(2));
-	U value = tdstack<U>::get(L, 2);
-	obj->*mp = value;
+	obj->*mp = tdstack<U>::get(L, 2);
 	return 0;
 }
 
@@ -357,7 +357,7 @@ class__<T>& class__<T>::property_ro (const char *name, U T::* mp)
 	lua_pushstring(L, constname.c_str());
 	void *v = lua_newuserdata(L, sizeof(U T::*));
 	memcpy(v, &mp, sizeof(U T::*));
-	lua_pushcclosure(L, &propget_proxy<T, U>, 2);
+	lua_pushcclosure(L, &m_propget_proxy<T, U>, 2);
 	lua_pushvalue(L, -1);
 	rawsetfield(L, -3, name);
 	rawsetfield(L, -3, name);
@@ -396,7 +396,7 @@ class__<T>& class__<T>::property_rw (const char *name, U T::* mp)
 	lua_pushstring(L, classname<T>::name());
 	void *v = lua_newuserdata(L, sizeof(U T::*));
 	memcpy(v, &mp, sizeof(U T::*));
-	lua_pushcclosure(L, &propset_proxy<T, U>, 2);
+	lua_pushcclosure(L, &m_propset_proxy<T, U>, 2);
 	rawsetfield(L, -2, name);
 	lua_pop(L, 2);
 	return *this;
@@ -436,5 +436,66 @@ class__<T>& class__<T>::static_method (const char *name, FnPtr fp)
 	lua_pushcclosure(L, &function_proxy<FnPtr>::f, 1);
 	rawsetfield(L, -2, name);
 	lua_pop(L, 1);
+	return *this;
+}
+
+/*
+ * Static property registration.  Works the same way as class properties,
+ * but the proxy functions are stored in the static __propget and __propset
+ * tables, and the proxies are the same as for global properties.
+ */
+
+template <typename T>
+template <typename U>
+class__<T>& class__<T>::static_property_ro (const char *name, U *data)
+{
+	lua_getglobal(L, classname<T>::name());
+	rawgetfield(L, -1, "__propget");
+	lua_pushlightuserdata(L, data);
+	lua_pushcclosure(L, &propget_proxy<U>, 1);
+	rawsetfield(L, -2, name);
+	lua_pop(L, 2);
+	return *this;
+}
+
+template <typename T>
+template <typename U>
+class__<T>& class__<T>::static_property_ro (const char *name, U (*get) ())
+{
+	lua_getglobal(L, classname<T>::name());
+	rawgetfield(L, -1, "__propget");
+	lua_pushlightuserdata(L, get);
+	lua_pushcclosure(L, &function_proxy<U (*) ()>::f, 1);
+	rawsetfield(L, -2, name);
+	lua_pop(L, 2);
+	return *this;
+}
+
+template <typename T>
+template <typename U>
+class__<T>& class__<T>::static_property_rw (const char *name, U *data)
+{
+	static_property_ro(name, data);
+	lua_getglobal(L, classname<T>::name());
+	rawgetfield(L, -1, "__propset");
+	lua_pushlightuserdata(L, data);
+	lua_pushcclosure(L, &propset_proxy<U>, 1);
+	rawsetfield(L, -2, name);
+	lua_pop(L, 2);
+	return *this;
+}
+
+template <typename T>
+template <typename U>
+class__<T>& class__<T>::static_property_rw (const char *name, U (*get) (),
+                                            void (*set) (U))
+{
+	static_property_ro(name, get);
+	lua_getglobal(L, classname<T>::name());
+	rawgetfield(L, -1, "__propset");
+	lua_pushlightuserdata(L, set);
+	lua_pushcclosure(L, &function_proxy<void (*) (U)>::f, 1);
+	rawsetfield(L, -2, name);
+	lua_pop(L, 2);
 	return *this;
 }

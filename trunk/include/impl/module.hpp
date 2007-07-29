@@ -52,6 +52,28 @@ module& module::function (const char *name, FnPtr fp)
 }
 
 /*
+ * Lua-registerable C function templates for getting and setting the value of
+ * a global/static variable through a pointer; used as property proxies.
+ * These work similiarly to the function proxies above.
+ */
+
+template <typename U>
+int propget_proxy (lua_State *L)
+{
+	U *data = (U *)lua_touserdata(L, lua_upvalueindex(1));
+	tdstack<U>::push(L, *data);
+	return 1;
+}
+
+template <typename U>
+int propset_proxy (lua_State *L)
+{
+	U *data = (U *)lua_touserdata(L, lua_upvalueindex(1));
+	*data = tdstack<U>::get(L, 1);
+	return 0;
+}
+
+/*
  * Perform class registration in a module.
  */
 
