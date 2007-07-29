@@ -1,0 +1,25 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C++ Express 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "luabridge", "luabridge.vcproj", "{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test.vcproj", "{A0818244-4C56-4749-A40A-9FF2E5659C96}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}.Debug|Win32.Build.0 = Debug|Win32
+		{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}.Release|Win32.ActiveCfg = Release|Win32
+		{6617EBF6-CBD6-4D4F-A220-E782765EE6DD}.Release|Win32.Build.0 = Release|Win32
+		{A0818244-4C56-4749-A40A-9FF2E5659C96}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A0818244-4C56-4749-A40A-9FF2E5659C96}.Debug|Win32.Build.0 = Debug|Win32
+		{A0818244-4C56-4749-A40A-9FF2E5659C96}.Release|Win32.ActiveCfg = Release|Win32
+		{A0818244-4C56-4749-A40A-9FF2E5659C96}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
