@@ -9,7 +9,8 @@ FN_PROPGET = 4
 FN_PROPSET = 5
 FN_STATIC_PROPGET = 6
 FN_STATIC_PROPSET = 7
-NUM_FN_TYPES = 8
+FN_OPERATOR = 8
+NUM_FN_TYPES = 9
 
 -- function to print contents of a table
 function printtable (t)
@@ -96,5 +97,9 @@ assert(object2.testProp2 == 47);		assert(testAFnCalled(FN_PROPGET));
 
 object1.testProp = 48;					assert(object1.testProp == 48);
 object1.testProp2 = 49;					assert(testAFnCalled(FN_PROPSET) and object1.testProp2 == 49);
+
+-- test operator overload
+object1a = object1 + object1;			assert(testAFnCalled(FN_OPERATOR));
+assert(object1a:getName() == "object1 + object1");
 
 print("All tests succeeded.");

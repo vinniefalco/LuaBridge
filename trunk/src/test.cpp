@@ -103,6 +103,7 @@ enum {
 	FN_PROPSET,
 	FN_STATIC_PROPGET,
 	FN_STATIC_PROPSET,
+	FN_OPERATOR,
 	NUM_FN_TYPES
 };
 
@@ -191,6 +192,12 @@ public:
 	{
 		A_functions.called[FN_STATIC_PROPSET] = true;
 		testStaticProp = x;
+	}
+	
+	luabridge::shared_ptr<A> operator + (const A& other)
+	{
+		A_functions.called[FN_OPERATOR] = true;
+		return new A(name + " + " + other.name);
 	}
 };
 
@@ -323,7 +330,8 @@ void register_lua_funcs (lua_State *L)
 		.static_method("testStatic", &A::testStatic)
 		.static_property_rw("testStaticProp", &A::testStaticProp)
 		.static_property_rw("testStaticProp2", &A::testStaticPropGet,
-			&A::testStaticPropSet);
+			&A::testStaticPropSet)
+		.method("__add", &A::operator+);
 
 	m.subclass<B, A>("B")
 		.constructor<void (*) (const string &)>()
