@@ -121,7 +121,7 @@
 					RelativePath="..\..\include\impl\class.hpp">
 				</File>
 				<File
-					RelativePath="..\..\include\impl\module.hpp">
+					RelativePath="..\..\include\impl\scope.hpp">
 				</File>
 				<File
 					RelativePath="..\..\include\impl\shared_ptr.hpp">
