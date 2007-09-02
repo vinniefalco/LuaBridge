@@ -304,9 +304,9 @@ luabridge::shared_ptr<const A> testRetSharedPtrConstA ()
 // add our own functions and classes to a Lua environment
 void register_lua_funcs (lua_State *L)
 {
-	luabridge::module m(L);
+	luabridge::scope s(L);
 
-	m	.function("testSucceeded", &testSucceeded)
+	s	.function("testSucceeded", &testSucceeded)
 		.function("testAFnCalled", &testAFnCalled)
 		.function("testBFnCalled", &testBFnCalled)
 		.function("testRetInt", &testRetInt)
@@ -320,7 +320,7 @@ void register_lua_funcs (lua_State *L)
 		.function("testParamStdString", &testParamStdString)
 		.function("testParamStdStringRef", &testParamStdStringRef);
 
-	m.class_<A>("A")
+	s.class_<A>("A")
 		.constructor<void (*) (const string &)>()
 		.method("testVirtual", &A::testVirtual)
 		.method("getName", &A::getName)
@@ -333,11 +333,11 @@ void register_lua_funcs (lua_State *L)
 			&A::testStaticPropSet)
 		.method("__add", &A::operator+);
 
-	m.subclass<B, A>("B")
+	s.subclass<B, A>("B")
 		.constructor<void (*) (const string &)>()
 		.static_method("testStatic2", &B::testStatic2);
 
-	m	.function("testParamAPtr", &testParamAPtr)
+	s	.function("testParamAPtr", &testParamAPtr)
 		.function("testParamAPtrConst", &testParamAPtrConst)
 		.function("testParamConstAPtr", &testParamConstAPtr)
 		.function("testParamSharedPtrA", &testParamSharedPtrA)

@@ -1,6 +1,6 @@
 /*
- * module.hpp - Copyright (C) 2007 by Nathan Reed
- * Implementation of the module class from luabridge.hpp.
+ * scope.hpp - Copyright (C) 2007 by Nathan Reed
+ * Implementation of template parts of the scope class from luabridge.hpp.
  */
 
 /*
@@ -39,11 +39,11 @@ struct function_proxy <FnPtr, void>
 };
 
 /*
- * Perform function registration in a module.
+ * Perform function registration in a scope.
  */
 
 template <typename FnPtr>
-module& module::function (const char *name, FnPtr fp)
+scope& scope::function (const char *name, FnPtr fp)
 {
 	lua_pushlightuserdata(L, (void *)fp);
 	lua_pushcclosure(L, &function_proxy<FnPtr>::f, 1);
@@ -74,24 +74,24 @@ int propset_proxy (lua_State *L)
 }
 
 /*
- * Perform class registration in a module.
+ * Perform class registration in a scope.
  */
 
 template <typename T>
-class__<T> module::class_ ()
+class__<T> scope::class_ ()
 {
 	return class__<T>(L);
 }
 
 template <typename T, typename Base>
-class__<T> module::subclass (const char *name)
+class__<T> scope::subclass (const char *name)
 {
 	assert(classname<Base>::name() != classname_unknown);
 	return class__<T>(L, name, classname<Base>::name());
 }
 
 template <typename T>
-class__<T> module::class_ (const char *name)
+class__<T> scope::class_ (const char *name)
 {
 	return class__<T>(L, name);
 }

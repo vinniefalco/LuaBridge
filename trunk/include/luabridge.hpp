@@ -19,17 +19,19 @@ namespace luabridge
 {
 	template <typename T> class class__;
 
-	// module performs registration tasks in a given Lua state
-	class module
+	// scope performs registration tasks in a given Lua state
+	class scope
 	{
+	protected:
 		lua_State *L;
+		std::string name;
 	public:
-		module (lua_State *L_): L(L_) {}
+		scope (lua_State *L_, const char *name_ = "");
 
 		// Function registration
 
 		template <typename FnPtr>
-		module& function (const char *name, FnPtr fp);
+		scope& function (const char *name, FnPtr fp);
 
 		// !!!UNDONE: support variables (global properties)
 
@@ -50,13 +52,12 @@ namespace luabridge
 
 	// class__ performs registration for members of a class
 	template <typename T>
-	class class__
+	class class__ : public scope
 	{
-		lua_State *L;
 	public:
 		class__ (lua_State *L_);
-		class__ (lua_State *L_, const char *name);
-		class__ (lua_State *L_, const char *name, const char *basename);
+		class__ (lua_State *L_, const char *name_);
+		class__ (lua_State *L_, const char *name_, const char *basename);
 
 		// Constructor registration.  The template parameter should be passed
 		// a function pointer type; only the argument list will be used (since
@@ -120,6 +121,8 @@ namespace luabridge
 	int indexer (lua_State *L);
 	int newindexer (lua_State *L);
 	int m_newindexer (lua_State *L);
+	void create_static_table (lua_State *L);
+	void lookup_static_table (lua_State *L, const char *name);
 
 	// Predeclare classname struct since several implementation files use it
 	template <typename T>
@@ -129,7 +132,7 @@ namespace luabridge
 	// Include implementation files
 #	include "impl/typelist.hpp"
 #	include "impl/stack.hpp"
-#	include "impl/module.hpp"
+#	include "impl/scope.hpp"
 #	include "impl/class.hpp"
 }
 

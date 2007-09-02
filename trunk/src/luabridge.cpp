@@ -14,11 +14,67 @@
 #	endif
 #endif
 
+using namespace luabridge;
+
 /*
  * Default name for unknown types
  */
 
 const char *luabridge::classname_unknown = "(unknown type)";
+
+/*
+ * Scope constructor
+ */
+
+luabridge::scope::scope (lua_State *L_, const char *name_):
+	L(L_), name(name_)
+{
+	if (name.length() > 0)
+	{
+		// Create static table for this scope.  This is stored in the global
+		// environment, keyed by the scope's name.
+		create_static_table(L);
+		lua_setglobal(L, name_);
+	}
+}
+
+/*
+ * Create a static table for a non-global scope and leave it on the stack
+ */
+
+void luabridge::create_static_table (lua_State *L)
+{
+	lua_newtable(L);
+
+	// Set it as its own metatable
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+
+	// Set indexer as the __index metamethod
+	lua_pushcfunction(L, &luabridge::indexer);
+	rawsetfield(L, -2, "__index");
+
+	// Set newindexer as the __newindex metamethod
+	lua_pushcfunction(L, &luabridge::newindexer);
+	rawsetfield(L, -2, "__newindex");
+
+	// Create the __propget and __propset metafields as empty tables
+	lua_newtable(L);
+	rawsetfield(L, -2, "__propget");
+	lua_newtable(L);
+	rawsetfield(L, -2, "__propset");
+}
+
+/*
+ * Lookup a static table based on its fully qualified name, and leave it on
+ * the stack
+ */
+
+void luabridge::lookup_static_table (lua_State *L, const char *name)
+{
+	// !!!UNDONE: do this for real
+	lua_getglobal(L, name);
+}
 
 /*
  * Class type checker.  Given the index of a userdata on the stack, makes
@@ -168,7 +224,7 @@ int luabridge::indexer (lua_State *L)
 }
 
 /*
- * Newindex metamethod for supporting properties on modules and static
+ * Newindex metamethod for supporting properties on scopes and static
  * properties of classes.
  */
 
@@ -254,3 +310,4 @@ int luabridge::m_newindexer (lua_State *L)
 	// Control never gets here
 	return 0;
 }
+
