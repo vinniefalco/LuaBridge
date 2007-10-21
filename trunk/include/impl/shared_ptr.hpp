@@ -43,6 +43,15 @@ shared_ptr<T>::shared_ptr (const shared_ptr<U>& rhs): ptr(rhs.get())
 }
 
 template <typename T>
+shared_ptr<T>& shared_ptr<T>::operator = (const shared_ptr<T>& rhs)
+{
+	reset();
+	ptr = rhs.ptr;
+	++refcounts_[ptr];
+	return *this;
+}
+
+template <typename T>
 template <typename U>
 shared_ptr<T>& shared_ptr<T>::operator = (const shared_ptr<U>& rhs)
 {

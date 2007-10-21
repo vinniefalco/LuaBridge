@@ -32,6 +32,9 @@ namespace luabridge
 		shared_ptr (const shared_ptr<T>& rhs);
 		template <typename U> shared_ptr (const shared_ptr<U>& rhs);
 
+		// Assignment operators: same deal, compiler doesn't recognize the
+		// second as an assign op and generates its own if we don't write it
+		shared_ptr<T>& operator = (const shared_ptr<T> & rhs);
 		template <typename U> shared_ptr& operator =
 			(const shared_ptr<U> & rhs);
 
