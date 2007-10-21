@@ -25,7 +25,7 @@ namespace luabridge
 	{
 		T* ptr;
 	public:
-		shared_ptr (T* ptr_);
+		shared_ptr (T* ptr_ = 0);
 
 		// Copy constructors: the first one is necessary to write out,
 		// since the compiler doesn't recognize the second as a copy ctor
