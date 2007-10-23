@@ -4,18 +4,42 @@
  */
 
 /*
- * These totally generic functions are unimplemented, causing a compiler
- * error if they are called.  We don't know how to send objects of arbitrary
- * types to and from Lua.  Following are specializations of this structure
- * that allow specific types to be handled in specific ways.
+ * Generic functions for data with value semantics: these make a copy on
+ * the heap of the data being passed, and stick it in a shared_ptr so Lua
+ * scripts can keep references to it.
+ * NOTE: for type-checking purposes, the data must be of a class or struct
+ * type registered with Lua, although it is allowed to be an opaque type.
+ * NOTE: data with reference semantics, i.e. pointers and references
+ * to data, are handled differently - see the specializations below.
  */
 
 template <typename T>
 struct tdstack
 {
-private:
-	static void push (lua_State *L, T data);
-	static T get (lua_State *L, int index);
+public:
+	static void push (lua_State *L, T data)
+	{
+		// Make sure we don't try to push ptrs to objects of
+		// unregistered classes or primitive types
+		assert(classname<T>::name() != classname_unknown);
+
+		// Allocate a new userdata and construct the pointer in-place there
+		void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
+		new(block) shared_ptr<T>(new T(data));
+
+		// Set the userdata's metatable
+		luaL_getmetatable(L, classname<T>::name());
+		lua_setmetatable(L, -2);
+	}
+	static T get (lua_State *L, int index)
+	{
+		// Make sure we don't try to push ptrs to objects of
+		// unregistered classes or primitive types
+		assert(classname<T>::name() != classname_unknown);
+
+		return *((shared_ptr<T> *)
+			checkclass(L, index, classname<T>::name()))->get();
+	}
 };
 
 /*
