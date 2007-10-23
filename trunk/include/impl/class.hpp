@@ -319,7 +319,7 @@ int m_propset_proxy (lua_State *L)
 
 template <typename T>
 template <typename U>
-class__<T>& class__<T>::property_ro (const char *name, U T::* mp)
+class__<T>& class__<T>::property_ro (const char *name, const U T::* mp)
 {
 	luaL_getmetatable(L, classname<T>::name());
 	std::string constname = std::string("const ") + classname<T>::name();
@@ -419,11 +419,11 @@ class__<T>& class__<T>::static_method (const char *name, FnPtr fp)
 
 template <typename T>
 template <typename U>
-class__<T>& class__<T>::static_property_ro (const char *name, U *data)
+class__<T>& class__<T>::static_property_ro (const char *name, const U *data)
 {
 	lookup_static_table(L, classname<T>::name());
 	rawgetfield(L, -1, "__propget");
-	lua_pushlightuserdata(L, data);
+	lua_pushlightuserdata(L, (void *)data);
 	lua_pushcclosure(L, &propget_proxy<U>, 1);
 	rawsetfield(L, -2, name);
 	lua_pop(L, 2);
@@ -450,7 +450,7 @@ class__<T>& class__<T>::static_property_rw (const char *name, U *data)
 	static_property_ro(name, data);
 	lookup_static_table(L, classname<T>::name());
 	rawgetfield(L, -1, "__propset");
-	lua_pushlightuserdata(L, data);
+	lua_pushlightuserdata(L, (void *)data);
 	lua_pushcclosure(L, &propset_proxy<U>, 1);
 	rawsetfield(L, -2, name);
 	lua_pop(L, 2);

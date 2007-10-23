@@ -73,7 +73,7 @@ namespace luabridge
 		// or read-only (ro).  Varieties that access member pointers directly
 		// and varieties that access through function calls are provided.
 		template <typename U>
-		class__<T>& property_ro (const char *name, U T::* mp);
+		class__<T>& property_ro (const char *name, const U T::* mp);
 		template <typename U>
 		class__<T>& property_ro (const char *name, U (T::*get) () const);
 		template <typename U>
@@ -88,7 +88,7 @@ namespace luabridge
 
 		// Static property registration
 		template <typename U>
-		class__<T>& static_property_ro (const char *name, U *data);
+		class__<T>& static_property_ro (const char *name, const U *data);
 		template <typename U>
 		class__<T>& static_property_ro (const char *name, U (*get) ());
 		template <typename U>
