@@ -84,12 +84,16 @@ creates a readable and writeable variable, while 'variable_ro' creates a
 read-only one.  Obviously, there is no setter for the read-only variable.
 
 Supported types for variables, and function parameters and returns, are:
- * Primitive types: int, float, double (all converted to/from
-	  Lua_number, since Lua does not distinguish different number types),
-	  bool
+ * Primitive types:
+      int, unsigned int, unsigned char, short, unsigned short, long,
+      unsigned long, float, double
+      (all converted to Lua_number, since Lua does not distinguish
+      different number types),
+      char (converted to strings of length one)
+      bool
  * Strings: const char * and std::string
  * Objects: pointers, references, and shared_ptrs to objects of registered
-	  classes (more about shared_ptrs later)
+     classes (more about shared_ptrs later)
 
 Classes
 -------

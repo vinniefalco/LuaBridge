@@ -244,6 +244,20 @@ struct tdstack <bool>
 };
 
 template <>
+struct tdstack <char>
+{
+	static void push (lua_State *L, char data)
+	{
+		char str[2] = { data, 0 };
+		lua_pushstring(L, str);
+	}
+	static char get (lua_State *L, int index)
+	{
+		return luaL_checkstring(L, index)[0];
+	}
+};
+
+template <>
 struct tdstack <const char *>
 {
 	static void push (lua_State *L, const char *data)
