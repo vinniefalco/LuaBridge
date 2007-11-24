@@ -14,6 +14,7 @@
 #	endif
 #endif
 
+using namespace std;
 using namespace luabridge;
 
 /*
@@ -33,8 +34,31 @@ luabridge::scope::scope (lua_State *L_, const char *name_):
 	{
 		// Create static table for this scope.  This is stored in the global
 		// environment, keyed by the scope's name.
+		
+		size_t start = 0, pos = 0;
+		lua_getglobal(L, "_G");
+		while ((pos = name.find('.', start)) != string::npos)
+		{
+			lua_getfield(L, -1, name.substr(start, pos - start).c_str());
+			if (lua_isnil(L, -1))
+			{
+				lua_pop(L, 1);
+				create_static_table(L);
+				lua_pushvalue(L, -1);
+				lua_setfield(L, -3, name.c_str() + start);
+			}
+			lua_remove(L, -2);
+			start = pos + 1;
+		}
+		
 		create_static_table(L);
-		lua_setglobal(L, name_);
+		lua_setfield(L, -2, name.c_str() + start);
+		lua_pop(L, 1);
+	}
+	else
+	{
+		// !!!UNDONE: setup global metatable?
+		//assert(false);
 	}
 }
 
@@ -72,8 +96,23 @@ void luabridge::create_static_table (lua_State *L)
 
 void luabridge::lookup_static_table (lua_State *L, const char *name)
 {
-	// !!!UNDONE: do this for real
-	lua_getglobal(L, name);
+	lua_getglobal(L, "_G");
+
+	if (name && name[0] != '\0')
+	{
+		std::string namestr(name);
+		size_t start = 0, pos = 0;
+		while ((pos = namestr.find('.', start)) != string::npos)
+		{
+			lua_getfield(L, -1, namestr.substr(start, pos - start).c_str());
+			assert(!lua_isnil(L, -1));
+			lua_remove(L, -2);
+			start = pos + 1;
+		}
+		lua_getfield(L, -1, namestr.substr(start).c_str());
+		assert(!lua_isnil(L, -1));
+		lua_remove(L, -2);
+	}
 }
 
 /*

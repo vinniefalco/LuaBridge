@@ -33,7 +33,18 @@ namespace luabridge
 		template <typename FnPtr>
 		scope& function (const char *name, FnPtr fp);
 
-		// !!!UNDONE: support variables (global properties)
+		// Variable registration.  Variables can be read/write (rw)
+		// or read-only (ro).  Varieties that access pointers directly
+		// and varieties that access through function calls are provided.
+
+		template <typename T>
+		scope& variable_ro (const char *name, const T *data);
+		template <typename T>
+		scope& variable_ro (const char *name, T (*get) ());
+		template <typename T>
+		scope& variable_rw (const char *name, T *data);
+		template <typename T>
+		scope& variable_rw (const char *name, T (*get) (), void (*set) (T));
 
 		// Class registration
 
@@ -43,7 +54,8 @@ namespace luabridge
 		// For registering subclasses (the base class must also be registered)
 		template <typename T, typename Base>
 		class__<T> subclass (const char *name);
-		// For adding new methods to a previously registered class, if desired
+		// For registering additional methods of a previously registered class
+		// (or subclass)
 		template <typename T>
 		class__<T> class_ ();
 
@@ -84,18 +96,23 @@ namespace luabridge
 
 		// Static method registration
 		template <typename FnPtr>
-		class__<T>& static_method (const char *name, FnPtr fp);
+		class__<T>& static_method (const char *name, FnPtr fp)
+			{ return *(class__<T>*)&(function(name, fp)); }
 
 		// Static property registration
 		template <typename U>
-		class__<T>& static_property_ro (const char *name, const U *data);
+		class__<T>& static_property_ro (const char *name, const U *data)
+			{ return *(class__<T>*)&(variable_ro(name, data)); }
 		template <typename U>
-		class__<T>& static_property_ro (const char *name, U (*get) ());
+		class__<T>& static_property_ro (const char *name, U (*get) ())
+			{ return *(class__<T>*)&(variable_ro(name, get)); }
 		template <typename U>
-		class__<T>& static_property_rw (const char *name, U *data);
+		class__<T>& static_property_rw (const char *name, U *data)
+			{ return *(class__<T>*)&(variable_rw(name, data)); }
 		template <typename U>
 		class__<T>& static_property_rw (const char *name, U (*get) (),
-		                                void (*set) (U));
+		                                void (*set) (U))
+			{ return *(class__<T>*)&(variable_rw(name, get, set)); }
 
 		// !!!UNDONE: allow inheriting Lua classes from C++ classes
 	};

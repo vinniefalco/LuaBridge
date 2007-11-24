@@ -325,13 +325,14 @@ void register_lua_funcs (lua_State *L)
 		.method("testVirtual", &A::testVirtual)
 		.method("getName", &A::getName)
 		.method("testSucceeded", &A::testSucceeded)
+		.method("__add", &A::operator+)
 		.property_rw("testProp", &A::testProp)
 		.property_rw("testProp2", &A::testPropGet, &A::testPropSet)
 		.static_method("testStatic", &A::testStatic)
 		.static_property_rw("testStaticProp", &A::testStaticProp)
 		.static_property_rw("testStaticProp2", &A::testStaticPropGet,
-			&A::testStaticPropSet)
-		.method("__add", &A::operator+);
+			&A::testStaticPropSet);
+	
 
 	s.subclass<B, A>("B")
 		.constructor<void (*) (const string &)>()

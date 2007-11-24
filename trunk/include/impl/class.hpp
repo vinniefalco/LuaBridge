@@ -207,10 +207,10 @@ template <typename FnPtr>
 class__<T>& class__<T>::constructor ()
 {
 	// Get a reference to the class's static table
-	lookup_static_table(L, classname<T>::name());
+	lookup_static_table(L, name.c_str());
 
 	// Push the constructor proxy, with the class's metatable as an upvalue
-	luaL_getmetatable(L, classname<T>::name());
+	luaL_getmetatable(L, name.c_str());
 	lua_pushcclosure(L,
 		&constructor_proxy<T, typename fnptr<FnPtr>::params>, 1);
 
@@ -271,9 +271,9 @@ template <typename FnPtr>
 class__<T>& class__<T>::method (const char *name, FnPtr fp)
 {
 	assert(fnptr<FnPtr>::mfp);
-	std::string metatable_name = classname<T>::name();
+	std::string metatable_name = this->name;
 	if (fnptr<FnPtr>::const_mfp)
-		metatable_name = "const " + metatable_name;
+		metatable_name.insert(0, "const ");
 	luaL_getmetatable(L, metatable_name.c_str());
 	lua_pushstring(L, metatable_name.c_str());
 	void *v = lua_newuserdata(L, sizeof(FnPtr));
@@ -321,8 +321,8 @@ template <typename T>
 template <typename U>
 class__<T>& class__<T>::property_ro (const char *name, const U T::* mp)
 {
-	luaL_getmetatable(L, classname<T>::name());
-	std::string constname = std::string("const ") + classname<T>::name();
+	luaL_getmetatable(L, this->name.c_str());
+	std::string constname = "const " + this->name;
 	luaL_getmetatable(L, constname.c_str());
 	rawgetfield(L, -2, "__propget");
 	rawgetfield(L, -2, "__propget");
@@ -341,8 +341,8 @@ template <typename T>
 template <typename U>
 class__<T>& class__<T>::property_ro (const char *name, U (T::*get) () const)
 {
-	luaL_getmetatable(L, classname<T>::name());
-	std::string constname = std::string("const ") + classname<T>::name();
+	luaL_getmetatable(L, this->name.c_str());
+	std::string constname = "const " + this->name;
 	luaL_getmetatable(L, constname.c_str());
 	rawgetfield(L, -2, "__propget");
 	rawgetfield(L, -2, "__propget");
@@ -363,9 +363,9 @@ template <typename U>
 class__<T>& class__<T>::property_rw (const char *name, U T::* mp)
 {
 	property_ro(name, mp);
-	luaL_getmetatable(L, classname<T>::name());
+	luaL_getmetatable(L, this->name.c_str());
 	rawgetfield(L, -1, "__propset");
-	lua_pushstring(L, classname<T>::name());
+	lua_pushstring(L, this->name.c_str());
 	void *v = lua_newuserdata(L, sizeof(U T::*));
 	memcpy(v, &mp, sizeof(U T::*));
 	lua_pushcclosure(L, &m_propset_proxy<T, U>, 2);
@@ -380,9 +380,9 @@ class__<T>& class__<T>::property_rw (const char *name,
 	U (T::*get) () const, void (T::*set) (U))
 {
 	property_ro(name, get);
-	luaL_getmetatable(L, classname<T>::name());
+	luaL_getmetatable(L, this->name.c_str());
 	rawgetfield(L, -1, "__propset");
-	lua_pushstring(L, classname<T>::name());
+	lua_pushstring(L, this->name.c_str());
 	typedef void (T::*FnPtr) (U);
 	void *v = lua_newuserdata(L, sizeof(FnPtr));
 	memcpy(v, &set, sizeof(FnPtr));
@@ -392,82 +392,3 @@ class__<T>& class__<T>::property_rw (const char *name,
 	return *this;
 }
 
-/*
- * Static method registration.  Method proxies are registered as values
- * in the class's static table.  We use the global function proxies defined
- * in scope.hpp, since static methods are really just hidden globals.
- */
-
-template <typename T>
-template <typename FnPtr>
-class__<T>& class__<T>::static_method (const char *name, FnPtr fp)
-{
-	assert(!fnptr<FnPtr>::mfp);
-	lookup_static_table(L, classname<T>::name());
-	lua_pushlightuserdata(L, (void *)fp);
-	lua_pushcclosure(L, &function_proxy<FnPtr>::f, 1);
-	rawsetfield(L, -2, name);
-	lua_pop(L, 1);
-	return *this;
-}
-
-/*
- * Static property registration.  Works the same way as class properties,
- * but the proxy functions are stored in the static __propget and __propset
- * tables, and the proxies are the same as for global properties.
- */
-
-template <typename T>
-template <typename U>
-class__<T>& class__<T>::static_property_ro (const char *name, const U *data)
-{
-	lookup_static_table(L, classname<T>::name());
-	rawgetfield(L, -1, "__propget");
-	lua_pushlightuserdata(L, (void *)data);
-	lua_pushcclosure(L, &propget_proxy<U>, 1);
-	rawsetfield(L, -2, name);
-	lua_pop(L, 2);
-	return *this;
-}
-
-template <typename T>
-template <typename U>
-class__<T>& class__<T>::static_property_ro (const char *name, U (*get) ())
-{
-	lookup_static_table(L, classname<T>::name());
-	rawgetfield(L, -1, "__propget");
-	lua_pushlightuserdata(L, (void *)get);
-	lua_pushcclosure(L, &function_proxy<U (*) ()>::f, 1);
-	rawsetfield(L, -2, name);
-	lua_pop(L, 2);
-	return *this;
-}
-
-template <typename T>
-template <typename U>
-class__<T>& class__<T>::static_property_rw (const char *name, U *data)
-{
-	static_property_ro(name, data);
-	lookup_static_table(L, classname<T>::name());
-	rawgetfield(L, -1, "__propset");
-	lua_pushlightuserdata(L, (void *)data);
-	lua_pushcclosure(L, &propset_proxy<U>, 1);
-	rawsetfield(L, -2, name);
-	lua_pop(L, 2);
-	return *this;
-}
-
-template <typename T>
-template <typename U>
-class__<T>& class__<T>::static_property_rw (const char *name, U (*get) (),
-                                            void (*set) (U))
-{
-	static_property_ro(name, get);
-	lookup_static_table(L, classname<T>::name());
-	rawgetfield(L, -1, "__propset");
-	lua_pushlightuserdata(L, (void *)set);
-	lua_pushcclosure(L, &function_proxy<void (*) (U)>::f, 1);
-	rawsetfield(L, -2, name);
-	lua_pop(L, 2);
-	return *this;
-}
