@@ -190,44 +190,34 @@ struct tdstack <shared_ptr<const T> >
  * Primitive types, including const char * and std::string
  */
 
-template <>
-struct tdstack <float>
-{
-	static void push (lua_State *L, float data)
-	{
-		lua_pushnumber(L, (lua_Number)data);
-	}
-	static float get (lua_State *L, int index)
-	{
-		return (float)luaL_checknumber(L, index);
-	}
-};
+// Create a macro for handling numeric types,
+// since they follow the same pattern
 
-template <>
-struct tdstack <double>
-{
-	static void push (lua_State *L, double data)
-	{
-		lua_pushnumber(L, (lua_Number)data);
+#define TDSTACK_NUMERIC(T) \
+	template <> \
+	struct tdstack <T> \
+	{ \
+		static void push (lua_State *L, T data) \
+		{ \
+			lua_pushnumber(L, (lua_Number)data); \
+		} \
+		static T get (lua_State *L, int index) \
+		{ \
+			return (T)(luaL_checknumber(L, index)); \
+		} \
 	}
-	static double get (lua_State *L, int index)
-	{
-		return (double)luaL_checknumber(L, index);
-	}
-};
 
-template <>
-struct tdstack <int>
-{
-	static void push (lua_State *L, int data)
-	{
-		lua_pushinteger(L, data);
-	}
-	static int get (lua_State *L, int index)
-	{
-		return luaL_checkint(L, index);
-	}
-};
+TDSTACK_NUMERIC(int);
+TDSTACK_NUMERIC(unsigned int);
+TDSTACK_NUMERIC(unsigned char);
+TDSTACK_NUMERIC(short);
+TDSTACK_NUMERIC(unsigned short);
+TDSTACK_NUMERIC(long);
+TDSTACK_NUMERIC(unsigned long);
+TDSTACK_NUMERIC(float);
+TDSTACK_NUMERIC(double);
+
+#undef TDSTACK_NUMERIC
 
 template <>
 struct tdstack <bool>
