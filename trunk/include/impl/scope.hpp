@@ -83,6 +83,9 @@ int varset_proxy (lua_State *L)
 template <typename T>
 scope& scope::variable_ro (const char *name, const T *data)
 {
+	// Currently can't register properties at global scope.
+	assert(this->name.length() > 0);
+
 	lookup_static_table(L, this->name.c_str());
 	rawgetfield(L, -1, "__propget");
 	lua_pushlightuserdata(L, (void *)data);
@@ -95,6 +98,9 @@ scope& scope::variable_ro (const char *name, const T *data)
 template <typename T>
 scope& scope::variable_ro (const char *name, T (*get) ())
 {
+	// Currently can't register properties at global scope.
+	assert(this->name.length() > 0);
+
 	lookup_static_table(L, this->name.c_str());
 	rawgetfield(L, -1, "__propget");
 	lua_pushlightuserdata(L, (void *)get);
@@ -107,6 +113,9 @@ scope& scope::variable_ro (const char *name, T (*get) ())
 template <typename T>
 scope& scope::variable_rw (const char *name, T *data)
 {
+	// Currently can't register properties at global scope.
+	assert(this->name.length() > 0);
+
 	variable_ro(name, data);
 	lookup_static_table(L, this->name.c_str());
 	rawgetfield(L, -1, "__propset");
@@ -120,6 +129,9 @@ scope& scope::variable_rw (const char *name, T *data)
 template <typename T>
 scope& scope::variable_rw (const char *name, T (*get) (), void (*set) (T))
 {
+	// Currently can't register properties at global scope.
+	assert(this->name.length() > 0);
+
 	variable_ro(name, get);
 	lookup_static_table(L, this->name.c_str());
 	rawgetfield(L, -1, "__propset");

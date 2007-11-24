@@ -32,7 +32,7 @@ necessary to use each of Luabridge's features.  You can run it by clicking
 Execute (Ctrl+F5) in MSVC after building, or by typing `make test` at the
 command line.  (In either case the command should be executed from the
 directory in which Luabridge was decompressed.)  The application will print
-'All test succeeded' if everything worked as expected, or an error message
+'All tests succeeded' if everything worked as expected, or an error message
 otherwise.
 
 Using Luabridge
@@ -50,16 +50,16 @@ made in the lib directory.  These are static libraries containing the small
 amount of common binary code in Luabridge.
 
 If L is a pointer to an instance of lua_State, the following code creates a
-Luabridge module for registering C++ functions and classes to L:
+Luabridge scope for registering C++ functions and classes to L:
 
-	luabridge::module m(L);
+	luabridge::scope s(L);
 
 Functions can then be registered as follows:
 
-	m	.function("foo", &foo)
+	s	.function("foo", &foo)
 		.function("bar", &bar);
 
-The 'function' function returns a reference to m, so you can chain many
+The 'function' function returns a reference to s, so you can chain many
 function definitions together.  The first argument is the name by which the
 function will be available in Lua, and the second is the function's address.
 Luabridge will automatically detect the number (up to 8, by default) and type
@@ -67,7 +67,23 @@ of the parameters.  Functions registered this way will be available at the
 global scope to Lua scripts executed by L.  Overloading of function names is
 not supported, nor is it likely to be supported in the future.
 
-Supported types for parameters and returns are:
+Variables can also be registered.  You can expose a 'bare' variable to Lua, or
+wrap it in getter and setter functions:
+
+	s	.variable_rw("var1", &var1)
+		.variable_rw("var2", &getter2, &setter2)
+		.variable_ro("var3", &var3)
+		.variable_ro("var4", &getter4)
+
+The first registration above gives Lua direct access to the 'var' variable.
+The second creates a variable which appears like any other variable to Lua
+code, but is retrieved and set through the 'getter2' and 'setter2' function.
+The getter must take no parameters and return a value, and the setter must take
+a value of the same type and return nothing.  The 'variable_rw' function
+creates a readable and writeable variable, while 'variable_ro' creates a
+read-only one.  Obviously, there is no setter for the read-only variable.
+
+Supported types for variables, and function parameters and returns, are:
  * Primitive types: int, float, double (all converted to/from
 	  Lua_number, since Lua does not distinguish different number types),
 	  bool
@@ -75,14 +91,17 @@ Supported types for parameters and returns are:
  * Objects: pointers, references, and shared_ptrs to objects of registered
 	  classes (more about shared_ptrs later)
 
+Classes
+-------
+
 C++ classes can be registered with Lua as follows:
 
-	m.class_<MyClass>("MyClass")
+	s.class_<MyClass>("MyClass")
 		.constructor<void (*) (/* parameter types */)>()
 		.method("method1", &MyClass::method1)
 		.method("method2", &MyClass::method2);
 
-	m.subclass<MySubclass, MyBaseClass>("MySubclass")
+	s.subclass<MySubclass, MyBaseClass>("MySubclass")
 		.constructor<...>
 		...
 
@@ -99,7 +118,7 @@ from this (the return type is ignored).  For example, to register a
 constructor taking two parameters, one int and one const char *, you would
 write:
 
-	m.class_...
+	s.class_...
 		.constructor<void (*) (int, const char *)>()
 
 Method registration works just like function registration.  Virtual methods
@@ -109,33 +128,25 @@ rather, a shared_ptr to a const object) to Lua, that reference to the object
 will be considered const and only const methods will be called on it.
 Destructors are registered automatically for each class.
 
-Static methods may be registered using the 'static_method' function:
+Static methods may be registered using the 'static_method' function, which is
+simply an alias for the 'function' function:
 
-	m.class_...
+	s.class_...
 		.static_method("method3", &MyClass::method3)
 
 Luabridge also supports properties, which allow class data members to be read
-and written from Lua as if they were variables.  You can expose a 'bare' C++
-member variable to Lua, or wrap it in getter and setter functions.  The syntax
-for registering properties is as follows:
+and written from Lua as if they were variables.  Properties work much like
+variables do, and the syntax for registering them is as follows:
 
-	m.class_...
+	s.class_...
 		.property_rw("property1", &MyClass::property1)
 		.property_rw("property2", &MyClass::getter2, &MyClass::setter2)
 		.property_ro("property3", &MyClass::property3)
 		.property_ro("property4", &MyClass::getter4)
 
-The first registration above gives Lua direct access to the 'property1' member
-variable of MyClass objects; the second creates a property which acts like any
-other variable in Lua but is retrieved and set through the 'getter2' and
-'setter2' methods of MyClass.  The getter must take no parameters and return
-a value, and the setter must take a value of the same type and return nothing.
-The 'property_rw' function creates a readable and writeable property, while
-'property_ro' creates a read-only one.
-
 Static properties on classes are also supported, using 'static_property_rw'
-and 'static_property_ro'.  Properties on modules, i.e. global properties, are
-not yet supported, but will be in a future Luabridge release.
+and 'static_property_ro', which are simply aliases for 'variable_rw' and
+'variable_ro'.
 
 To register a subclass of another class that has been registered with Lua, use
 the "subclass" function.  This takes two template arguments: the class to be
@@ -176,10 +187,8 @@ Luabridge v0.2 does not support:
    increased by editing include/impl/typelist.hpp)
  * Returning objects from functions other than through a shared_ptr
  * Passing objects to functions by value
- * Overloading operators
  * Overloaded functions, methods, or constructors
- * Global properties
- * Packages/namespaces
+ * Global variables (variables must be wrapped in a named scope)
  * Automatic conversion between STL container types and Lua tables
  * Inheriting Lua classes from C++ classes
 

@@ -58,7 +58,6 @@ luabridge::scope::scope (lua_State *L_, const char *name_):
 	else
 	{
 		// !!!UNDONE: setup global metatable?
-		//assert(false);
 	}
 }
 
