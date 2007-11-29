@@ -31,19 +31,11 @@ const char *classname<T>::name_ = classname_unknown;
 
 // Specialization for const types, mapping to same names
 template <typename T>
-struct classname <const T>
+struct classname <const T>: public classname<T>
 {
-	static const char *name ()
-	{
-		return classname<T>::name_;
-	}
 	static bool is_const ()
 	{
 		return true;
-	}
-	static void set_name (const char *name)
-	{
-		classname<T>::name_ = name;
 	}
 };
 
@@ -272,8 +264,16 @@ class__<T>& class__<T>::method (const char *name, FnPtr fp)
 {
 	assert(fnptr<FnPtr>::mfp);
 	std::string metatable_name = this->name;
+// Disable MSVC's warning 'conditional expression is constant'
+#ifdef _MSC_VER
+#	pragma warning (push)
+#	pragma warning (disable: 4127)
+#endif
 	if (fnptr<FnPtr>::const_mfp)
 		metatable_name.insert(0, "const ");
+#ifdef _MSC_VER
+#	pragma warning (pop)
+#endif
 	luaL_getmetatable(L, metatable_name.c_str());
 	lua_pushstring(L, metatable_name.c_str());
 	void *v = lua_newuserdata(L, sizeof(FnPtr));

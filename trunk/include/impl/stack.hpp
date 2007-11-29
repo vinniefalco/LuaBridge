@@ -19,7 +19,7 @@ struct tdstack
 public:
 	static void push (lua_State *L, T data)
 	{
-		// Make sure we don't try to push ptrs to objects of
+		// Make sure we don't try to push objects of
 		// unregistered classes or primitive types
 		assert(classname<T>::name() != classname_unknown);
 
@@ -33,7 +33,7 @@ public:
 	}
 	static T get (lua_State *L, int index)
 	{
-		// Make sure we don't try to push ptrs to objects of
+		// Make sure we don't try to retrieve objects of
 		// unregistered classes or primitive types
 		assert(classname<T>::name() != classname_unknown);
 
@@ -155,6 +155,10 @@ struct tdstack <shared_ptr<T> >
 	}
 	static shared_ptr<T> get (lua_State *L, int index)
 	{
+		// Make sure we don't try to retrieve ptrs to objects of
+		// unregistered classes or primitive types
+		assert(classname<T>::name() != classname_unknown);
+
 		return *(shared_ptr<T> *)
 			checkclass(L, index, classname<T>::name());
 	}
