@@ -116,7 +116,7 @@ scope& scope::variable_rw (const char *name, T *data)
 	// Currently can't register properties at global scope.
 	assert(this->name.length() > 0);
 
-	variable_ro(name, data);
+	variable_ro<T>(name, data);
 	lookup_static_table(L, this->name.c_str());
 	rawgetfield(L, -1, "__propset");
 	lua_pushlightuserdata(L, (void *)data);
@@ -132,7 +132,7 @@ scope& scope::variable_rw (const char *name, T (*get) (), void (*set) (T))
 	// Currently can't register properties at global scope.
 	assert(this->name.length() > 0);
 
-	variable_ro(name, get);
+	variable_ro<T>(name, get);
 	lookup_static_table(L, this->name.c_str());
 	rawgetfield(L, -1, "__propset");
 	lua_pushlightuserdata(L, (void *)set);

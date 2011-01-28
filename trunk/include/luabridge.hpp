@@ -102,17 +102,17 @@ namespace luabridge
 		// Static property registration
 		template <typename U>
 		class__<T>& static_property_ro (const char *name, const U *data)
-			{ return *(class__<T>*)&(variable_ro(name, data)); }
+			{ return *(class__<T>*)&(variable_ro<U>(name, data)); }
 		template <typename U>
 		class__<T>& static_property_ro (const char *name, U (*get) ())
-			{ return *(class__<T>*)&(variable_ro(name, get)); }
+			{ return *(class__<T>*)&(variable_ro<U>(name, get)); }
 		template <typename U>
 		class__<T>& static_property_rw (const char *name, U *data)
-			{ return *(class__<T>*)&(variable_rw(name, data)); }
+			{ return *(class__<T>*)&(variable_rw<U>(name, data)); }
 		template <typename U>
 		class__<T>& static_property_rw (const char *name, U (*get) (),
 		                                void (*set) (U))
-			{ return *(class__<T>*)&(variable_rw(name, get, set)); }
+			{ return *(class__<T>*)&(variable_rw<U>(name, get, set)); }
 
 		// !!!UNDONE: allow inheriting Lua classes from C++ classes
 	};

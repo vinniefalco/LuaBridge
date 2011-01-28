@@ -362,7 +362,7 @@ template <typename T>
 template <typename U>
 class__<T>& class__<T>::property_rw (const char *name, U T::* mp)
 {
-	property_ro(name, mp);
+	property_ro<U>(name, mp);
 	luaL_getmetatable(L, this->name.c_str());
 	rawgetfield(L, -1, "__propset");
 	lua_pushstring(L, this->name.c_str());
@@ -379,7 +379,7 @@ template <typename U>
 class__<T>& class__<T>::property_rw (const char *name,
 	U (T::*get) () const, void (T::*set) (U))
 {
-	property_ro(name, get);
+	property_ro<U>(name, get);
 	luaL_getmetatable(L, this->name.c_str());
 	rawgetfield(L, -1, "__propset");
 	lua_pushstring(L, this->name.c_str());
