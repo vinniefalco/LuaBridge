@@ -1,15 +1,9 @@
-Luabridge v0.2
-Readme - 28 July 2007
-Copyright (C) 2007 by Nathan Reed.  All rights and priveleges reserved.
+# LuaBridge
 
-Introduction
-------------
+Luabridge is a lightweight, dependency-free library for binding Lua to C++ which
+works with Lua revisions starting from 5.1.2.
 
-Luabridge is a lightweight, dependency-free library for binding Lua to C++,
-written against Lua 5.1.2.
-
-Compiling
----------
+## Compiling
 
 Luabridge compiles correctly in g++ 4, MSVC 7.1, and MSVC 8.0.  Because of the
 advanced template features it uses, I can't guarantee Luabridge will compile
@@ -35,8 +29,7 @@ directory in which Luabridge was decompressed.)  The application will print
 'All tests succeeded' if everything worked as expected, or an error message
 otherwise.
 
-Using Luabridge
----------------
+## Usage
 
 Luabridge is based on C++ template metaprogramming.  It contains template code
 to automatically generate at compile-time the various Lua API calls necessary
@@ -49,15 +42,17 @@ libluabridge (release version) or libluabridged (debug version), which will be
 made in the lib directory.  These are static libraries containing the small
 amount of common binary code in Luabridge.
 
+### Registering functions
+
 If L is a pointer to an instance of lua_State, the following code creates a
 Luabridge scope for registering C++ functions and classes to L:
 
-	luabridge::scope s(L);
+	 luabridge::scope s(L);
 
 Functions can then be registered as follows:
 
-	s	.function("foo", &foo)
-		.function("bar", &bar);
+  	s	.function("foo", &foo)
+  		.function("bar", &bar);
 
 The 'function' function returns a reference to s, so you can chain many
 function definitions together.  The first argument is the name by which the
@@ -67,13 +62,15 @@ of the parameters.  Functions registered this way will be available at the
 global scope to Lua scripts executed by L.  Overloading of function names is
 not supported, nor is it likely to be supported in the future.
 
+### Registering data
+
 Variables can also be registered.  You can expose a 'bare' variable to Lua, or
 wrap it in getter and setter functions:
 
-	s	.variable_rw("var1", &var1)
-		.variable_rw("var2", &getter2, &setter2)
-		.variable_ro("var3", &var3)
-		.variable_ro("var4", &getter4)
+  	s	.variable_rw("var1", &var1)
+  		.variable_rw("var2", &getter2, &setter2)
+  		.variable_ro("var3", &var3)
+  		.variable_ro("var4", &getter4)
 
 The first registration above gives Lua direct access to the 'var' variable.
 The second creates a variable which appears like any other variable to Lua
@@ -95,8 +92,7 @@ Supported types for variables, and function parameters and returns, are:
  * Objects: pointers, references, and shared_ptrs to objects of registered
      classes (more about shared_ptrs later)
 
-Classes
--------
+### Registering classes
 
 C++ classes can be registered with Lua as follows:
 
@@ -159,8 +155,7 @@ re-declared and will function normally in Lua.  If a class has a base class
 that is *not* registered with Lua, there is no need to declare it as a
 subclass.
 
-shared_ptr
-----------
+### Lifetime Management
 
 Luabridge uses a built-in reference counted smart pointer implementation 
 called shared_ptr for memory management.  It is necessary that all objects
@@ -183,10 +178,9 @@ or
 
 to make the other shared_ptr visible to Luabridge.
 
-Limitations of Luabridge
-------------------------
+## Limitations 
 
-Luabridge v0.2 does not support:
+Luabridge does not support:
  * More than 8 parameters on a function or method (although this can be
    increased by editing include/impl/typelist.hpp)
  * Returning objects from functions other than through a shared_ptr
@@ -203,3 +197,26 @@ https://luabridge.svn.sourceforge.net/svnroot/luabridge/trunk
 
 If you are interested in contributing to Luabridge, please contact me at:
 nathaniel dot reed at gmail dot com, or send email to me through sourceforge.
+
+## License
+
+LuaBridge is distributed under the terms of the MIT License:
+
+LuaBridge is Copyright (C) 2007 by Nathan Reed.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
