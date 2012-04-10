@@ -1,0 +1,34 @@
+2012-04-09 Vinnie Falco <vinnie.falco@gmail.com>
+
+  * Import original SVN repository to Git.
+  * Add tags for historical releases.
+  * Convert to Git style by removing the tags and trunk directories.
+  * Rewrite README as README.md.
+  * Add CHANGES file.
+
+2007-11-28 Nathan Reed <nathaniel.reed@gmail.com>
+
+  * Fix various bugs (see commit log).
+  * Add various enhancemnts (see commit log).
+
+================================================================================
+
+2007-07-28 Nathan Reed <nathaniel.reed@gmail.com>
+
+  * Release version 0.2 with tag "0.2".
+
+================================================================================
+
+2007-03-01 Nathan Reed <nathaniel.reed@gmail.com>
+
+  * Release version 0.1 with tag "0.1".
+
+================================================================================
+
+Format:
+
+YYYY-MM-DD {name} <{email address}>
+
+  * {item}
+
+
