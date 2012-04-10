@@ -202,7 +202,7 @@ LuaBridge does not support:
 Github is the new official home for LuaBridge. The old SVN repository is
 deprecated since it is no longer used, or maintained. The original author has
 graciously passed the reins to Vinnie Falco for maintaining and improving the
-project to Vinnie Falco.
+project.
 
 We welcome contributions to LuaBridge. Feel free to fork the repository and
 issue a Pull Request. All questions, comments, suggestions, and/or proposed
