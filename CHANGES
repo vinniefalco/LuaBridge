@@ -1,3 +1,11 @@
+
+
+================================================================================
+
+2012-04-09 Vinnie Falco <vinnie.falco@gmail.com>
+
+  * Release version 0.2.1 with tag "0.2.1".
+
 2012-04-09 Vinnie Falco <vinnie.falco@gmail.com>
 
   * Import original SVN repository to Git.
@@ -5,11 +13,13 @@
   * Convert to Git style by removing the tags and trunk directories.
   * Rewrite README as README.md.
   * Add CHANGES file.
+  * Convert to MIT License, with the original author's permission.
+  * Take over maintenance of LuaBridge
 
 2007-11-28 Nathan Reed <nathaniel.reed@gmail.com>
 
   * Fix various bugs (see commit log).
-  * Add various enhancemnts (see commit log).
+  * Add various enhancements (see commit log).
 
 ================================================================================
 
@@ -22,13 +32,3 @@
 2007-03-01 Nathan Reed <nathaniel.reed@gmail.com>
 
   * Release version 0.1 with tag "0.1".
-
-================================================================================
-
-Format:
-
-YYYY-MM-DD {name} <{email address}>
-
-  * {item}
-
-
