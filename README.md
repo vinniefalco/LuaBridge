@@ -181,24 +181,36 @@ to make the other shared_ptr visible to LuaBridge.
 ## Limitations 
 
 LuaBridge does not support:
- * More than 8 parameters on a function or method (although this can be
-   increased by editing include/impl/typelist.hpp)
- * Returning objects from functions other than through a shared_ptr
- * Passing objects to functions by value
- * Overloaded functions, methods, or constructors
- * Global variables (variables must be wrapped in a named scope)
- * Automatic conversion between STL container types and Lua tables
- * Inheriting Lua classes from C++ classes
 
-Development is continuing, and new releases will be published at the project
-website: http://LuaBridge.sourceforge.net
-The latest (unstable) version is always available for SVN checkout at:
-https://LuaBridge.svn.sourceforge.net/svnroot/LuaBridge/trunk
+- More than 8 parameters on a function or method (although this can be
+ increased by editing include/impl/typelist.hpp)
 
-If you are interested in contributing to LuaBridge, please contact me at:
-nathaniel dot reed at gmail dot com, or send email to me through sourceforge.
+- Returning objects from functions other than through a shared_ptr
+
+- Passing objects to functions by value
+
+- Overloaded functions, methods, or constructors
+
+- Global variables (variables must be wrapped in a named scope)
+
+- Automatic conversion between STL container types and Lua tables
+
+- Inheriting Lua classes from C++ classes
+
+## Development
+
+Github is the new official home for LuaBridge. The old SVN repository is
+deprecated since it is no longer used, or maintained. The original author has
+graciously passed the reins to Vinnie Falco for maintaining and improving the
+project to Vinnie Falco.
+
+We welcome contributions to LuaBridge. Feel free to fork the repository and
+issue a Pull Request. All questions, comments, suggestions, and/or proposed
+changes will be handled by the new maintainer.
 
 ## License
 
-LuaBridge is distributed under the terms of the MIT License:
-
+The current version of LuaBridge is distributed under the terms of the MIT
+License. Older versions up to and including 0.2 are distributed under the
+BSD 3-Clause License. See the corresponding license file in those versions
+for more details.
