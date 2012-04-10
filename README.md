@@ -208,6 +208,10 @@ We welcome contributions to LuaBridge. Feel free to fork the repository and
 issue a Pull Request. All questions, comments, suggestions, and/or proposed
 changes will be handled by the new maintainer.
 
+The 'master' branch contains only stable commits belonging to tagged releases,
+while the 'develop' branch contains proposed features for inclusion in the
+next release.
+
 ## License
 
 The current version of LuaBridge is distributed under the terms of the MIT
