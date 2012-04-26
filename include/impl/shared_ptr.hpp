@@ -22,10 +22,12 @@
 */
 //==============================================================================
 
+#include <stdint.h>
+
 /*
  * Implementation of shared_ptr class template.
  */
- 
+
 // Declaration of container for the refcounts
 #ifdef _MSC_VER
 	typedef stdext::hash_map<const void *, int> refcounts_t;
@@ -35,7 +37,7 @@
 		size_t operator () (const void * const v) const
 		{
 			static __gnu_cxx::hash<unsigned int> H;
-			return H((unsigned int)v);
+			return H(uintptr_t(v));
 		}
 	};
 	typedef __gnu_cxx::hash_map<const void *, int, ptr_hash> refcounts_t;
