@@ -27,7 +27,6 @@
 
 #include <cassert>
 #include <string>
-#include <lua.hpp>
 
 #ifndef USE_OTHER_SHARED_PTR
 #	include "shared_ptr.hpp"
