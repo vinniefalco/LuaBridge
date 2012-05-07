@@ -38,12 +38,15 @@ namespace luabridge
 
 template <typename T> class class__;
 
-// scope performs registration tasks in a given Lua state
+/**
+  Registration manager.
+
+  Performs registration tasks for a specified Lua state.
+
+  @todo namespace support.
+*/
 class scope
 {
-protected:
-  lua_State *L;
-  std::string name;
 public:
   scope (lua_State *L_, const char *name_ = "");
 
@@ -78,7 +81,9 @@ public:
   template <typename T>
   class__<T> class_ ();
 
-  // !!!UNDONE: support namespaces
+protected:
+  lua_State *L;
+  std::string name;
 };
 
 // class__ performs registration for members of a class
