@@ -93,7 +93,7 @@ public:
 
   /** Construct from another shared_ptr.
 
-      @param 
+      @param rhs The shared_ptr to assign from.
   */
   shared_ptr (shared_ptr <T> const& rhs) : m_p (rhs.get())
   {
@@ -124,8 +124,8 @@ public:
 
   /** Assign from another shared_ptr.
 
-      @param rhs The shared_ptr to assign from.
-      @return A reference to the shared_ptr.
+      @param  rhs The shared_ptr to assign from.
+      @return     A reference to the shared_ptr.
   */
   shared_ptr <T>& operator= (shared_ptr <T> const& rhs)
   {
@@ -164,11 +164,19 @@ public:
     return m_p;
   }
 
+  /** Retrieve the raw pointer.
+
+      @return A pointer to the object.
+  */
   T* operator* () const
   {
     return m_p;
   }
 
+  /** Retrieve the raw pointer.
+
+      @return A pointer to the object.
+  */
   T* operator-> () const
   {
     return m_p;
