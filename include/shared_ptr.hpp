@@ -25,6 +25,8 @@
 #ifndef LUABRIDGE_SHARED_PTR_HEADER
 #define LUABRIDGE_SHARED_PTR_HEADER
 
+#include <stdint.h>
+
 #ifdef _MSC_VER
 #  pragma warning (push)
 #  pragma warning (disable: 4702) // unreachable code

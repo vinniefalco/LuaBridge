@@ -22,8 +22,6 @@
 */
 //==============================================================================
 
-#include <stdint.h>
-
 /*
  * Implementation of shared_ptr class template.
  */
