@@ -1,6 +1,7 @@
 //==============================================================================
 /*
-  LuaBridge is Copyright (C) 2007 by Nathan Reed.
+  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright (C) 2007, Nathan Reed
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
