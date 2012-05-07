@@ -40,141 +40,170 @@
 namespace luabridge
 {
 
-  /** A reference counted smart pointer.
+// Declaration of container for the refcounts
+#ifdef _MSC_VER
+typedef stdext::hash_map <const void *, int> refcounts_t;
+#else
+struct ptr_hash
+{
+  size_t operator () (const void * const v) const
+  {
+    static __gnu_cxx::hash<unsigned int> H;
+    return H(uintptr_t(v));
+  }
+};
+typedef __gnu_cxx::hash_map<const void *, int, ptr_hash> refcounts_t;
+#endif
+
+/** @todo Trick the definition into existing in the header only.
+*/
+extern refcounts_t refcounts_;
+
+//==============================================================================
+/**
+  A reference counted smart pointer.
 
   The api is compatible with boost::shared_ptr and std::shared_ptr, in the
   sense that it implements a strict subset of the functionality.
 
+  This implementation uses a hash table to look up the reference count
+  associated with a particular pointer.
+
   @tparam T The class type.
+
+  @todo Decompose shared_ptr using a policy. At a minimum, the underlying
+        reference count should be policy based (to support atomic operations)
+        and the delete behavior should be policy based (to support custom
+        disposal methods).
+
+  @todo Provide an intrusive version of shared_ptr.
+*/
+template <typename T>
+class shared_ptr
+{
+public:
+  /** Construct as nullptr or from existing pointer to T.
+
+      @param p The optional, existing pointer to assign from.
   */
-  template <typename T>
-  class shared_ptr
+  shared_ptr (T* p = 0) : m_p (p)
   {
-  public:
-    shared_ptr (T* ptr_ = 0);
-    // Copy constructors: the first one is necessary to write out,
-    // since the compiler doesn't recognize the second as a copy ctor
-    shared_ptr (const shared_ptr<T>& rhs);
-    template <typename U> shared_ptr (const shared_ptr<U>& rhs);
-    ~shared_ptr ();
+    ++refcounts_ [m_p];
+  }
 
-    // Assignment operators: same deal, compiler doesn't recognize the
-    // second as an assign op and generates its own if we don't write it
-    shared_ptr<T>& operator = (const shared_ptr<T> & rhs);
-    template <typename U> shared_ptr& operator =
-      (const shared_ptr<U> & rhs);
+  /** Construct from another shared_ptr.
 
-    T* get () const;
-    T* operator * () const;
-    T* operator -> () const;
-    long use_count () const;
-
-    void reset ();
-
-  private:
-    T* ptr;
-  };
-
-  /*
-  * Implementation of shared_ptr class template.
+      @param 
   */
-
-  // Declaration of container for the refcounts
-#ifdef _MSC_VER
-  typedef stdext::hash_map<const void *, int> refcounts_t;
-#else
-  struct ptr_hash
+  shared_ptr (shared_ptr <T> const& rhs) : m_p (rhs.get())
   {
-    size_t operator () (const void * const v) const
+    ++refcounts_ [m_p];
+  }
+
+  /** Construct from a shared_ptr of a different type.
+
+      @invariant A pointer to U must be convertible to a pointer to T.
+
+      @param  rhs The shared_ptr to assign from.
+      @tparam U   The other object type.
+  */
+  template <typename U>
+  shared_ptr (shared_ptr <U> const& rhs) : m_p (static_cast <T*> (rhs.get()))
+  {
+    ++refcounts_ [m_p];
+  }
+
+  /** Release the object.
+
+      If there are no more references then the object is deleted.
+  */
+  ~shared_ptr ()
+  {
+    reset();
+  }
+
+  /** Assign from another shared_ptr.
+
+      @param rhs The shared_ptr to assign from.
+      @return A reference to the shared_ptr.
+  */
+  shared_ptr <T>& operator= (shared_ptr <T> const& rhs)
+  {
+    if (m_p != rhs.m_p)
     {
-      static __gnu_cxx::hash<unsigned int> H;
-      return H(uintptr_t(v));
+      reset ();
+      m_p = rhs.m_p;
+      ++refcounts_ [m_p];
     }
-  };
-  typedef __gnu_cxx::hash_map<const void *, int, ptr_hash> refcounts_t;
-#endif
-  extern refcounts_t refcounts_;
+    return *this;
+  }
 
-  /*
-  * shared_ptr <T> implementation
+  /** Assign from another shared_ptr of a different type.
+
+      @invariant A pointer to U must be convertible to a pointer to T.
+
+      @tparam U   The other object type.
+      @param  rhs The other shared_ptr to assign from.
+      @return     A reference to the shared_ptr.
   */
-
-  template <typename T>
-  shared_ptr<T>::shared_ptr (T* ptr_): ptr(ptr_)
-  {
-    ++refcounts_[ptr];
-  }
-
-  template <typename T>
-  shared_ptr<T>::shared_ptr (const shared_ptr<T>& rhs): ptr(rhs.get())
-  {
-    ++refcounts_[ptr];
-  }
-
-  template <typename T>
   template <typename U>
-  shared_ptr<T>::shared_ptr (const shared_ptr<U>& rhs): ptr(rhs.get())
+  shared_ptr <T>& operator= (shared_ptr <U> const& rhs)
   {
-    ++refcounts_[ptr];
-  }
-
-  template <typename T>
-  shared_ptr<T>& shared_ptr<T>::operator = (const shared_ptr<T>& rhs)
-  {
-    reset();
-    ptr = rhs.ptr;
-    ++refcounts_[ptr];
+    reset ();
+    m_p = static_cast <T*> (rhs.get());
+    ++refcounts_ [m_p];
     return *this;
   }
 
-  template <typename T>
-  template <typename U>
-  shared_ptr<T>& shared_ptr<T>::operator = (const shared_ptr<U>& rhs)
+  /** Retrieve the raw pointer.
+
+      @return A pointer to the object.
+  */
+  T* get () const
   {
-    reset();
-    ptr = static_cast<T*>(rhs.get());
-    ++refcounts_[ptr];
-    return *this;
+    return m_p;
   }
 
-  template <typename T>
-  T* shared_ptr<T>::get () const
+  T* operator* () const
   {
-    return ptr;
+    return m_p;
   }
 
-  template <typename T>
-  T* shared_ptr<T>::operator * () const
+  T* operator-> () const
   {
-    return ptr;
+    return m_p;
   }
 
-  template <typename T>
-  T* shared_ptr<T>::operator -> () const
+  /** Determine the number of references.
+
+      @note This is not thread-safe.
+
+      @return The number of active references.
+  */
+  long use_count () const
   {
-    return ptr;
+    return refcounts_ [m_p];
   }
 
-  template <typename T>
-  long shared_ptr<T>::use_count () const
+  /** Release the pointer.
+
+      The reference count is decremented. If the reference count reaches
+      zero, the object is deleted.
+  */
+  void reset ()
   {
-    return refcounts_[ptr];
+    if (m_p != 0)
+    {
+      if (--refcounts_ [m_p] <= 0)
+        delete m_p;
+
+      m_p = 0;
+    }
   }
 
-  template <typename T>
-  void shared_ptr<T>::reset ()
-  {
-    if (!ptr) return;
-    if (--refcounts_[ptr] <= 0)
-      delete ptr;
-    ptr = 0;
-  }
-
-  template <typename T>
-  shared_ptr<T>::~shared_ptr ()
-  {
-    reset();
-  }
+private:
+  T* m_p;
+};
 
 }
 

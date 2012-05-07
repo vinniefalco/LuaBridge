@@ -1,4 +1,9 @@
 
+2012-05-07 Vinnie Falco <vinnie.falco@gmail.com>
+
+  * Check shared_ptr assignments to the same object to prevent unwanted deletes.
+  * Documentation comments for shared_ptr.
+  * Tidy up formatting, style, and white space
 
 ================================================================================
 
