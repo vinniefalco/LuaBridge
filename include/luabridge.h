@@ -211,11 +211,11 @@ private:
   */
   void create_static_table (lua_State *L) // [-0, +1]
   {
-    lua_newtable (L);                                 // [-0, +1]
+    lua_newtable (L);
 
     // Set it as its own metatable
-    lua_pushvalue(L, -1);
-    lua_setmetatable(L, -2);
+    lua_pushvalue (L, -1);
+    lua_setmetatable (L, -2);
 
     // Set indexer as the __index metamethod
     lua_pushcfunction(L, &indexer);
