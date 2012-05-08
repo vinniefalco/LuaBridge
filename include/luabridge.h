@@ -97,141 +97,6 @@ public:
   template <typename T>
   class__<T> class_ ();
 
-private:
-  /*
-  * Index metamethod for C++ classes exposed to Lua.  This searches the
-  * metatable for the given key, but if it can't find it, it looks for a
-  * __parent key and delegates the lookup to that.
-  */
-
-  static int indexer (lua_State *L)
-  {
-    lua_getmetatable(L, 1);
-
-    for (;;)
-    {
-      // Look for the key in the metatable
-      lua_pushvalue(L, 2);
-      lua_rawget(L, -2);
-      // Did we get a non-nil result?  If so, return it
-      if (!lua_isnil(L, -1))
-        return 1;
-      lua_pop(L, 1);
-
-      // Look for the key in the __propget metafield
-      rawgetfield(L, -1, "__propget");
-      if (!lua_isnil(L, -1))
-      {
-        lua_pushvalue(L, 2);
-        lua_rawget(L, -2);
-        // If we got a non-nil result, call it and return its value
-        if (!lua_isnil(L, -1))
-        {
-          assert(lua_isfunction(L, -1));
-          lua_pushvalue(L, 1);
-          lua_call(L, 1, 1);
-          return 1;
-        }
-        lua_pop(L, 1);
-      }
-      lua_pop(L, 1);
-
-      // Look for the key in the __const metafield
-      rawgetfield(L, -1, "__const");
-      if (!lua_isnil(L, -1))
-      {
-        lua_pushvalue(L, 2);
-        lua_rawget(L, -2);
-        if (!lua_isnil(L, -1))
-          return 1;
-        lua_pop(L, 1);
-      }
-      lua_pop(L, 1);
-
-      // Look for a __parent metafield; if it doesn't exist, return nil;
-      // otherwise, repeat the lookup on it.
-      rawgetfield(L, -1, "__parent");
-      if (lua_isnil(L, -1))
-        return 1;
-      lua_remove(L, -2);
-    }
-
-    // Control never gets here
-    return 0;
-  }
-
-  /*
-  * Newindex metamethod for supporting properties on scopes and static
-  * properties of classes.
-  */
-
-  static int newindexer (lua_State *L)
-  {
-    lua_getmetatable(L, 1);
-
-    for (;;)
-    {
-      // Look for the key in the __propset metafield
-      rawgetfield(L, -1, "__propset");
-      if (!lua_isnil(L, -1))
-      {
-        lua_pushvalue(L, 2);
-        lua_rawget(L, -2);
-        // If we got a non-nil result, call it
-        if (!lua_isnil(L, -1))
-        {
-          assert(lua_isfunction(L, -1));
-          lua_pushvalue(L, 3);
-          lua_call(L, 1, 0);
-          return 0;
-        }
-        lua_pop(L, 1);
-      }
-      lua_pop(L, 1);
-
-      // Look for a __parent metafield; if it doesn't exist, error;
-      // otherwise, repeat the lookup on it.
-      rawgetfield(L, -1, "__parent");
-      if (lua_isnil(L, -1))
-      {
-        return luaL_error(L, "attempt to set %s, which isn't a property",
-          lua_tostring(L, 2));
-      }
-      lua_remove(L, -2);
-    }
-
-    // Control never gets here
-    return 0;
-  }
-
-
-  //----------------------------------------------------------------------------
-  /**
-    Create a static table for a non-global scope.
-  */
-  void create_static_table (lua_State *L) // [-0, +1]
-  {
-    lua_newtable (L);
-
-    // Set it as its own metatable
-    lua_pushvalue (L, -1);
-    lua_setmetatable (L, -2);
-
-    // Set indexer as the __index metamethod
-    lua_pushcfunction(L, &indexer);
-    rawsetfield(L, -2, "__index");
-
-    // Set newindexer as the __newindex metamethod
-    lua_pushcfunction(L, &newindexer);
-    rawsetfield(L, -2, "__newindex");
-
-    // Create the __propget and __propset metafields as empty tables
-    lua_newtable(L);
-    rawsetfield(L, -2, "__propget");
-    lua_newtable(L);
-    rawsetfield(L, -2, "__propset");
-  }
-
 protected:
   lua_State *L;
   std::string name;
@@ -297,8 +162,8 @@ public:
 // Prototypes for implementation functions implemented in luabridge.cpp
 void *checkclass (lua_State *L, int idx, const char *tname,
   bool exact = false);
-//int indexer (lua_State *L);
-//int newindexer (lua_State *L);
+int indexer (lua_State *L);
+int newindexer (lua_State *L);
 int m_newindexer (lua_State *L);
 void create_static_table (lua_State *L);
 void lookup_static_table (lua_State *L, const char *name);
