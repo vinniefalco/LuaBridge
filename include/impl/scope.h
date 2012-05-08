@@ -24,7 +24,7 @@
 //==============================================================================
 
 /*
-* Implementation of template parts of the scope class from luabridge.hpp.
+* Implementation of template parts of the scope class from luabridge.h.
 */
 
 /*

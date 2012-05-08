@@ -30,7 +30,7 @@
 #include <string>
 
 #ifndef USE_OTHER_SHARED_PTR
-#include "shared_ptr.hpp"
+#include "shared_ptr.h"
 #endif
 
 namespace luabridge
@@ -171,10 +171,10 @@ struct classname;
 extern const char *classname_unknown;
 
   // Include implementation files
-#include "impl/typelist.hpp"
-#include "impl/stack.hpp"
-#include "impl/scope.hpp"
-#include "impl/class.hpp"
+#include "impl/typelist.h"
+#include "impl/stack.h"
+#include "impl/scope.h"
+#include "impl/class.h"
 }
 
 

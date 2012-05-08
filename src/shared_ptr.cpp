@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include "../include/shared_ptr.hpp"
+#include "../include/shared_ptr.h"
 
 // Definition of the container for refcounts - has to be in a source file,
 // not the header
