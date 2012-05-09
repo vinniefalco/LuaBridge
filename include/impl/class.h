@@ -86,7 +86,7 @@ void create_metatable (lua_State *L, const char *name)
 {
   luaL_newmetatable(L, name);
   // Set indexer as the __index metamethod
-  lua_pushcfunction(L, &indexer);
+  lua_pushcfunction(L, &util::meta_index);
   rawsetfield(L, -2, "__index");
   // Set m_newindexer as the __newindex metamethod
   lua_pushcfunction(L, &m_newindexer);
@@ -110,7 +110,7 @@ void create_const_metatable (lua_State *L, const char *name)
 {
   std::string constname = std::string("const ") + name;
   luaL_newmetatable(L, constname.c_str());
-  lua_pushcfunction(L, &indexer);
+  lua_pushcfunction(L, &util::meta_index);
   rawsetfield(L, -2, "__index");
   lua_pushcfunction(L, &m_newindexer);
   rawsetfield(L, -2, "__newindex");
