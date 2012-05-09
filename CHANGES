@@ -1,4 +1,8 @@
 
+2012-05-08 Vinnie Falco <vinnie.falco@gmail.com>
+
+  * Move function definitions into the header
+
 2012-05-07 Vinnie Falco <vinnie.falco@gmail.com>
 
   * Check shared_ptr assignments to the same object to prevent unwanted deletes.

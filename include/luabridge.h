@@ -301,12 +301,13 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Construct a scope in the specified namespace.
+    Construct a scope with the specified dot-separated name.
 
-    Namespaces are separated with dots, for example "x.y" would create
-    the "x" table in the global environment containing a child table "y".
+    This creates a chain of tables registered into the global scope. For
+    example, "x.y.z" produces _G["x"]["y"]["z"] with subsequent registrations
+    going into z[].
   */
-  scope (lua_State *L_, const char *name_) : L (L_), name (name_)
+  scope (lua_State *L_, char const *name_) : L (L_), name (name_)
   {
     assert (name.length () > 0);
 
@@ -317,16 +318,14 @@ public:
     size_t pos = 0;
     while ((pos = name.find ('.', start)) != std::string::npos)
     {
-      /** @todo This is broken when there is more than one dot-separated
-                component in the scope.
-      */
-      lua_getfield (L, -1, name.substr(start, pos - start).c_str());
+      std::string const id = name.substr (start, pos - start);
+      lua_getfield (L, -1, id.c_str ()); //! @todo Do we need rawgetfield() here?
       if (lua_isnil (L, -1))
       {
         lua_pop (L, 1);
         util::createStaticTable (L);
-        lua_pushvalue(L, -1);
-        lua_setfield(L, -3, name.c_str() + start);
+        lua_pushvalue (L, -1);
+        rawsetfield (L, -3, id.c_str ());
       }
       lua_remove(L, -2);
       start = pos + 1;
@@ -334,7 +333,7 @@ public:
 
     // Create a new table with the remaining portion of the name.
     util::createStaticTable (L);
-    lua_setfield (L, -2, name.c_str() + start);
+    rawsetfield (L, -2, name.c_str() + start);
     lua_pop (L, 1);
   }
 
