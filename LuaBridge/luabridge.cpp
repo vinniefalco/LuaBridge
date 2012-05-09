@@ -37,14 +37,6 @@
 using namespace std;
 using namespace luabridge;
 
-static int luaL_typerror (lua_State *L, int narg, const char *tname)
-{
-  const char *msg = lua_pushfstring(L, "%s expected, got %s",
-    tname, luaL_typename(L, narg));
-
-  return luaL_argerror(L, narg, msg);
-}
-
 /*
 * Default name for unknown types
 */
@@ -69,7 +61,7 @@ void *luabridge::checkclass (lua_State *L, int idx, const char *tname,
 
   // Check that the thing on the stack is indeed a userdata
   if (!lua_isuserdata(L, idx))
-    luaL_typerror(L, idx, tname);
+    util::typeError (L, idx, tname);
 
   // Lookup the given name in the registry
   luaL_getmetatable(L, tname);

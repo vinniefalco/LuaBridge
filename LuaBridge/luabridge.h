@@ -79,6 +79,20 @@ struct util
 {
   //----------------------------------------------------------------------------
   /**
+    Produce an error message.
+
+    luaL_typerror was removed in Lua 5.2 so we provide it here.
+  */
+  static int typeError (lua_State *L, int narg, const char *tname)
+  {
+    const char *msg = lua_pushfstring(L, "%s expected, got %s",
+      tname, luaL_typename(L, narg));
+
+    return luaL_argerror(L, narg, msg);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
     Custom __index metamethod for C++ classes.
 
     If the given key is not found, the search will be delegated up the parent
