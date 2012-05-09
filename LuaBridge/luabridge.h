@@ -206,6 +206,7 @@ struct util
     rawsetfield (L, -2, "__propset");         // Set __propset as empty table.
   }
 
+  //----------------------------------------------------------------------------
   /**
     Look up a static table.
 
@@ -218,7 +219,7 @@ struct util
   {
     lua_getglobal (L, "_G");
 
-    if (name && name[0] != '\0')
+    if (name && name [0] != '\0')
     {
       std::string namestr (name);
       size_t start = 0;
@@ -237,7 +238,6 @@ struct util
   }
 
   //----------------------------------------------------------------------------
-
   /**
     lua_CFunction for a function signature and a return type.
 
@@ -258,6 +258,7 @@ struct util
     }
   };
 
+  //----------------------------------------------------------------------------
   /**
     lua_CFunction for a function signature and a void return type.
 
@@ -276,7 +277,6 @@ struct util
       return 0;
     }
   };
-
 };
 
 //==============================================================================
