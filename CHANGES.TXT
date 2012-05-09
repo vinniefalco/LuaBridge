@@ -2,6 +2,8 @@
 2012-05-08 Vinnie Falco <vinnie.falco@gmail.com>
 
   * Move function definitions into the header
+  * Fix bug with scope() construction with a name.
+  * Merge all the source files into the same directory.
 
 2012-05-07 Vinnie Falco <vinnie.falco@gmail.com>
 

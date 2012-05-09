@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include "../include/luabridge.h"
+#include "luabridge.h"
 #include <cstdio>
 
 #ifdef _MSC_VER
