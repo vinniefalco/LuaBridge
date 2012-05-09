@@ -24,60 +24,6 @@
 //==============================================================================
 
 /*
-* Implementation of template parts of the scope class from luabridge.h.
-*/
-
-/*
-* Templates generating C functions that can be registered to Lua.  These act
-* as proxies for functions that we want to register, performing the mechanics
-* of dynamic type checking and so forth.  They are registered to Lua as
-* C closures with the actual function pointer to call as an upvalue.  We have
-* to enclose them in structs so that we can specialize on the void return
-* type, since C++ doesn't allow specialization of function templates.
-*/
-
-template <typename FnPtr, typename Ret = typename fnptr<FnPtr>::resulttype>
-struct function_proxy
-{
-  typedef typename fnptr<FnPtr>::params params;
-  static int f (lua_State *L)
-  {
-    FnPtr fp = (FnPtr)lua_touserdata(L, lua_upvalueindex(1));
-    arglist<params> args(L);
-    tdstack<Ret>::push(L, fnptr<FnPtr>::apply(fp, args));
-    return 1;
-  }
-};
-
-template <typename FnPtr>
-struct function_proxy <FnPtr, void>
-{
-  typedef typename fnptr<FnPtr>::params params;
-  static int f (lua_State *L)
-  {
-    FnPtr fp = (FnPtr)lua_touserdata(L, lua_upvalueindex(1));
-    arglist<params> args(L);
-    fnptr<FnPtr>::apply(fp, args);
-    return 0;
-  }
-};
-
-/*
-* Perform function registration in a scope.
-*/
-
-template <typename FnPtr>
-scope& scope::function (const char *name, FnPtr fp)
-{
-  lookup_static_table(L, this->name.c_str());
-  lua_pushlightuserdata(L, (void *)fp);
-  lua_pushcclosure(L, &function_proxy<FnPtr>::f, 1);
-  rawsetfield(L, -2, name);
-  lua_pop(L, 1);
-  return *this;
-}
-
-/*
 * Lua-registerable C function templates for getting and setting the value of
 * a global/static variable through a pointer.  Also used for static props.
 * These work similiarly to the function proxies above.
@@ -110,7 +56,7 @@ scope& scope::variable_ro (const char *name, const T *data)
   // Currently can't register properties at global scope.
   assert(this->name.length() > 0);
 
-  lookup_static_table(L, this->name.c_str());
+  util::findStaticTable(L, this->name.c_str());
   rawgetfield(L, -1, "__propget");
   lua_pushlightuserdata(L, (void *)data);
   lua_pushcclosure(L, &varget_proxy<T>, 1);
@@ -125,10 +71,10 @@ scope& scope::variable_ro (const char *name, T (*get) ())
   // Currently can't register properties at global scope.
   assert(this->name.length() > 0);
 
-  lookup_static_table(L, this->name.c_str());
+  util::findStaticTable(L, this->name.c_str());
   rawgetfield(L, -1, "__propget");
   lua_pushlightuserdata(L, (void *)get);
-  lua_pushcclosure(L, &function_proxy<T (*) ()>::f, 1);
+  lua_pushcclosure(L, &util::functionProxy<T (*) ()>::f, 1);
   rawsetfield(L, -2, name);
   lua_pop(L, 2);
   return *this;
@@ -141,7 +87,7 @@ scope& scope::variable_rw (const char *name, T *data)
   assert(this->name.length() > 0);
 
   variable_ro<T>(name, data);
-  lookup_static_table(L, this->name.c_str());
+  util::findStaticTable(L, this->name.c_str());
   rawgetfield(L, -1, "__propset");
   lua_pushlightuserdata(L, (void *)data);
   lua_pushcclosure(L, &varset_proxy<T>, 1);
@@ -157,10 +103,10 @@ scope& scope::variable_rw (const char *name, T (*get) (), void (*set) (T))
   assert(this->name.length() > 0);
 
   variable_ro<T>(name, get);
-  lookup_static_table(L, this->name.c_str());
+  util::findStaticTable(L, this->name.c_str());
   rawgetfield(L, -1, "__propset");
   lua_pushlightuserdata(L, (void *)set);
-  lua_pushcclosure(L, &function_proxy<void (*) (T)>::f, 1);
+  lua_pushcclosure(L, &util::functionProxy<void (*) (T)>::f, 1);
   rawsetfield(L, -2, name);
   lua_pop(L, 2);
   return *this;

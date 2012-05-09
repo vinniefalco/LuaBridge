@@ -39,6 +39,9 @@
 */
 //==============================================================================
 
+#ifndef LUABRIDGE_TYPELIST_HEADER
+#define LUABRIDGE_TYPELIST_HEADER
+
 /* Implementation of C++ template type lists and related tools.
 * Type list and definition of nil type list, which is void.
 */
@@ -609,3 +612,5 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
       tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
   }
 };
+
+#endif
