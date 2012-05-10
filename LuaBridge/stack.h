@@ -82,7 +82,7 @@ public:
   static T* get (lua_State *L, int index)
   {
     return ((shared_ptr<T> *)
-      checkclass(L, index, classname<T>::name()))->get();
+      util::checkclass(L, index, classname<T>::name(), false))->get();
   }
 };
 
@@ -96,7 +96,7 @@ public:
   {
     std::string constname = std::string("const ") + classname<T>::name();
     return ((shared_ptr<const T> *)
-      checkclass(L, index, constname.c_str()))->get();
+      util::checkclass (L, index, constname.c_str(), false))->get();
   }
 };
 
@@ -109,7 +109,7 @@ public:
   static T* const get (lua_State *L, int index)
   {
     return ((shared_ptr<T> *)
-      checkclass(L, index, classname<T>::name()))->get();
+      util::checkclass(L, index, classname<T>::name(), false))->get();
   }
 };
 
@@ -123,7 +123,7 @@ public:
   {
     std::string constname = std::string("const ") + classname<T>::name();
     return ((shared_ptr<const T> *)
-      checkclass(L, index, constname.c_str()))->get();
+      util::checkclass(L, index, constname.c_str(), false))->get();
   }
 };
 
@@ -136,7 +136,7 @@ public:
   static T& get (lua_State *L, int index)
   {
     return *((shared_ptr<T> *)
-      checkclass(L, index, classname<T>::name()))->get();
+      util::checkclass(L, index, classname<T>::name(), false))->get();
   }
 };
 
@@ -150,7 +150,7 @@ public:
   {
     std::string constname = std::string("const ") + classname<T>::name();
     return *((shared_ptr<const T> *)
-      checkclass(L, index, constname.c_str()))->get();
+      util::checkclass(L, index, constname.c_str(), false))->get();
   }
 };
 
@@ -184,7 +184,7 @@ struct tdstack <shared_ptr<T> >
     assert(classname<T>::name() != classname_unknown);
 
     return *(shared_ptr<T> *)
-      checkclass(L, index, classname<T>::name());
+      util::checkclass(L, index, classname<T>::name(), false);
   }
 };
 
