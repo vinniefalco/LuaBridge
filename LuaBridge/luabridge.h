@@ -347,58 +347,71 @@ struct util
   */
   static int meta_index (lua_State *L)
   {
+    int result = 0;
+
     lua_getmetatable (L, 1);
 
     for (;;)
     {
-      // Look for the key in the metatable
-      lua_pushvalue(L, 2);
-      lua_rawget(L, -2);
-      // Did we get a non-nil result?  If so, return it
-      if (!lua_isnil(L, -1))
-        return 1;
+      // Check the metatable.
+      lua_pushvalue (L, 2);
+      lua_rawget (L, -2);
+      if (!lua_isnil (L, -1))
+      {
+        // found
+        result = 1;
+        break;
+      }
       lua_pop(L, 1);
 
-      // Look for the key in the __propget metafield
-      rawgetfield(L, -1, "__propget");
-      if (!lua_isnil(L, -1))
+      // Check the __propget metafield.
+      rawgetfield (L, -1, "__propget");
+      if (!lua_isnil (L, -1))
       {
-        lua_pushvalue(L, 2);
-        lua_rawget(L, -2);
-        // If we got a non-nil result, call it and return its value
-        if (!lua_isnil(L, -1))
+        lua_pushvalue (L, 2);
+        lua_rawget (L, -2);
+        if (!lua_isnil (L, -1))
         {
-          assert(lua_isfunction(L, -1));
-          lua_pushvalue(L, 1);
-          lua_call(L, 1, 1);
-          return 1;
+          // found
+          assert (lua_isfunction (L, -1));
+          lua_pushvalue (L, 1);
+          lua_call (L, 1, 1);
+          result = 1;
+          break;
         }
         lua_pop(L, 1);
       }
       lua_pop(L, 1);
 
-      // Look for the key in the __const metafield
-      rawgetfield(L, -1, "__const");
-      if (!lua_isnil(L, -1))
+      // Check the __const metafield.
+      rawgetfield (L, -1, "__const");
+      if (!lua_isnil (L, -1))
       {
-        lua_pushvalue(L, 2);
-        lua_rawget(L, -2);
-        if (!lua_isnil(L, -1))
-          return 1;
+        lua_pushvalue (L, 2);
+        lua_rawget (L, -2);
+        if (!lua_isnil (L, -1))
+        {
+          // found
+          result = 1;
+          break;
+        }
         lua_pop(L, 1);
       }
       lua_pop(L, 1);
 
-      // Look for a __parent metafield; if it doesn't exist, return nil;
-      // otherwise, repeat the lookup on it.
-      rawgetfield(L, -1, "__parent");
+      // Repeat the lookup in the __parent metafield,
+      // or return nil if the field doesn't exist.
+      rawgetfield (L, -1, "__parent");
       if (lua_isnil(L, -1))
-        return 1;
+      {
+        // no parent
+        result = 1;
+        break;
+      }
       lua_remove(L, -2);
     }
 
-    // Control never gets here
-    return 0;
+    return result;
   }
 
   //----------------------------------------------------------------------------
@@ -425,6 +438,52 @@ struct util
           assert(lua_isfunction(L, -1));
           lua_pushvalue(L, 3);
           lua_call(L, 1, 0);
+          return 0;
+        }
+        lua_pop(L, 1);
+      }
+      lua_pop(L, 1);
+
+      // Look for a __parent metafield; if it doesn't exist, error;
+      // otherwise, repeat the lookup on it.
+      rawgetfield(L, -1, "__parent");
+      if (lua_isnil(L, -1))
+      {
+        return luaL_error(L, "attempt to set %s, which isn't a property",
+          lua_tostring(L, 2));
+      }
+      lua_remove(L, -2);
+    }
+
+    // Control never gets here
+    return 0;
+  }
+
+  /*
+  * Newindex variant for properties of objects, which passes the
+  * object on which the property is to be set as the first parameter
+  * to the setter method.
+  */
+
+  static int m_newindexer (lua_State *L)
+  {
+    lua_getmetatable(L, 1);
+
+    for (;;)
+    {
+      // Look for the key in the __propset metafield
+      rawgetfield(L, -1, "__propset");
+      if (!lua_isnil(L, -1))
+      {
+        lua_pushvalue(L, 2);
+        lua_rawget(L, -2);
+        // If we got a non-nil result, call it
+        if (!lua_isnil(L, -1))
+        {
+          assert(lua_isfunction(L, -1));
+          lua_pushvalue(L, 1);
+          lua_pushvalue(L, 3);
+          lua_call(L, 2, 0);
           return 0;
         }
         lua_pop(L, 1);
@@ -741,11 +800,13 @@ public:
     return *this;
   }
 
-  // Class registration
-
-  // For registering a class that hasn't been registered before
+  //----------------------------------------------------------------------------
+  /**
+    Register a new class.
+  */
   template <typename T>
   class__<T> class_ (const char *name);
+
   // For registering subclasses (the base class must also be registered)
   template <typename T, typename Base>
   class__<T> subclass (const char *name);
@@ -818,7 +879,6 @@ public:
 
 // Prototypes for implementation functions implemented in luabridge.cpp
 void *checkclass (lua_State *L, int idx, const char *tname, bool exact = false);
-int m_newindexer (lua_State *L);
 
 // Predeclare classname struct since several implementation files use it
 template <typename T>
@@ -914,7 +974,7 @@ void create_metatable (lua_State *L, const char *name)
   lua_pushcfunction(L, &util::meta_index);
   rawsetfield(L, -2, "__index");
   // Set m_newindexer as the __newindex metamethod
-  lua_pushcfunction(L, &m_newindexer);
+  lua_pushcfunction(L, &util::m_newindexer);
   rawsetfield(L, -2, "__newindex");
   // Set the __gc metamethod to call the class destructor
   lua_pushstring(L, name);
@@ -937,7 +997,7 @@ void create_const_metatable (lua_State *L, const char *name)
   luaL_newmetatable(L, constname.c_str());
   lua_pushcfunction(L, &util::meta_index);
   rawsetfield(L, -2, "__index");
-  lua_pushcfunction(L, &m_newindexer);
+  lua_pushcfunction(L, &util::m_newindexer);
   rawsetfield(L, -2, "__newindex");
   lua_pushstring(L, constname.c_str());
   lua_pushcclosure(L, &destructor_dispatch<T>, 1);
