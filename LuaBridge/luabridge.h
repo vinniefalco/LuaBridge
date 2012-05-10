@@ -371,22 +371,22 @@ struct util
   * Works like the luaL_checkudata function.
   */
 
-  static void* checkclass (lua_State *L, int idx, const char *tname, bool exact)
+  static void* checkclass (lua_State *L, int index, const char *tname, bool exact)
   {
-    // If idx is relative to the top of the stack, convert it into an index
+    // If index is relative to the top of the stack, convert it into an index
     // relative to the bottom of the stack, so we can push our own stuff
-    if (idx < 0)
-      idx += lua_gettop(L) + 1;
+    if (index < 0)
+      index += lua_gettop(L) + 1;
 
     // Check that the thing on the stack is indeed a userdata
-    if (!lua_isuserdata(L, idx))
-      util::typeError (L, idx, tname);
+    if (!lua_isuserdata(L, index))
+      typeError (L, index, tname);
 
     // Lookup the given name in the registry
     luaL_getmetatable(L, tname);
 
     // Lookup the metatable of the given userdata
-    lua_getmetatable(L, idx);
+    lua_getmetatable(L, index);
 
     // If exact match required, simply test for identity.
     if (exact)
@@ -396,17 +396,17 @@ struct util
         tname += 6;
 
       if (lua_rawequal(L, -1, -2))
-        return lua_touserdata(L, idx);
+        return lua_touserdata(L, index);
       else
       {
         // Generate an informative error message
         rawgetfield(L, -1, "__type");
-        //luaL_argerror(L,idx,lua_pushfstring (L,"%s expected, got %s", tname , lua_typename(L,lua_type(L,idx))));
+        //luaL_argerror(L,index,lua_pushfstring (L,"%s expected, got %s", tname , lua_typename(L,lua_type(L,index))));
         char buffer[256];
         snprintf(buffer, 256, "%s expected, got %s", tname,
           lua_tostring(L, -1));
         // luaL_argerror does not return
-        luaL_argerror(L, idx, buffer);
+        luaL_argerror(L, index, buffer);
         return 0;
       }
     }
@@ -431,14 +431,14 @@ struct util
       {
         // Lookup the __type field of the original metatable, so we can
         // generate an informative error message
-        lua_getmetatable(L, idx);
+        lua_getmetatable(L, index);
         rawgetfield(L, -1, "__type");
 
         char buffer[256];
         snprintf(buffer, 256, "%s expected, got %s", tname,
           lua_tostring(L, -1));
         // luaL_argerror does not return
-        luaL_argerror(L, idx, buffer);
+        luaL_argerror(L, index, buffer);
         return 0;
       }
 
@@ -447,7 +447,7 @@ struct util
     }
 
     // Found a matching metatable; return the userdata
-    return lua_touserdata(L, idx);
+    return lua_touserdata(L, index);
   }
 
 
@@ -736,9 +736,9 @@ struct util
     lua_newtable (L);                         // Create the table.
     lua_pushvalue (L, -1);
     lua_setmetatable (L, -2);                 // Set it as its own metatable.
-    lua_pushcfunction (L, &util::indexer);
+    lua_pushcfunction (L, &indexer);
     rawsetfield (L, -2, "__index");           // Use our __index.
-    lua_pushcfunction (L, &util::newindexer);
+    lua_pushcfunction (L, &newindexer);
     rawsetfield (L, -2, "__newindex");        // Use our __newindex.
     lua_newtable (L);
     rawsetfield (L, -2, "__propget");         // Create empty __propget.
@@ -786,9 +786,9 @@ struct util
   static void createMetaTable (lua_State *L, char const* name)
   {
     luaL_newmetatable (L, name);
-    lua_pushcfunction (L, &util::indexer);
+    lua_pushcfunction (L, &indexer);
     rawsetfield (L, -2, "__index");                     // Use our __index.
-    lua_pushcfunction (L, &util::object_newindexer);
+    lua_pushcfunction (L, &object_newindexer);
     rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
     lua_pushstring (L, name);
     lua_pushcclosure (L, &destructor_dispatch <T>, 1);
@@ -811,9 +811,9 @@ struct util
   {
     std::string const cname = std::string("const ") + name;
     luaL_newmetatable (L, cname.c_str());
-    lua_pushcfunction (L, &util::indexer);
+    lua_pushcfunction (L, &indexer);
     rawsetfield (L, -2, "__index");                     // Use our __index.
-    lua_pushcfunction (L, &util::object_newindexer);
+    lua_pushcfunction (L, &object_newindexer);
     rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
     lua_pushstring (L, cname.c_str());
     lua_pushcclosure (L, &destructor_dispatch<T>, 1);
@@ -833,7 +833,7 @@ struct util
 
   @todo namespace support.
 */
-class scope
+class scope : public util
 {
 public:
   //----------------------------------------------------------------------------
@@ -869,7 +869,7 @@ public:
       if (lua_isnil (L, -1))
       {
         lua_pop (L, 1);
-        util::createStaticTable (L);
+        createStaticTable (L);
         lua_pushvalue (L, -1);
         rawsetfield (L, -3, id.c_str ());
       }
@@ -878,7 +878,7 @@ public:
     }
 
     // Create a new table with the remaining portion of the name.
-    util::createStaticTable (L);
+    createStaticTable (L);
     rawsetfield (L, -2, name.c_str() + start);
     lua_pop (L, 1);
   }
@@ -890,9 +890,9 @@ public:
   template <typename Function>
   scope& function (char const* const name, Function fp)
   {
-    util::findStaticTable (L, this->name.c_str());
+    findStaticTable (L, this->name.c_str());
     lua_pushlightuserdata (L, static_cast <void*> (fp));
-    lua_pushcclosure (L, &util::functionProxy <Function>::f, 1);
+    lua_pushcclosure (L, &functionProxy <Function>::f, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
     return *this;
@@ -912,10 +912,10 @@ public:
     // Currently can't register properties at global scope.
     assert (this->name.length() > 0);
 
-    util::findStaticTable (L, this->name.c_str ());
+    findStaticTable (L, this->name.c_str ());
     rawgetfield (L, -1, "__propget");
     lua_pushlightuserdata (L, const_cast <void*> (static_cast <void const*> (data)));
-    lua_pushcclosure (L, &util::getProxy <T>, 1);
+    lua_pushcclosure (L, &getProxy <T>, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 2);
     return *this;
@@ -934,10 +934,10 @@ public:
     // Currently can't register properties at global scope.
     assert (this->name.length() > 0);
 
-    util::findStaticTable (L, this->name.c_str ());
+    findStaticTable (L, this->name.c_str ());
     rawgetfield(L, -1, "__propget");
     lua_pushlightuserdata (L, static_cast <void*> (getFunction));
-    lua_pushcclosure (L, &util::functionProxy<T (*) ()>::f, 1);
+    lua_pushcclosure (L, &functionProxy<T (*) ()>::f, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 2);
     return *this;
@@ -958,10 +958,10 @@ public:
     assert (this->name.length() > 0);
 
     variable_ro <T> (name, data);
-    util::findStaticTable (L, this->name.c_str ());
+    findStaticTable (L, this->name.c_str ());
     rawgetfield (L, -1, "__propset");
     lua_pushlightuserdata (L, static_cast <void*> (data));
-    lua_pushcclosure (L, &util::setProxy <T>, 1);
+    lua_pushcclosure (L, &setProxy <T>, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 2);
     return *this;
@@ -981,10 +981,10 @@ public:
     assert (this->name.length() > 0);
 
     variable_ro <T> (name, getFunction);
-    util::findStaticTable (L, this->name.c_str ());
+    findStaticTable (L, this->name.c_str ());
     rawgetfield (L, -1, "__propset");
     lua_pushlightuserdata (L, static_cast <void*> (setFunction));
-    lua_pushcclosure (L, &util::functionProxy <void (*) (T)>::f, 1);
+    lua_pushcclosure (L, &functionProxy <void (*) (T)>::f, 1);
     rawsetfield(L, -2, name);
     lua_pop(L, 2);
     return *this;
@@ -1084,7 +1084,7 @@ class__<T> scope::class_ ()
 template <typename T, typename Base>
 class__<T> scope::subclass (const char *name)
 {
-  assert(classname<Base>::name() != util::classname_unknown ());
+  assert(classname<Base>::name() != classname_unknown ());
   return class__<T>(L, name, classname<Base>::name());
 }
 
