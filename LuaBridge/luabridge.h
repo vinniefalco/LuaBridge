@@ -20,6 +20,22 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
+
+  This file incorporates work covered by the following copyright and
+  permission notice:  
+
+    The Loki Library
+    Copyright (c) 2001 by Andrei Alexandrescu
+    This code accompanies the book:
+    Alexandrescu, Andrei. "Modern C++ Design: Generic Programming and Design 
+        Patterns Applied". Copyright (c) 2001. Addison-Wesley.
+    Permission to use, copy, modify, distribute and sell this software for any 
+        purpose is hereby granted without fee, provided that the above copyright 
+        notice appear in all copies and that both that copyright notice and this 
+        permission notice appear in supporting documentation.
+    The author or Addison-Welsey Longman make no representations about the 
+        suitability of this software for any purpose. It is provided "as is" 
+        without express or implied warranty.
 */
 //==============================================================================
 
@@ -432,7 +448,7 @@ struct util
 
   //----------------------------------------------------------------------------
   /**
-    Create a static table for a non-global scope.
+    Create a static table.
 
     The resulting table is placed on the stack.
   */
@@ -486,7 +502,7 @@ struct util
   /**
     lua_CFunction for a function signature and a return type.
 
-    @note This must be registered as a closure with the actual
+    @note This is registered as a closure with the actual
           function pointer in the first upvalue.
   */
   template <typename Function,
@@ -507,7 +523,7 @@ struct util
   /**
     lua_CFunction for a function signature and a void return type.
 
-    @note This must be registered as a closure with the actual
+    @note This is registered as a closure with the actual
           function pointer in the first upvalue.
   */
   template <typename Function>
@@ -522,6 +538,42 @@ struct util
       return 0;
     }
   };
+
+  //----------------------------------------------------------------------------
+  /**
+    lua_CFunction for getting a variable.
+
+    This is also used for static properties.
+
+    @note This is registered as a closure with a pointer to
+          the variable in the first upvalue.
+  */
+
+  template <typename T>
+  static int varget_proxy (lua_State *L)
+  {
+    T* data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
+    tdstack <T>::push (L, *data);
+    return 1;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    lua_CFunction for setting a variable.
+
+    This is also used for static properties.
+
+    @note This is registered as a closure with a pointer to
+          the variable in the first upvalue.
+  */
+
+  template <typename T>
+  static int varset_proxy (lua_State *L)
+  {
+    T* data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
+    *data = tdstack <T>::get (L, 1);
+    return 0;
+  }
 };
 
 //==============================================================================
@@ -598,18 +650,96 @@ public:
   }
 
   //----------------------------------------------------------------------------
-  // Variable registration.  Variables can be read/write (rw)
-  // or read-only (ro).  Varieties that access pointers directly
-  // and varieties that access through function calls are provided.
+  /**
+    Register a read-only variable.
 
+    The variable is retrieved through the provided pointer.
+
+    @note The proxy function is stored in the __propget table.
+  */
   template <typename T>
-  scope& variable_ro (const char *name, const T *data);
+  scope& variable_ro (char const* name, T const* data)
+  {
+    // Currently can't register properties at global scope.
+    assert (this->name.length() > 0);
+
+    util::findStaticTable (L, this->name.c_str ());
+    rawgetfield (L, -1, "__propget");
+    lua_pushlightuserdata (L, const_cast <void*> (static_cast <void const*> (data)));
+    lua_pushcclosure (L, &util::varget_proxy <T>, 1);
+    rawsetfield (L, -2, name);
+    lua_pop (L, 2);
+    return *this;
+  }
+
+  /**
+    Register a read-only variable.
+
+    The variable is retrieved through the provided function.
+
+    @note The proxy function is stored in the __propget table.
+  */
   template <typename T>
-  scope& variable_ro (const char *name, T (*get) ());
+  scope& variable_ro (char const* name, T (*getFunction) ())
+  {
+    // Currently can't register properties at global scope.
+    assert (this->name.length() > 0);
+
+    util::findStaticTable (L, this->name.c_str ());
+    rawgetfield(L, -1, "__propget");
+    lua_pushlightuserdata (L, static_cast <void*> (getFunction));
+    lua_pushcclosure (L, &util::functionProxy<T (*) ()>::f, 1);
+    rawsetfield (L, -2, name);
+    lua_pop (L, 2);
+    return *this;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    Register a read-write variable.
+
+    The variable is retrieved and stored through the provided pointer.
+
+    @note The proxy function is stored in the __propset table.
+  */
   template <typename T>
-  scope& variable_rw (const char *name, T *data);
+  scope& variable_rw (char const* name, T* data)
+  {
+    // Currently can't register properties at global scope.
+    assert (this->name.length() > 0);
+
+    variable_ro <T> (name, data);
+    util::findStaticTable (L, this->name.c_str ());
+    rawgetfield (L, -1, "__propset");
+    lua_pushlightuserdata (L, static_cast <void*> (data));
+    lua_pushcclosure (L, &util::varset_proxy <T>, 1);
+    rawsetfield (L, -2, name);
+    lua_pop (L, 2);
+    return *this;
+  }
+
+  /**
+    Register a read-write variable.
+
+    The variable is retrieved and stored through the provided functions.
+
+    @note The proxy function is stored in the __propset table.
+  */
   template <typename T>
-  scope& variable_rw (const char *name, T (*get) (), void (*set) (T));
+  scope& variable_rw (char const* name, T (*getFunction) (), void (*setFunction) (T))
+  {
+    // Currently can't register properties at global scope.
+    assert (this->name.length() > 0);
+
+    variable_ro <T> (name, getFunction);
+    util::findStaticTable (L, this->name.c_str ());
+    rawgetfield (L, -1, "__propset");
+    lua_pushlightuserdata (L, static_cast <void*> (setFunction));
+    lua_pushcclosure (L, &util::functionProxy <void (*) (T)>::f, 1);
+    rawsetfield(L, -2, name);
+    lua_pop(L, 2);
+    return *this;
+  }
 
   // Class registration
 
@@ -695,7 +825,28 @@ template <typename T>
 struct classname;
 extern const char *classname_unknown;
 
-#include "scope.h"
+/*
+* Perform class registration in a scope.
+*/
+
+template <typename T>
+class__<T> scope::class_ ()
+{
+  return class__<T>(L);
+}
+
+template <typename T, typename Base>
+class__<T> scope::subclass (const char *name)
+{
+  assert(classname<Base>::name() != classname_unknown);
+  return class__<T>(L, name, classname<Base>::name());
+}
+
+template <typename T>
+class__<T> scope::class_ (const char *name)
+{
+  return class__<T>(L, name);
+}
 
 /*
 * Container for registered class names, with awareness of const types
@@ -855,8 +1006,8 @@ class__<T>::class__ (lua_State *L_, const char *name_,
   lua_pop(L, 1);
 
   // Set the __parent metafield to the base class's static table
-  lookup_static_table(L, name_);
-  lookup_static_table(L, basename);
+  util::findStaticTable(L, name_);
+  util::findStaticTable(L, basename);
   rawsetfield(L, -2, "__parent");
   lua_pop(L, 1);
 }
@@ -893,7 +1044,7 @@ template <typename FnPtr>
 class__<T>& class__<T>::constructor ()
 {
   // Get a reference to the class's static table
-  lookup_static_table(L, name.c_str());
+  util::findStaticTable(L, name.c_str());
 
   // Push the constructor proxy, with the class's metatable as an upvalue
   luaL_getmetatable(L, name.c_str());
