@@ -45,7 +45,7 @@ public:
   {
     // Make sure we don't try to push objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != util::classname_unknown ());
+    assert(classname<T>::name() != classname_unknown ());
 
     // Allocate a new userdata and construct the pointer in-place there
     void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
@@ -59,7 +59,7 @@ public:
   {
     // Make sure we don't try to retrieve objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != util::classname_unknown ());
+    assert(classname<T>::name() != classname_unknown ());
 
     return *((shared_ptr<T> *)
       checkclass(L, index, classname<T>::name()))->get();
@@ -167,7 +167,7 @@ struct tdstack <shared_ptr<T> >
   {
     // Make sure we don't try to push ptrs to objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != util::classname_unknown ());
+    assert(classname<T>::name() != classname_unknown ());
 
     // Allocate a new userdata and construct the pointer in-place there
     void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
@@ -181,7 +181,7 @@ struct tdstack <shared_ptr<T> >
   {
     // Make sure we don't try to retrieve ptrs to objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != util::classname_unknown ());
+    assert(classname<T>::name() != classname_unknown ());
 
     return *(shared_ptr<T> *)
       util::checkclass(L, index, classname<T>::name(), false);
@@ -195,7 +195,7 @@ struct tdstack <shared_ptr<const T> >
   {
     // Make sure we don't try to push ptrs to objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != util::classname_unknown ());
+    assert(classname<T>::name() != classname_unknown ());
 
     // Allocate a new userdata and construct the pointer in-place there
     void *block = lua_newuserdata(L, sizeof(shared_ptr<const T>));

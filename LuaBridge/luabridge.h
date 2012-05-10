@@ -1,7 +1,11 @@
 //==============================================================================
 /*
+  https://github.com/vinniefalco/LuaBridge
+  
   Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright (C) 2007, Nathan Reed
+
+  License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -299,6 +303,79 @@ template <typename T>
 class class__;
 
 //==============================================================================
+/**
+  Default name for unknown class types.
+*/
+inline char const* classname_unknown ()
+{
+  static char const* name = "(unknown type)";
+  return name;
+}
+
+//------------------------------------------------------------------------------
+/**
+  Container for a registered class name.
+
+  The registration is associated with a const attribute.
+
+  @note Unregistered classes will be named classname_unknown()
+
+  @tparam T The registered class.
+
+  @internal
+*/
+template <typename T>
+class classname
+{
+public:
+  /** Retrieve the class name.
+
+      Unregistered classes will be named classname_unknown ().
+  */
+  static inline char const* name ()
+  {
+    return classname <T>::m_name;
+  }
+
+  /** Determine if a registered class is const.
+
+      @note Unregistered classes are non-const.
+  */
+  static inline bool is_const ()
+  {
+    return false;
+  }
+
+  /** Register a class name.
+  */
+  static inline void set_name (const char *name)
+  {
+    classname <T>::m_name = name;
+  }
+
+private:
+  static char const* m_name;
+};
+
+template <typename T>
+char const* classname <T>::m_name = classname_unknown ();
+
+//------------------------------------------------------------------------------
+/**
+  Container specialization for const types.
+
+  The mapped name is the same.
+*/
+template <typename T>
+struct classname <const T> : public classname <T>
+{
+  static inline bool is_const ()
+  {
+    return true;
+  }
+};
+
+//==============================================================================
 
 /** Get a value, bypassing metamethods.
     @internal
@@ -339,16 +416,6 @@ inline void rawsetfield (lua_State* const L, int const index, char const* const 
 
 struct util
 {
-  //----------------------------------------------------------------------------
-  /**
-    Default name for unknown class types.
-  */
-  static char const* classname_unknown ()
-  {
-    static char const* name = "(unknown type)";
-    return name;
-  }
-
   //----------------------------------------------------------------------------
   /**
     Produce an error message.
@@ -1067,10 +1134,6 @@ public:
   // !!!UNDONE: allow inheriting Lua classes from C++ classes
 };
 
-// Predeclare classname struct since several implementation files use it
-template <typename T>
-struct classname;
-
 /*
 * Perform class registration in a scope.
 */
@@ -1095,49 +1158,13 @@ class__<T> scope::class_ (const char *name)
 }
 
 /*
-* Container for registered class names, with awareness of const types
-*/
-
-template <typename T>
-struct classname
-{
-  static const char *name_;
-  static const char *name ()
-  {
-    return classname<T>::name_;
-  }
-  static bool is_const ()
-  {
-    return false;
-  }
-  static void set_name (const char *name)
-  {
-    classname<T>::name_ = name;
-  }
-};
-
-// Initial type names are unknown
-template <typename T>
-const char *classname<T>::name_ = util::classname_unknown ();
-
-// Specialization for const types, mapping to same names
-template <typename T>
-struct classname <const T>: public classname<T>
-{
-  static bool is_const ()
-  {
-    return true;
-  }
-};
-
-/*
 * class__ constructors
 */
 
 template <typename T>
 class__<T>::class__ (lua_State *L_): scope(L_, classname<T>::name())
 {
-  assert(classname<T>::name() != util::classname_unknown ());
+  assert(classname<T>::name() != classname_unknown ());
 }
 
 template <typename T>
