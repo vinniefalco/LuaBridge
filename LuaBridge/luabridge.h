@@ -305,6 +305,8 @@ class class__;
 //==============================================================================
 /**
   Default name for unknown class types.
+
+  @internal
 */
 inline char const* classname_unknown ()
 {
@@ -330,7 +332,7 @@ class classname
 public:
   /** Retrieve the class name.
 
-      Unregistered classes will be named classname_unknown ().
+      Unregistered classes will be named classname_unknown().
   */
   static inline char const* name ()
   {
@@ -365,6 +367,8 @@ char const* classname <T>::m_name = classname_unknown ();
   Container specialization for const types.
 
   The mapped name is the same.
+
+  @internal
 */
 template <typename T>
 struct classname <const T> : public classname <T>
@@ -438,7 +442,7 @@ struct util
   * Works like the luaL_checkudata function.
   */
 
-  static void* checkclass (lua_State *L, int index, const char *tname, bool exact)
+  static void* checkClass (lua_State *L, int index, const char *tname, bool exact)
   {
     // If index is relative to the top of the stack, convert it into an index
     // relative to the bottom of the stack, so we can push our own stuff
@@ -612,7 +616,7 @@ struct util
   template <typename T>
   static int destructor_dispatch (lua_State *L)
   {
-    void *obj = checkclass(L, 1, lua_tostring(L, lua_upvalueindex(1)), true);
+    void *obj = checkClass(L, 1, lua_tostring(L, lua_upvalueindex(1)), true);
     shared_ptr<T> &ptr = *((shared_ptr<T> *)obj);
     ptr.~shared_ptr<T>();
     return 0;
@@ -815,6 +819,44 @@ struct util
 
   //----------------------------------------------------------------------------
   /**
+    Create static tables from a dot-separated identifier.
+
+    "x.y.z" produces _G["x"] = x[], x["y"] = y[], and y["z"] = z[].
+    
+    The last table (z[] in the example) is left on the stack.
+  */
+  static void createStaticTables (lua_State* L, std::string name)
+  {
+    assert (name.length () > 0);
+
+    lua_getglobal (L, "_G");
+
+    // Process each dot-separated namespace identifier.
+    size_t start = 0;
+    size_t pos = 0;
+    while ((pos = name.find ('.', start)) != std::string::npos)
+    {
+      std::string const id = name.substr (start, pos - start);
+      lua_getfield (L, -1, id.c_str ()); //! @todo Do we need rawgetfield() here?
+      if (lua_isnil (L, -1))
+      {
+        lua_pop (L, 1);
+        createStaticTable (L);
+        lua_pushvalue (L, -1);
+        rawsetfield (L, -3, id.c_str ());
+      }
+      lua_remove(L, -2);
+      start = pos + 1;
+    }
+
+    // Create a new table with the remaining portion of the name.
+    createStaticTable (L);
+    rawsetfield (L, -2, name.c_str() + start);
+    lua_pop (L, 1);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
     Look up a static table.
 
     The table is identified by its fully qualified dot-separated name. The
@@ -883,7 +925,7 @@ struct util
     lua_pushcfunction (L, &object_newindexer);
     rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
     lua_pushstring (L, cname.c_str());
-    lua_pushcclosure (L, &destructor_dispatch<T>, 1);
+    lua_pushcclosure (L, &destructor_dispatch <T>, 1);
     rawsetfield (L, -2, "__gc");                        // Use our __gc.
     lua_pushstring (L, cname.c_str());
     rawsetfield (L, -2, "__type");                      // Store the class type.
@@ -915,39 +957,10 @@ public:
   //----------------------------------------------------------------------------
   /**
     Construct a scope with the specified dot-separated name.
-
-    This creates a chain of tables registered into the global scope. For
-    example, "x.y.z" produces _G["x"]["y"]["z"] with subsequent registrations
-    going into z[].
   */
   scope (lua_State *L_, char const *name_) : L (L_), name (name_)
   {
-    assert (name.length () > 0);
-
-    lua_getglobal (L, "_G");
-
-    // Process each dot-separated namespace identifier.
-    size_t start = 0;
-    size_t pos = 0;
-    while ((pos = name.find ('.', start)) != std::string::npos)
-    {
-      std::string const id = name.substr (start, pos - start);
-      lua_getfield (L, -1, id.c_str ()); //! @todo Do we need rawgetfield() here?
-      if (lua_isnil (L, -1))
-      {
-        lua_pop (L, 1);
-        createStaticTable (L);
-        lua_pushvalue (L, -1);
-        rawsetfield (L, -3, id.c_str ());
-      }
-      lua_remove(L, -2);
-      start = pos + 1;
-    }
-
-    // Create a new table with the remaining portion of the name.
-    createStaticTable (L);
-    rawsetfield (L, -2, name.c_str() + start);
-    lua_pop (L, 1);
+    createStaticTables (L, name);
   }
 
   //----------------------------------------------------------------------------
@@ -988,6 +1001,7 @@ public:
     return *this;
   }
 
+  //----------------------------------------------------------------------------
   /**
     Register a read-only variable.
 
@@ -1034,6 +1048,7 @@ public:
     return *this;
   }
 
+  //----------------------------------------------------------------------------
   /**
     Register a read-write variable.
 
@@ -1281,7 +1296,7 @@ struct method_proxy
   typedef typename fnptr<FnPtr>::params params;
   static int f (lua_State *L)
   {
-    classtype *obj = ((shared_ptr<classtype> *)util::checkclass(L, 1,
+    classtype *obj = ((shared_ptr<classtype> *)util::checkClass(L, 1,
       lua_tostring(L, lua_upvalueindex(1)), false))->get();
     FnPtr fp = *(FnPtr *)lua_touserdata(L, lua_upvalueindex(2));
     arglist<params, 2> args(L);
@@ -1297,7 +1312,7 @@ struct method_proxy <FnPtr, void>
   typedef typename fnptr<FnPtr>::params params;
   static int f (lua_State *L)
   {
-    classtype *obj = ((shared_ptr<classtype> *)util::checkclass(L, 1,
+    classtype *obj = ((shared_ptr<classtype> *)util::checkClass(L, 1,
       lua_tostring(L, lua_upvalueindex(1)), false))->get();
     FnPtr fp = *(FnPtr *)lua_touserdata(L, lua_upvalueindex(2));
     arglist<params, 2> args(L);
@@ -1348,7 +1363,7 @@ class__<T>& class__<T>::method (const char *name, FnPtr fp)
 template <typename T, typename U>
 int m_propget_proxy (lua_State *L)
 {
-  T *obj = ((shared_ptr<T> *)util::checkclass(L, 1,
+  T *obj = ((shared_ptr<T> *)util::checkClass(L, 1,
     lua_tostring(L, lua_upvalueindex(1)), false))->get();
   U T::* mp = *(U T::**)lua_touserdata(L, lua_upvalueindex(2));
   tdstack<U>::push(L, obj->*mp);
@@ -1358,7 +1373,7 @@ int m_propget_proxy (lua_State *L)
 template <typename T, typename U>
 int m_propset_proxy (lua_State *L)
 {
-  T *obj = ((shared_ptr<T> *)util::checkclass(L, 1,
+  T *obj = ((shared_ptr<T> *)util::checkClass(L, 1,
     lua_tostring(L, lua_upvalueindex(1)), false))->get();
   U T::* mp = *(U T::**)lua_touserdata(L, lua_upvalueindex(2));
   obj->*mp = tdstack<U>::get(L, 2);
