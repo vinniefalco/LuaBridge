@@ -45,7 +45,7 @@ public:
   {
     // Make sure we don't try to push objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown);
+    assert(classname<T>::name() != util::classname_unknown ());
 
     // Allocate a new userdata and construct the pointer in-place there
     void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
@@ -59,7 +59,7 @@ public:
   {
     // Make sure we don't try to retrieve objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown);
+    assert(classname<T>::name() != util::classname_unknown ());
 
     return *((shared_ptr<T> *)
       checkclass(L, index, classname<T>::name()))->get();
@@ -167,7 +167,7 @@ struct tdstack <shared_ptr<T> >
   {
     // Make sure we don't try to push ptrs to objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown);
+    assert(classname<T>::name() != util::classname_unknown ());
 
     // Allocate a new userdata and construct the pointer in-place there
     void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
@@ -181,7 +181,7 @@ struct tdstack <shared_ptr<T> >
   {
     // Make sure we don't try to retrieve ptrs to objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown);
+    assert(classname<T>::name() != util::classname_unknown ());
 
     return *(shared_ptr<T> *)
       util::checkclass(L, index, classname<T>::name(), false);
@@ -195,7 +195,7 @@ struct tdstack <shared_ptr<const T> >
   {
     // Make sure we don't try to push ptrs to objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown);
+    assert(classname<T>::name() != util::classname_unknown ());
 
     // Allocate a new userdata and construct the pointer in-place there
     void *block = lua_newuserdata(L, sizeof(shared_ptr<const T>));
@@ -258,16 +258,16 @@ struct tdstack <bool>
   {
     luaL_checktype(L, index, LUA_TBOOLEAN);
     // In MSC, disable "bool to int conversion" warning
-#		ifdef _MSC_VER
-#			pragma warning (push)
-#			pragma warning (disable: 4800)
-#		endif
+#    ifdef _MSC_VER
+#      pragma warning (push)
+//#      pragma warning (disable: 4800)
+#    endif
 
-    return (bool)lua_toboolean(L, index);
+    return lua_toboolean(L, index) ? true : false;
 
-#		ifdef _MSC_VER
-#			pragma warning (pop)
-#		endif
+#    ifdef _MSC_VER
+#      pragma warning (pop)
+#    endif
   }
 };
 

@@ -327,12 +327,6 @@ inline void rawsetfield (lua_State* const L, int const index, char const* const 
     lua_rawset (L, index);
 }
 
-//----------------------------------------------------------------------------
-/**
-  Default name for unknown class types.
-*/
-static char const* classname_unknown = "(unknown type)";
-
 //==============================================================================
 /**
   Utilities.
@@ -345,6 +339,16 @@ static char const* classname_unknown = "(unknown type)";
 
 struct util
 {
+  //----------------------------------------------------------------------------
+  /**
+    Default name for unknown class types.
+  */
+  static char const* classname_unknown ()
+  {
+    static char const* name = "(unknown type)";
+    return name;
+  }
+
   //----------------------------------------------------------------------------
   /**
     Produce an error message.
@@ -397,6 +401,7 @@ struct util
       {
         // Generate an informative error message
         rawgetfield(L, -1, "__type");
+        //luaL_argerror(L,idx,lua_pushfstring (L,"%s expected, got %s", tname , lua_typename(L,lua_type(L,idx))));
         char buffer[256];
         snprintf(buffer, 256, "%s expected, got %s", tname,
           lua_tostring(L, -1));
@@ -587,9 +592,9 @@ struct util
           result = 1;
           break;
         }
-        lua_pop(L, 1);
+        lua_pop (L, 1);
       }
-      lua_pop(L, 1);
+      lua_pop (L, 1);
 
       // Check the __const metafield.
       rawgetfield (L, -1, "__const");
@@ -674,23 +679,19 @@ struct util
   /**
     Custom __newindex metamethod for metatables.
 
-    This supports properties on scopes, and static properties of classes.
-  */
-  /*
-  * Newindex variant for properties of objects, which passes the
-  * object on which the property is to be set as the first parameter
-  * to the setter method.
+    This supports properties on class objects. The corresponding object is
+    passed in the first parameter to the setFunction.
   */
 
-  static int meta_newindexer (lua_State *L)
+  static int object_newindexer (lua_State *L)
   {
     int result = 0;
 
-    lua_getmetatable(L, 1);
+    lua_getmetatable (L, 1);
 
     for (;;)
     {
-      // Look for the key in the __propset metafield
+      // Check __propset
       rawgetfield (L, -1, "__propset");
       if (!lua_isnil (L, -1))
       {
@@ -698,7 +699,7 @@ struct util
         lua_rawget (L, -2);
         if (!lua_isnil (L, -1))
         {
-          // found
+          // found it, call the setFunction.
           assert (lua_isfunction (L, -1));
           lua_pushvalue (L, 1);
           lua_pushvalue (L, 3);
@@ -763,16 +764,16 @@ struct util
       std::string namestr (name);
       size_t start = 0;
       size_t pos = 0;
-      while ((pos = namestr.find('.', start)) != std::string::npos)
+      while ((pos = namestr.find ('.', start)) != std::string::npos)
       {
-        lua_getfield(L, -1, namestr.substr(start, pos - start).c_str());
-        assert(!lua_isnil(L, -1));
-        lua_remove(L, -2);
+        lua_getfield (L, -1, namestr.substr(start, pos - start).c_str());
+        assert (!lua_isnil(L, -1));
+        lua_remove (L, -2);
         start = pos + 1;
       }
-      lua_getfield(L, -1, namestr.substr(start).c_str());
-      assert(!lua_isnil(L, -1));
-      lua_remove(L, -2);
+      lua_getfield (L, -1, namestr.substr(start).c_str());
+      assert (!lua_isnil(L, -1));
+      lua_remove (L, -2);
     }
   }
 
@@ -787,7 +788,7 @@ struct util
     luaL_newmetatable (L, name);
     lua_pushcfunction (L, &util::indexer);
     rawsetfield (L, -2, "__index");                     // Use our __index.
-    lua_pushcfunction (L, &util::meta_newindexer);
+    lua_pushcfunction (L, &util::object_newindexer);
     rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
     lua_pushstring (L, name);
     lua_pushcclosure (L, &destructor_dispatch <T>, 1);
@@ -800,22 +801,27 @@ struct util
     rawsetfield (L, -2, "__propset");                   // Create empty __propset.
   }
 
+  //----------------------------------------------------------------------------
+  /**
+    Create a metatable suitable for a const object.
+  */
+
   template <typename T>
-  static void createConstMetaTable (lua_State *L, const char *name)
+  static void createConstMetaTable (lua_State *L, char const* name)
   {
-    std::string constname = std::string("const ") + name;
-    luaL_newmetatable(L, constname.c_str());
-    lua_pushcfunction(L, &util::indexer);
-    rawsetfield(L, -2, "__index");
-    lua_pushcfunction(L, &util::meta_newindexer);
-    rawsetfield(L, -2, "__newindex");
-    lua_pushstring(L, constname.c_str());
-    lua_pushcclosure(L, &destructor_dispatch<T>, 1);
-    rawsetfield(L, -2, "__gc");
-    lua_pushstring(L, constname.c_str());
-    rawsetfield(L, -2, "__type");
-    lua_newtable(L);
-    rawsetfield(L, -2, "__propget");
+    std::string const cname = std::string("const ") + name;
+    luaL_newmetatable (L, cname.c_str());
+    lua_pushcfunction (L, &util::indexer);
+    rawsetfield (L, -2, "__index");                     // Use our __index.
+    lua_pushcfunction (L, &util::object_newindexer);
+    rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
+    lua_pushstring (L, cname.c_str());
+    lua_pushcclosure (L, &destructor_dispatch<T>, 1);
+    rawsetfield (L, -2, "__gc");                        // Use our __gc.
+    lua_pushstring (L, cname.c_str());
+    rawsetfield (L, -2, "__type");                      // Store the class type.
+    lua_newtable (L);
+    rawsetfield (L, -2, "__propget");                   // Create empty __propget.
   }
 };
 
@@ -1064,7 +1070,6 @@ public:
 // Predeclare classname struct since several implementation files use it
 template <typename T>
 struct classname;
-extern const char *classname_unknown;
 
 /*
 * Perform class registration in a scope.
@@ -1079,7 +1084,7 @@ class__<T> scope::class_ ()
 template <typename T, typename Base>
 class__<T> scope::subclass (const char *name)
 {
-  assert(classname<Base>::name() != classname_unknown);
+  assert(classname<Base>::name() != util::classname_unknown ());
   return class__<T>(L, name, classname<Base>::name());
 }
 
@@ -1113,7 +1118,7 @@ struct classname
 
 // Initial type names are unknown
 template <typename T>
-const char *classname<T>::name_ = classname_unknown;
+const char *classname<T>::name_ = util::classname_unknown ();
 
 // Specialization for const types, mapping to same names
 template <typename T>
@@ -1132,7 +1137,7 @@ struct classname <const T>: public classname<T>
 template <typename T>
 class__<T>::class__ (lua_State *L_): scope(L_, classname<T>::name())
 {
-  assert(classname<T>::name() != classname_unknown);
+  assert(classname<T>::name() != util::classname_unknown ());
 }
 
 template <typename T>
@@ -1344,11 +1349,11 @@ template <typename U>
 class__<T>& class__<T>::property_ro (const char *name, const U T::* mp)
 {
   luaL_getmetatable(L, this->name.c_str());
-  std::string constname = "const " + this->name;
-  luaL_getmetatable(L, constname.c_str());
+  std::string cname = "const " + this->name;
+  luaL_getmetatable(L, cname.c_str());
   rawgetfield(L, -2, "__propget");
   rawgetfield(L, -2, "__propget");
-  lua_pushstring(L, constname.c_str());
+  lua_pushstring(L, cname.c_str());
   void *v = lua_newuserdata(L, sizeof(U T::*));
   memcpy(v, &mp, sizeof(U T::*));
   lua_pushcclosure(L, &m_propget_proxy<T, U>, 2);
@@ -1364,11 +1369,11 @@ template <typename U>
 class__<T>& class__<T>::property_ro (const char *name, U (T::*get) () const)
 {
   luaL_getmetatable(L, this->name.c_str());
-  std::string constname = "const " + this->name;
-  luaL_getmetatable(L, constname.c_str());
+  std::string cname = "const " + this->name;
+  luaL_getmetatable(L, cname.c_str());
   rawgetfield(L, -2, "__propget");
   rawgetfield(L, -2, "__propget");
-  lua_pushstring(L, constname.c_str());
+  lua_pushstring(L, cname.c_str());
   typedef U (T::*FnPtr) () const;
   void *v = lua_newuserdata(L, sizeof(FnPtr));
   memcpy(v, &get, sizeof(FnPtr));
