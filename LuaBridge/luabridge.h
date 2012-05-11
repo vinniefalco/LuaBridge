@@ -300,8 +300,24 @@ namespace luabridge
 #include "stack.h"
 
 // forward declaration
-template <typename T>
+template <typename T, class Container>
 class class__;
+
+//==============================================================================
+/**
+  Holds class objects.
+
+  This is what gets constructed in the userdata
+*/
+template <class T>
+class container
+{
+public:
+  explicit container (T* p) : m_p (p)
+  {
+  }
+
+};
 
 //==============================================================================
 /**
@@ -313,22 +329,22 @@ public:
 };
 
 //------------------------------------------------------------------------------
-/**
-  Retrieve an instance of the specified policy.
-*/
-template <typename T, template <typename> class PolicyType >
-Policy* getPolicy ()
-{
-  static PolicyType <T> s_policy;
-  return &s_policy;
-}
-
-//------------------------------------------------------------------------------
 
 template <typename T>
 class OurSharedPtrPolicy : public Policy
 {
 };
+
+//------------------------------------------------------------------------------
+/**
+  Retrieve an instance of the specified policy.
+*/
+template <typename T, template <class> class PolicyType >
+Policy* getPolicy ()
+{
+  static PolicyType <T> s_policy;
+  return &s_policy;
+}
 
 //==============================================================================
 /**
@@ -367,7 +383,8 @@ public:
   */
   static inline bool isRegistered ()
   {
-    return classname <T>::s_name != unregisteredClassName ();
+    //return classname <T>::s_name != unregisteredClassName ();
+    return classname <T>::s_policy != 0;
   }
 
   /** Retrieve the class name.
@@ -763,7 +780,7 @@ struct detail
     Create a metatable.
   */
 
-  template <typename T>
+  template <typename T, class Container>
   static void createMetaTable (lua_State *L, char const* name)
   {
     luaL_newmetatable (L, name);
@@ -772,7 +789,7 @@ struct detail
     lua_pushcfunction (L, &object_newindexer);
     rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
     lua_pushstring (L, name);
-    lua_pushcclosure (L, &dtorProxy <T>, 1);
+    lua_pushcclosure (L, &dtorProxy <T, Container>, 1);
     rawsetfield (L, -2, "__gc");                        // Use our __gc
     lua_pushstring (L, name);
     rawsetfield (L, -2, "__type");                      // Set __type to class name.
@@ -787,7 +804,7 @@ struct detail
     Create a metatable suitable for a const object.
   */
 
-  template <typename T>
+  template <typename T, class Container>
   static void createConstMetaTable (lua_State *L, char const* name)
   {
     std::string const cname = std::string("const ") + name;
@@ -797,7 +814,7 @@ struct detail
     lua_pushcfunction (L, &object_newindexer);
     rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
     lua_pushstring (L, cname.c_str());
-    lua_pushcclosure (L, &dtorProxy <T>, 1);
+    lua_pushcclosure (L, &dtorProxy <T, Container>, 1);
     rawsetfield (L, -2, "__gc");                        // Use our __gc.
     lua_pushstring (L, cname.c_str());
     rawsetfield (L, -2, "__type");                      // Store the class type.
@@ -904,7 +921,7 @@ struct detail
             typename Retval = typename fnptr <Function>::resulttype>
   struct functionProxy
   {
-    typedef typename fnptr<Function>::params params;
+    typedef typename fnptr <Function>::params params;
     static int f (lua_State *L)
     {
       Function fp = static_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -981,17 +998,19 @@ struct detail
     userdata, initialize it with a shared_ptr to an appropriately constructed
     new class object, and set the metatable so that Lua can use the object.
   */
-  template <typename T, typename Params>
+  template <typename T, typename Params, class Container>
   static int ctorProxy (lua_State *L)
   {
-    // Allocate a new userdata and construct a shared_ptr<T> in-place there
-    void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
-    arglist<Params, 2> args(L);
-    new(block) shared_ptr<T>(constructor<T, Params>::apply(args));
+    typedef typename Container::template rebind <T>::other ContainerType;
+
+    // Allocate a new userdata and construct a Container in-place there
+    void* mem = lua_newuserdata (L, sizeof (ContainerType));
+    arglist <Params, 2> args (L);
+    new (mem) ContainerType (constructor <T, Params>::apply (args));
 
     // Set the userdata's metatable
-    lua_pushvalue(L, lua_upvalueindex(1));
-    lua_setmetatable(L, -2);
+    lua_pushvalue (L, lua_upvalueindex (1));
+    lua_setmetatable (L, -2);
 
     return 1;
   }
@@ -1008,12 +1027,14 @@ struct detail
   * we can ensure that we are destructing the right kind of object.
   */
 
-  template <typename T>
+  template <typename T, class Container>
   static int dtorProxy (lua_State *L)
   {
-    void *obj = checkClass(L, 1, lua_tostring(L, lua_upvalueindex(1)), true);
-    shared_ptr<T> &ptr = *((shared_ptr<T> *)obj);
-    ptr.~shared_ptr<T>();
+    typedef typename Container::template rebind <T>::other ContainerType;
+
+    void* mem = checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), true);
+    ContainerType& container (*(static_cast <ContainerType*> (mem)));
+    container.~ContainerType ();
     return 0;
   }
 
@@ -1234,10 +1255,10 @@ public:
   /**
     Register a new class.
   */
-  template <typename T>
-  class__<T> class_ (char const* name)
+  template <class T>
+  class__ <T, shared_ptr <T> > class_ (char const* name)
   {
-    return class__<T> (L, name);
+    return class__ <T, shared_ptr <T> > (L, name);
   }
 
   //----------------------------------------------------------------------------
@@ -1247,10 +1268,10 @@ public:
     The class must already be registered.
   */
 
-  template <typename T>
-  class__<T> class_ ()
+  template <class T>
+  class__<T, shared_ptr <T> > class_ ()
   {
-    return class__<T> (L);
+    return class__ <T, shared_ptr <T> > (L);
   }
 
   //----------------------------------------------------------------------------
@@ -1260,11 +1281,11 @@ public:
     @note The base class must be registered.
   */
 
-  template <typename T, typename Base>
-  class__<T> subclass (char const *name)
+  template <class T, class Base>
+  class__ <T, shared_ptr <T> > subclass (char const *name)
   {
     assert (classname <Base>::isRegistered ());
-    return class__ <T> (L, name, classname <Base>::name ());
+    return class__ <T, shared_ptr <T> > (L, name, classname <Base>::name ());
   }
 
 protected:
@@ -1276,11 +1297,11 @@ protected:
 /**
   Perform registration for class members.
 */
-template <typename T>
+template <typename T, class Container = shared_ptr <T> >
 class class__ : public scope
 {
 public:
-  class__ (lua_State *L_)
+  explicit class__ (lua_State *L_)
     : scope (L_, classname <T>::name ())
   {
     assert (classname <T>::isRegistered ());
@@ -1294,13 +1315,13 @@ public:
 
     // Create metatable for this class.  The metatable is stored in the Lua
     // registry, keyed by the given class name.
-    createMetaTable<T>(L, name_);
+    createMetaTable <T, Container> (L, name_);
 
     // Create const metatable for this class.  This is identical to the
     // previous metatable, except that it has "const " prepended to the __type
     // field, and has no __propset field.  Const methods will be added to the
     // const metatable, non-const methods to the normal metatable.
-    createConstMetaTable<T>(L, name_);
+    createConstMetaTable <T, Container> (L, name_);
 
     // Set __const metafield to point to the const metatable
     rawsetfield(L, -2, "__const");
@@ -1315,14 +1336,14 @@ public:
     classname<T>::registerClass(name_);
 
     // Create metatable for this class
-    createMetaTable<T>(L, name_);
+    createMetaTable <T, Container> (L, name_);
     // Set the __parent metafield to the base class's metatable
     luaL_getmetatable(L, basename);
     rawsetfield(L, -2, "__parent");
 
     // Create const metatable for this class.  Its __parent field will point
     // to the const metatable of the parent class.
-    createConstMetaTable<T>(L, name_);
+    createConstMetaTable <T, Container> (L, name_);
     std::string base_constname = std::string("const ") + basename;
     luaL_getmetatable(L, base_constname.c_str());
     rawsetfield(L, -2, "__parent");
@@ -1343,7 +1364,7 @@ public:
   // a function pointer type; only the argument list will be used (since
   // you can't take the address of a ctor).
   template <typename FnPtr>
-  class__<T>& constructor ()
+  class__<T,Container>& constructor ()
   {
     // Get a reference to the class's static table
     findStaticTable(L, name.c_str());
@@ -1351,7 +1372,7 @@ public:
     // Push the constructor proxy, with the class's metatable as an upvalue
     luaL_getmetatable(L, name.c_str());
     lua_pushcclosure(L,
-      &ctorProxy<T, typename fnptr<FnPtr>::params>, 1);
+      &ctorProxy<T, typename fnptr<FnPtr>::params, Container>, 1);
 
     // Set the constructor proxy as the __call metamethod of the static table
     rawsetfield(L, -2, "__call");
@@ -1366,7 +1387,7 @@ public:
   */
 
   template <typename FnPtr>
-  class__<T>& method (const char *name, FnPtr fp)
+  class__<T,Container>& method (const char *name, FnPtr fp)
   {
     assert(fnptr<FnPtr>::mfp);
     std::string metatable_name = this->name;
@@ -1400,7 +1421,7 @@ public:
   */
 
   template <typename U>
-  class__<T>& property_ro (const char *name, const U T::* mp)
+  class__<T,Container>& property_ro (const char *name, const U T::* mp)
   {
     luaL_getmetatable(L, this->name.c_str());
     std::string cname = "const " + this->name;
@@ -1419,7 +1440,7 @@ public:
   }
 
   template <typename U>
-  class__<T>& property_ro (const char *name, U (T::*get) () const)
+  class__<T,Container>& property_ro (const char *name, U (T::*get) () const)
   {
     luaL_getmetatable(L, this->name.c_str());
     std::string cname = "const " + this->name;
@@ -1439,7 +1460,7 @@ public:
   }
 
   template <typename U>
-  class__<T>& property_rw (const char *name, U T::* mp)
+  class__<T,Container>& property_rw (const char *name, U T::* mp)
   {
     property_ro<U>(name, mp);
     luaL_getmetatable(L, this->name.c_str());
@@ -1454,7 +1475,7 @@ public:
   }
 
   template <typename U>
-  class__<T>& property_rw (const char *name, U (T::*get) () const, void (T::*set) (U))
+  class__<T,Container>& property_rw (const char *name, U (T::*get) () const, void (T::*set) (U))
   {
     property_ro<U>(name, get);
     luaL_getmetatable(L, this->name.c_str());
@@ -1471,34 +1492,34 @@ public:
 
   // Static method registration
   template <typename FnPtr>
-  class__<T>& static_method (const char *name, FnPtr fp)
+  class__<T,Container>& static_method (const char *name, FnPtr fp)
   {
-    return *(class__<T>*)&(function(name, fp));
+    return *(class__<T,Container>*)&(function(name, fp));
   }
 
   // Static property registration
   template <typename U>
-  class__<T>& static_property_ro (const char *name, const U *data)
+  class__<T,Container>& static_property_ro (const char *name, const U *data)
   {
-    return *(class__<T>*)&(variable_ro<U>(name, data));
+    return *(class__<T,Container>*)&(variable_ro<U>(name, data));
   }
   
   template <typename U>
-  class__<T>& static_property_ro (const char *name, U (*get) ())
+  class__<T,Container>& static_property_ro (const char *name, U (*get) ())
   {
-    return *(class__<T>*)&(variable_ro<U>(name, get));
+    return *(class__<T,Container>*)&(variable_ro<U>(name, get));
   }
   
   template <typename U>
-  class__<T>& static_property_rw (const char *name, U *data)
+  class__<T,Container>& static_property_rw (const char *name, U *data)
   {
-    return *(class__<T>*)&(variable_rw<U>(name, data));
+    return *(class__<T,Container>*)&(variable_rw<U>(name, data));
   }
   
   template <typename U>
-  class__<T>& static_property_rw (const char *name, U (*get) (), void (*set) (U))
+  class__<T,Container>& static_property_rw (const char *name, U (*get) (), void (*set) (U))
   {
-    return *(class__<T>*)&(variable_rw<U>(name, get, set));
+    return *(class__<T,Container>*)&(variable_rw<U>(name, get, set));
   }
 
   /** @todo Inherit Lua classes from C++ classes */

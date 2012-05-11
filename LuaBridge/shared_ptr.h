@@ -103,6 +103,12 @@ template <typename T>
 class shared_ptr
 {
 public:
+  template <typename Other>
+  struct rebind
+  {
+    typedef shared_ptr <Other> other;
+  };
+
   /** Construct as nullptr or from existing pointer to T.
 
       @param p The optional, existing pointer to assign from.
@@ -161,7 +167,7 @@ public:
 
   /** Assign from another shared_ptr of a different type.
 
-      @invariant A pointer to U must be convertible to a pointer to T.
+      @note A pointer to U must be convertible to a pointer to T.
 
       @tparam U   The other object type.
       @param  rhs The other shared_ptr to assign from.
