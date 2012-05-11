@@ -44,20 +44,12 @@
 */
 //==============================================================================
 
-/*
-* Type-dispatch functions for manipulating the Lua stack.
-*/
+//==============================================================================
+/**
+  Lua stack type-dispatch for objects with value semantics
 
-/*
-* Generic functions for data with value semantics: these make a copy on
-* the heap of the data being passed, and stick it in a shared_ptr so Lua
-* scripts can keep references to it.
-* NOTE: for type-checking purposes, the data must be of a class or struct
-* type registered with Lua, although it is allowed to be an opaque type.
-* NOTE: data with reference semantics, i.e. pointers and references
-* to data, are handled differently - see the specializations below.
+  @note Pointers and references are specialized separately.
 */
-
 template <typename T>
 struct tdstack
 {
@@ -91,6 +83,8 @@ public:
     return *obj;
   }
 };
+
+//------------------------------------------------------------------------------
 
 /*
 * Pointers and references: getting is done by retrieving the address from
@@ -153,6 +147,8 @@ public:
   }
 };
 
+//------------------------------------------------------------------------------
+
 template <typename T>
 struct tdstack <T&>
 {
@@ -179,6 +175,8 @@ public:
       detail::checkClass(L, index, constname.c_str(), false))->get();
   }
 };
+
+//------------------------------------------------------------------------------
 
 /*
 * shared_ptr: we can push these.

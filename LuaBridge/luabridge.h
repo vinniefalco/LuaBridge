@@ -358,6 +358,34 @@ struct SharedPtrPolicy : AbstractPolicy
 
 //------------------------------------------------------------------------------
 /**
+  Object policy for exclusive Lua ownership.
+*/
+template <typename T>
+struct LuaOwnedPolicy : AbstractPolicy
+{
+  size_t getUserdataSize () const
+  {
+    return sizeof (T*);
+  }
+
+  void constructUserdata (void* const userdata, void* const object) const
+  {
+    *static_cast <T**> (userdata) = static_cast <T*> (object);
+  }
+
+  void destroyUserdata (void* const userdata) const
+  {
+    *static_cast <T**> (userdata)->~T ();
+  }
+
+  void* getClassPointer (void* const userdata) const
+  {
+    return *static_cast <T**> (userdata);
+  }
+};
+
+//------------------------------------------------------------------------------
+/**
   Object policy for an unmanaged pointer.
 
   The object must outlive all Lua environments.
@@ -365,26 +393,23 @@ struct SharedPtrPolicy : AbstractPolicy
 template <typename T>
 struct UnmanagedPtrPolicy : AbstractPolicy
 {
-  typedef T* Container;
-
   size_t getUserdataSize () const
   {
-    return sizeof (Container);
+    return sizeof (T*);
   }
 
   void constructUserdata (void* const userdata, void* const object) const
   {
-    new (userdata) Container (static_cast <T*> (object));
+    *static_cast <T**> (userdata) = static_cast <T*> (object);
   }
 
   void destroyUserdata (void* const userdata) const
   {
-    (static_cast <Container*> (userdata))->~Container ();
   }
 
   void* getClassPointer (void* const userdata) const
   {
-    return *static_cast <Container*> (userdata);
+    return *static_cast <T**> (userdata);
   }
 };
 
