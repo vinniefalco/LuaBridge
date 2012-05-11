@@ -296,9 +296,6 @@
 namespace luabridge
 {
 
-#include "typelist.h"
-#include "stack.h"
-
 // forward declaration
 template <class T, template <class> class Policy>
 class class__;
@@ -421,6 +418,11 @@ struct UnmanagedPtrPolicy : AbstractPolicy
     return *static_cast <T**> (userdata);
   }
 };
+
+//==============================================================================
+
+#include "typelist.h"
+#include "stack.h"
 
 //==============================================================================
 /**

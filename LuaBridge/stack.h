@@ -111,6 +111,8 @@ public:
   }
 };
 
+//------------------------------------------------------------------------------
+
 template <typename T>
 struct tdstack <const T *>
 {
@@ -125,6 +127,8 @@ public:
   }
 };
 
+//------------------------------------------------------------------------------
+
 template <typename T>
 struct tdstack <T* const>
 {
@@ -137,6 +141,8 @@ public:
       detail::checkClass(L, index, classname<T>::name(), false))->get();
   }
 };
+
+//------------------------------------------------------------------------------
 
 template <typename T>
 struct tdstack <const T* const>
