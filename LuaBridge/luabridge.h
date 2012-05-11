@@ -305,63 +305,75 @@ class class__;
 
 //==============================================================================
 /**
-  Default name for unknown class types.
+  Holds the address of a unique string to identify unregistered classes.
 
   @internal
 */
-inline char const* classname_unknown ()
+class classnamebase
 {
-  static char const* name = "(unknown type)";
-  return name;
-}
-
-//------------------------------------------------------------------------------
+protected:
+  static inline char const* unregisteredClassName ()
+  {
+    static char const* name = "(unknown type)";
+    return name;
+  }
+};
+//http://bit.ly/KdT5x9
 /**
-  Container for a registered class name.
+  Registered class attributes.
 
-  The registration is associated with a const attribute.
+  This template provides introspection to retrieve the attributes associated
+  with any class type. Attributes include whether or not the class is
+  registered, a name string for registered classes, and the const-ness.
 
-  @note Unregistered classes will be named classname_unknown()
-
-  @tparam T The registered class.
+  @tparam T The class for obtaining attributes.
 
   @internal
 */
 template <typename T>
-class classname
+class classname : private classnamebase
 {
 public:
+  /** Determine if the class is registered to Lua.
+  */
+  static inline bool isRegistered ()
+  {
+    return classname <T>::s_name != unregisteredClassName ();
+  }
+
   /** Retrieve the class name.
 
-      Unregistered classes will be named classname_unknown().
+      @note The class must be registered.
   */
   static inline char const* name ()
   {
-    return classname <T>::m_name;
+    assert (isRegistered ());
+    return classname <T>::s_name;
   }
 
   /** Determine if a registered class is const.
 
-      @note Unregistered classes are non-const.
+      @note The class must already be registered.
   */
-  static inline bool is_const ()
+  static inline bool isConst ()
   {
+    //assert (isRegistered ());
     return false;
   }
 
   /** Register a class name.
   */
-  static inline void set_name (const char *name)
+  static inline void setName (const char *name)
   {
-    classname <T>::m_name = name;
+    classname <T>::s_name = name;
   }
 
 private:
-  static char const* m_name;
+  static char const* s_name;
 };
 
 template <typename T>
-char const* classname <T>::m_name = classname_unknown ();
+char const* classname <T>::s_name = classnamebase::unregisteredClassName ();
 
 //------------------------------------------------------------------------------
 /**
@@ -374,7 +386,7 @@ char const* classname <T>::m_name = classname_unknown ();
 template <typename T>
 struct classname <const T> : public classname <T>
 {
-  static inline bool is_const ()
+  static inline bool isConst ()
   {
     return true;
   }
@@ -675,7 +687,7 @@ struct util
     The table is identified by its fully qualified dot-separated name. The
     resulting table is returned on the stack.
 
-    @invariant The table must exist.
+    @note The table must exist.
   */
   static void findStaticTable (lua_State* const L, char const* const name)
   {
@@ -1198,13 +1210,13 @@ public:
   /**
     Register a subclass.
 
-    The base class must already be registered.
+    @note The base class must be registered.
   */
 
   template <typename T, typename Base>
   class__<T> subclass (char const *name)
   {
-    assert (classname <Base>::name() != classname_unknown ());
+    assert (classname <Base>::isRegistered ());
     return class__ <T> (L, name, classname <Base>::name ());
   }
 
@@ -1222,7 +1234,7 @@ class class__ : public scope
 {
 public:
   class__ (lua_State *L_)
-    : scope(L_, classname<T>::name())
+: scope(L_, classname<T>::name())
   {
     assert(classname<T>::name() != classname_unknown ());
   }
@@ -1230,8 +1242,8 @@ public:
   class__ (lua_State *L_, const char *name_)
     : scope(L_, name_)
   {
-    assert(!classname<T>::is_const());
-    classname<T>::set_name(name_);
+    assert(!classname<T>::isConst());
+    classname<T>::setName(name_);
 
     // Create metatable for this class.  The metatable is stored in the Lua
     // registry, keyed by the given class name.
@@ -1252,8 +1264,8 @@ public:
   class__ (lua_State *L_, const char *name_, const char *basename)
     : scope(L_, name_)
   {
-    assert(!classname<T>::is_const());
-    classname<T>::set_name(name_);
+    assert(!classname<T>::isConst());
+    classname<T>::setName(name_);
 
     // Create metatable for this class
     createMetaTable<T>(L, name_);

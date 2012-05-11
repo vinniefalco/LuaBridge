@@ -66,7 +66,7 @@ public:
   {
     // Make sure we don't try to push objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown ());
+    assert (classname <T>::isRegistered ());
 
     // Allocate a new userdata and construct the pointer in-place there
     void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
@@ -76,11 +76,12 @@ public:
     luaL_getmetatable(L, classname<T>::name());
     lua_setmetatable(L, -2);
   }
+
   static T get (lua_State *L, int index)
   {
     // Make sure we don't try to retrieve objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown ());
+    assert (classname <T>::isRegistered ());
 
     return *((shared_ptr<T> *)
       util::checkClass(L, index, classname<T>::name()))->get();
@@ -188,7 +189,7 @@ struct tdstack <shared_ptr<T> >
   {
     // Make sure we don't try to push ptrs to objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown ());
+    assert (classname <T>::isRegistered ());
 
     // Allocate a new userdata and construct the pointer in-place there
     void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
@@ -198,11 +199,12 @@ struct tdstack <shared_ptr<T> >
     luaL_getmetatable(L, classname<T>::name());
     lua_setmetatable(L, -2);
   }
+
   static shared_ptr<T> get (lua_State *L, int index)
   {
     // Make sure we don't try to retrieve ptrs to objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown ());
+    assert (classname <T>::isRegistered ());
 
     return *(shared_ptr<T> *)
       util::checkClass(L, index, classname<T>::name(), false);
@@ -216,7 +218,7 @@ struct tdstack <shared_ptr<const T> >
   {
     // Make sure we don't try to push ptrs to objects of
     // unregistered classes or primitive types
-    assert(classname<T>::name() != classname_unknown ());
+    assert (classname <T>::isRegistered ());
 
     // Allocate a new userdata and construct the pointer in-place there
     void *block = lua_newuserdata(L, sizeof(shared_ptr<const T>));
