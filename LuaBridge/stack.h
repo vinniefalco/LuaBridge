@@ -62,29 +62,33 @@ template <typename T>
 struct tdstack
 {
 public:
+  /**
+    Push a copy of a registered class onto the stack.
+
+    @note T must be copy-constructible.
+  */
   static void push (lua_State *L, T data)
   {
-    // Make sure we don't try to push objects of
-    // unregistered classes or primitive types
-    assert (classname <T>::isRegistered ());
-
-    // Allocate a new userdata and construct the pointer in-place there
-    void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
-    new(block) shared_ptr<T>(new T(data));
-
-    // Set the userdata's metatable
-    luaL_getmetatable(L, classname<T>::name());
-    lua_setmetatable(L, -2);
+    // Use the policy to construct a new userdata with the class metatable.
+    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    void* const userdata = lua_newuserdata (L, policy.getUserdataSize ());
+    policy.constructUserdata (userdata, new T (data));
+    luaL_getmetatable (L, classname <T>::name ());
+    lua_setmetatable (L, -2);
   }
 
+  /**
+    Retrieve a copy of a registered class from the stack.
+
+    @note T must be copy-constructible.
+  */
   static T get (lua_State *L, int index)
   {
-    // Make sure we don't try to retrieve objects of
-    // unregistered classes or primitive types
-    assert (classname <T>::isRegistered ());
-
-    return *((shared_ptr<T> *)
-      detail::checkClass(L, index, classname<T>::name()))->get();
+    // Use the policy to retrieve a pointer to the class.
+    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    void* const userdata = detail::checkClass (L, index, classname <T>::name());
+    T const* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+    return *obj;
   }
 };
 
@@ -258,7 +262,13 @@ struct tdstack <T> \
 } \
 }
 
-TDSTACK_NUMERIC(int);
+template <> struct tdstack <
+  int > { static void push (lua_State* L,
+  int value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  int get (lua_State* L, int index) { return static_cast <
+  int > (luaL_checknumber (L, index)); } };
+
+//TDSTACK_NUMERIC(int);
 TDSTACK_NUMERIC(unsigned int);
 TDSTACK_NUMERIC(unsigned char);
 TDSTACK_NUMERIC(short);

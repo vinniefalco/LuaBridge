@@ -356,6 +356,38 @@ struct SharedPtrPolicy : AbstractPolicy
   }
 };
 
+//------------------------------------------------------------------------------
+/**
+  Object policy for an unmanaged pointer.
+
+  The object must outlive all Lua environments.
+*/
+template <typename T>
+struct UnmanagedPtrPolicy : AbstractPolicy
+{
+  typedef T* Container;
+
+  size_t getUserdataSize () const
+  {
+    return sizeof (Container);
+  }
+
+  void constructUserdata (void* const userdata, void* const object) const
+  {
+    new (userdata) Container (static_cast <T*> (object));
+  }
+
+  void destroyUserdata (void* const userdata) const
+  {
+    (static_cast <Container*> (userdata))->~Container ();
+  }
+
+  void* getClassPointer (void* const userdata) const
+  {
+    return *static_cast <Container*> (userdata);
+  }
+};
+
 //==============================================================================
 /**
   Holds the address of a unique string to identify unregistered classes.
@@ -890,10 +922,7 @@ struct detail
 
   //----------------------------------------------------------------------------
   /**
-    lua_CFunction for calling a function.
-
-    @note This is registered as a closure with the actual
-          function pointer in the first upvalue.
+    lua_CFunction to call a function with a return value.
   */
   template <typename Function,
             typename Retval = typename fnptr <Function>::resulttype>
@@ -902,21 +931,17 @@ struct detail
     typedef typename fnptr <Function>::params params;
     static int f (lua_State *L)
     {
+      // The upvalue contains the function pointer.
       Function fp = static_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
       arglist <params> args (L);
-      tdstack <Retval>::push (L, fnptr <Function>::apply (fp, args));
+      tdstack <Retval>::push (L, fnptr <Function>::call (fp, args));
       return 1;
     }
   };
 
   //----------------------------------------------------------------------------
   /**
-    lua_CFunction for calling a function.
-
-    The return type is void.
-
-    @note This is registered as a closure with the actual
-          function pointer in the first upvalue.
+    lua_CFunction to call a function with no return value.
   */
   template <typename Function>
   struct functionProxy <Function, void>
@@ -924,26 +949,24 @@ struct detail
     typedef typename fnptr <Function>::params params;
     static int f (lua_State *L)
     {
+      // The upvalue contains the function pointer.
       Function fp = static_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
       arglist <params> args (L);
-      fnptr <Function>::apply (fp, args);
+      fnptr <Function>::call (fp, args);
       return 0;
     }
   };
 
   //----------------------------------------------------------------------------
   /**
-    lua_CFunction for getting a variable.
+    lua_CFunction to get a variable.
 
-    This is also used for static properties.
-
-    @note This is registered as a closure with a pointer to
-          the variable in the first upvalue.
+    This is also used for static data members of classes
   */
-
   template <typename T>
   static int propgetProxy (lua_State *L)
   {
+    // The upvalue holds a pointer to the variable.
     T* data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
     tdstack <T>::push (L, *data);
     return 1;
@@ -951,17 +974,15 @@ struct detail
 
   //----------------------------------------------------------------------------
   /**
-    lua_CFunction for setting a variable.
+    lua_CFunction to set a variable.
 
-    This is also used for static properties.
-
-    @note This is registered as a closure with a pointer to
-          the variable in the first upvalue.
+    This is also used for static data members of classes.
   */
 
   template <typename T>
   static int propsetProxy (lua_State *L)
   {
+    // The upvalue holds a pointer to the variable.
     T* data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
     *data = tdstack <T>::get (L, 1);
     return 0;
@@ -969,12 +990,10 @@ struct detail
 
   //----------------------------------------------------------------------------
   /**
-    lua_CFunction for constructing a class object.
-    
+    lua_CFunction to construct a class object.
+
     These are registered to Lua as global functions with the name of the class,
-    with the appropriate metatable passed as an upvalue.  They allocate a new
-    userdata, initialize it with a shared_ptr to an appropriately constructed
-    new class object, and set the metatable so that Lua can use the object.
+    with the appropriate metatable passed as an upvalue.
   */
   template <typename T, typename Params>
   static int ctorProxy (lua_State *L)
@@ -983,7 +1002,7 @@ struct detail
     AbstractPolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = lua_newuserdata (L, policy.getUserdataSize ());
     arglist <Params, 2> args (L);
-    policy.constructUserdata (userdata, constructor <T, Params>::apply (args));
+    policy.constructUserdata (userdata, constructor <T, Params>::call (args));
     lua_pushvalue (L, lua_upvalueindex (1));
     lua_setmetatable (L, -2);
     return 1;
@@ -991,15 +1010,17 @@ struct detail
 
   //----------------------------------------------------------------------------
   /**
-    lua_CFunction for calling a destructor.
-  */
-  /*Lua-registerable C function template for destructors.  Objects are stored
-  * in Lua as userdata containing a shared_ptr, and this is registered as the
-  * __gc metamethod.  The expected classname is passed as an upvalue so that
-  * we can ensure that we are destructing the right kind of object.
+    lua_CFunction to garbage collect a class object.
+
+    This is used for the __gc metamethod. The policy determines what actually
+    happens to the object. It could decrement a reference count, delete the
+    object, do nothing, or any other policy-dependent action.
+
+    @note The expected classname is passed as an upvalue so that we can
+          ensure that we are destroying the right kind of object.
   */
   template <typename T>
-  static int dtorProxy (lua_State *L)
+  static int gcProxy (lua_State *L)
   {
     // Use the policy to destroy the userdata.
     AbstractPolicy const& policy = classname <T>::getPolicy ();
@@ -1016,37 +1037,46 @@ struct detail
   * on which they are called as argument 1 and all the method arguments as
   * args 2 and up.
   */
-
-  template <typename FnPtr, typename Ret = typename fnptr<FnPtr>::resulttype>
+  /**
+    lua_CFunction to call a class member function with a return value.
+  */
+  template <typename MemberFunction,
+            typename ReturnType = typename fnptr <MemberFunction>::resulttype>
   struct methodProxy
   {
-    typedef typename fnptr<FnPtr>::classtype classtype;
-    typedef typename fnptr<FnPtr>::params params;
+    typedef typename fnptr <MemberFunction>::classtype T;
+    typedef typename fnptr <MemberFunction>::params params;
     static int f (lua_State *L)
     {
-      classtype *obj = ((shared_ptr<classtype> *)checkClass(L, 1,
-        lua_tostring(L, lua_upvalueindex(1)), false))->get();
-      FnPtr fp = *(FnPtr *)lua_touserdata(L, lua_upvalueindex(2));
-      arglist<params, 2> args(L);
-      tdstack<Ret>::push(L, fnptr<FnPtr>::apply(obj, fp, args));
+      // Use the policy to obtain the class pointer.
+      AbstractPolicy const& policy = classname <T>::getPolicy ();
+      void* const userdata = checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+      T* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+      MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
+      arglist <params, 2> args(L);
+      tdstack <ReturnType>::push (L, fnptr <MemberFunction>::call (obj, fp, args));
       return 1;
     }
   };
 
   //----------------------------------------------------------------------------
-
-  template <typename FnPtr>
-  struct methodProxy <FnPtr, void>
+  /**
+    lua_CFunction to call a class member function with no return value.
+  */
+  template <typename MemberFunction>
+  struct methodProxy <MemberFunction, void>
   {
-    typedef typename fnptr<FnPtr>::classtype classtype;
-    typedef typename fnptr<FnPtr>::params params;
+    typedef typename fnptr <MemberFunction>::classtype T;
+    typedef typename fnptr <MemberFunction>::params params;
     static int f (lua_State *L)
     {
-      classtype *obj = ((shared_ptr<classtype> *)checkClass(L, 1,
-        lua_tostring(L, lua_upvalueindex(1)), false))->get();
-      FnPtr fp = *(FnPtr *)lua_touserdata(L, lua_upvalueindex(2));
-      arglist<params, 2> args(L);
-      fnptr<FnPtr>::apply(obj, fp, args);
+      // Use the policy to obtain the class pointer.
+      AbstractPolicy const& policy = classname <T>::getPolicy ();
+      void* const userdata = checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+      T* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+      MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
+      arglist <params, 2> args (L);
+      fnptr <MemberFunction>::call (obj, fp, args);
       return 0;
     }
   };
@@ -1058,14 +1088,15 @@ struct detail
   * proxies, but they take both the expected classname for type-checking and
   * the member pointer as upvalues.
   */
-
   template <typename T, typename U>
   static int propgetMemberProxy (lua_State *L)
   {
-    T *obj = ((shared_ptr<T> *)checkClass(L, 1,
-      lua_tostring(L, lua_upvalueindex(1)), false))->get();
-    U T::* mp = *(U T::**)lua_touserdata(L, lua_upvalueindex(2));
-    tdstack<U>::push(L, obj->*mp);
+    // Use the policy to obtain the class pointer.
+    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    void* const userdata = checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+    T* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+    U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
+    tdstack <U>::push (L, obj->*mp);
     return 1;
   }
 
@@ -1074,9 +1105,11 @@ struct detail
   template <typename T, typename U>
   static int propsetMemberProxy (lua_State *L)
   {
-    T *obj = ((shared_ptr<T> *)checkClass(L, 1,
-      lua_tostring(L, lua_upvalueindex(1)), false))->get();
-    U T::* mp = *(U T::**)lua_touserdata(L, lua_upvalueindex(2));
+    // Use the policy to obtain the class pointer.
+    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    void* const userdata = checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+    T* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+    U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
     obj->*mp = tdstack<U>::get(L, 2);
     return 0;
   }
@@ -1086,7 +1119,7 @@ struct detail
     Create a metatable.
   */
 
-  template <typename T, class Container>
+  template <typename T>
   static void createMetaTable (lua_State *L, char const* name)
   {
     luaL_newmetatable (L, name);
@@ -1095,7 +1128,7 @@ struct detail
     lua_pushcfunction (L, &object_newindexer);
     rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
     lua_pushstring (L, name);
-    lua_pushcclosure (L, &dtorProxy <T>, 1);
+    lua_pushcclosure (L, &gcProxy <T>, 1);
     rawsetfield (L, -2, "__gc");                        // Use our __gc
     lua_pushstring (L, name);
     rawsetfield (L, -2, "__type");                      // Set __type to class name.
@@ -1110,7 +1143,7 @@ struct detail
     Create a metatable suitable for a const object.
   */
 
-  template <typename T, class Container>
+  template <typename T>
   static void createConstMetaTable (lua_State *L, char const* name)
   {
     std::string const cname = std::string("const ") + name;
@@ -1120,7 +1153,7 @@ struct detail
     lua_pushcfunction (L, &object_newindexer);
     rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
     lua_pushstring (L, cname.c_str());
-    lua_pushcclosure (L, &dtorProxy <T>, 1);
+    lua_pushcclosure (L, &gcProxy <T>, 1);
     rawsetfield (L, -2, "__gc");                        // Use our __gc.
     lua_pushstring (L, cname.c_str());
     rawsetfield (L, -2, "__type");                      // Store the class type.
@@ -1333,13 +1366,13 @@ public:
 
     // Create metatable for this class.  The metatable is stored in the Lua
     // registry, keyed by the given class name.
-    createMetaTable <T, Container> (L, name_);
+    createMetaTable <T> (L, name_);
 
     // Create const metatable for this class.  This is identical to the
     // previous metatable, except that it has "const " prepended to the __type
     // field, and has no __propset field.  Const methods will be added to the
     // const metatable, non-const methods to the normal metatable.
-    createConstMetaTable <T, Container> (L, name_);
+    createConstMetaTable <T> (L, name_);
 
     // Set __const metafield to point to the const metatable
     rawsetfield (L, -2, "__const");
@@ -1355,14 +1388,14 @@ public:
     classname <T>::registerClass <Policy> (name_);
 
     // Create metatable for this class
-    createMetaTable <T, Container> (L, name_);
+    createMetaTable <T> (L, name_);
     // Set the __parent metafield to the base class's metatable
     luaL_getmetatable(L, basename);
     rawsetfield(L, -2, "__parent");
 
     // Create const metatable for this class.  Its __parent field will point
     // to the const metatable of the parent class.
-    createConstMetaTable <T, Container> (L, name_);
+    createConstMetaTable <T> (L, name_);
     std::string base_constname = std::string("const ") + basename;
     luaL_getmetatable(L, base_constname.c_str());
     rawsetfield(L, -2, "__parent");

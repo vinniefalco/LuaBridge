@@ -123,7 +123,7 @@ struct fnptr <Ret (*) ()>
 {
   FNPTR_GLOBAL_TRAITS;
   typedef nil params;
-  static Ret apply (Ret (*fp) (), const typevallist<params> &tvl)
+  static Ret call (Ret (*fp) (), const typevallist<params> &tvl)
   {
     (void)tvl;
     return fp();
@@ -135,7 +135,7 @@ struct fnptr <Ret (*) (P1)>
 {
   FNPTR_GLOBAL_TRAITS;
   typedef typelist<P1> params;
-  static Ret apply (Ret (*fp) (P1), const typevallist<params> &tvl)
+  static Ret call (Ret (*fp) (P1), const typevallist<params> &tvl)
   {
     return fp(tvl.hd);
   }
@@ -146,7 +146,7 @@ struct fnptr <Ret (*) (P1, P2)>
 {
   FNPTR_GLOBAL_TRAITS;
   typedef typelist<P1, typelist<P2> > params;
-  static Ret apply (Ret (*fp) (P1, P2), const typevallist<params> &tvl)
+  static Ret call (Ret (*fp) (P1, P2), const typevallist<params> &tvl)
   {
     return fp(tvl.hd, tvl.tl.hd);
   }
@@ -157,7 +157,7 @@ struct fnptr <Ret (*) (P1, P2, P3)>
 {
   FNPTR_GLOBAL_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3> > > params;
-  static Ret apply (Ret (*fp) (P1, P2, P3), const typevallist<params> &tvl)
+  static Ret call (Ret (*fp) (P1, P2, P3), const typevallist<params> &tvl)
   {
     return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -168,7 +168,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4)>
 {
   FNPTR_GLOBAL_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
-  static Ret apply (Ret (*fp) (P1, P2, P3, P4),
+  static Ret call (Ret (*fp) (P1, P2, P3, P4),
     const typevallist<params> &tvl)
   {
     return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
@@ -182,7 +182,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5)>
   FNPTR_GLOBAL_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4,
     typelist<P5> > > > > params;
-  static Ret apply (Ret (*fp) (P1, P2, P3, P4, P5),
+  static Ret call (Ret (*fp) (P1, P2, P3, P4, P5),
     const typevallist<params> &tvl)
   {
     return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -197,7 +197,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6)>
   FNPTR_GLOBAL_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5, 
     typelist<P6> > > > > > params;
-  static Ret apply (Ret (*fp) (P1, P2, P3, P4, P5, P6),
+  static Ret call (Ret (*fp) (P1, P2, P3, P4, P5, P6),
     const typevallist<params> &tvl)
   {
     return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -212,7 +212,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6, P7)>
   FNPTR_GLOBAL_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6, typelist<P7> > > > > > > params;
-  static Ret apply (Ret (*fp) (P1, P2, P3, P4, P5, P6, P7),
+  static Ret call (Ret (*fp) (P1, P2, P3, P4, P5, P6, P7),
     const typevallist<params> &tvl)
   {
     return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -228,7 +228,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
   FNPTR_GLOBAL_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6, typelist<P7, typelist<P8> > > > > > > > params;
-  static Ret apply (Ret (*fp) (P1, P2, P3, P4, P5, P6, P7, P8),
+  static Ret call (Ret (*fp) (P1, P2, P3, P4, P5, P6, P7, P8),
     const typevallist<params> &tvl)
   {
     return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -250,7 +250,7 @@ struct fnptr <Ret (T::*) ()>
 {
   FNPTR_MFP_TRAITS;
   typedef nil params;
-  static Ret apply (T *obj, Ret (T::*fp) (), const typevallist<params> &tvl)
+  static Ret call (T *obj, Ret (T::*fp) (), const typevallist<params> &tvl)
   {
     (void)tvl;
     return (obj->*fp)();
@@ -262,7 +262,7 @@ struct fnptr <Ret (T::*) (P1)>
 {
   FNPTR_MFP_TRAITS;
   typedef typelist<P1> params;
-  static Ret apply (T *obj, Ret (T::*fp) (P1),
+  static Ret call (T *obj, Ret (T::*fp) (P1),
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd);
@@ -274,7 +274,7 @@ struct fnptr <Ret (T::*) (P1, P2)>
 {
   FNPTR_MFP_TRAITS;
   typedef typelist<P1, typelist<P2> > params;
-  static Ret apply (T *obj, Ret (T::*fp) (P1, P2),
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2),
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
@@ -286,7 +286,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3)>
 {
   FNPTR_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3> > > params;
-  static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3),
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3),
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
@@ -299,7 +299,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4)>
 {
   FNPTR_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
-  static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3, P4),
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4),
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
@@ -313,7 +313,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
   FNPTR_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4,
     typelist<P5> > > > > params;
-  static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5),
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5),
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -328,7 +328,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6)>
   FNPTR_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6> > > > > > params;
-  static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5, P6),
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5, P6),
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -343,7 +343,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7)>
   FNPTR_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6, typelist<P7> > > > > > > params;
-  static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7),
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7),
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -359,7 +359,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
   FNPTR_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6, typelist<P7, typelist <P8> > > > > > > > params;
-  static Ret apply (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7, P8),
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7, P8),
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -381,7 +381,7 @@ struct fnptr <Ret (T::*) () const>
 {
   FNPTR_CONST_MFP_TRAITS;
   typedef nil params;
-  static Ret apply (const T *obj, Ret (T::*fp) () const,
+  static Ret call (const T *obj, Ret (T::*fp) () const,
     const typevallist<params> &tvl)
   {
     (void)tvl;
@@ -394,7 +394,7 @@ struct fnptr <Ret (T::*) (P1) const>
 {
   FNPTR_CONST_MFP_TRAITS;
   typedef typelist<P1> params;
-  static Ret apply (const T *obj, Ret (T::*fp) (P1) const,
+  static Ret call (const T *obj, Ret (T::*fp) (P1) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd);
@@ -406,7 +406,7 @@ struct fnptr <Ret (T::*) (P1, P2) const>
 {
   FNPTR_CONST_MFP_TRAITS;
   typedef typelist<P1, typelist<P2> > params;
-  static Ret apply (const T *obj, Ret (T::*fp) (P1, P2) const,
+  static Ret call (const T *obj, Ret (T::*fp) (P1, P2) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
@@ -418,7 +418,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3) const>
 {
   FNPTR_CONST_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3> > > params;
-  static Ret apply (const T *obj, Ret (T::*fp) (P1, P2, P3) const,
+  static Ret call (const T *obj, Ret (T::*fp) (P1, P2, P3) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
@@ -431,7 +431,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4) const>
 {
   FNPTR_CONST_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
-  static Ret apply (const T *obj, Ret (T::*fp) (P1, P2, P3, P4) const,
+  static Ret call (const T *obj, Ret (T::*fp) (P1, P2, P3, P4) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
@@ -445,7 +445,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5) const>
   FNPTR_CONST_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4,
     typelist<P5> > > > > params;
-  static Ret apply (const T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5) const,
+  static Ret call (const T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -460,7 +460,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6) const>
   FNPTR_CONST_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6> > > > > > params;
-  static Ret apply (const T *obj,
+  static Ret call (const T *obj,
     Ret (T::*fp) (P1, P2, P3, P4, P5, P6) const,
     const typevallist<params> &tvl)
   {
@@ -476,7 +476,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
   FNPTR_CONST_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6, typelist<P7> > > > > > > params;
-  static Ret apply (const T *obj,
+  static Ret call (const T *obj,
     Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7) const,
     const typevallist<params> &tvl)
   {
@@ -493,7 +493,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
   FNPTR_CONST_MFP_TRAITS;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6, typelist<P7, typelist<P8> > > > > > > > params;
-  static Ret apply (const T *obj,
+  static Ret call (const T *obj,
     Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7, P8) const,
     const typevallist<params> &tvl)
   {
@@ -515,12 +515,12 @@ struct constructor {};
 template <typename T>
 struct constructor <T, nil>
 {
-  static T* apply (const typevallist<nil> &tvl)
+  static T* call (const typevallist<nil> &tvl)
   {
     (void)tvl;
     return new T;
   }
-  static T* apply (void* mem, const typevallist<nil> &tvl)
+  static T* call (void* mem, const typevallist<nil> &tvl)
   {
     (void)tvl;
     return new (mem) T;
@@ -530,11 +530,11 @@ struct constructor <T, nil>
 template <typename T, typename P1>
 struct constructor <T, typelist<P1> >
 {
-  static T* apply (const typevallist<typelist<P1> > &tvl)
+  static T* call (const typevallist<typelist<P1> > &tvl)
   {
     return new T(tvl.hd);
   }
-  static T* apply (void* mem, const typevallist<typelist<P1> > &tvl)
+  static T* call (void* mem, const typevallist<typelist<P1> > &tvl)
   {
     return new (mem) T(tvl.hd);
   }
@@ -543,11 +543,11 @@ struct constructor <T, typelist<P1> >
 template <typename T, typename P1, typename P2>
 struct constructor <T, typelist<P1, typelist<P2> > >
 {
-  static T* apply (const typevallist<typelist<P1, typelist<P2> > > &tvl)
+  static T* call (const typevallist<typelist<P1, typelist<P2> > > &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd);
   }
-  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2> > > &tvl)
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2> > > &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd);
   }
@@ -556,12 +556,12 @@ struct constructor <T, typelist<P1, typelist<P2> > >
 template <typename T, typename P1, typename P2, typename P3>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3> > > >
 {
-  static T* apply (const typevallist<typelist<P1, typelist<P2,
+  static T* call (const typevallist<typelist<P1, typelist<P2,
     typelist<P3> > > > &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
-  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
     typelist<P3> > > > &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
@@ -572,12 +572,12 @@ template <typename T, typename P1, typename P2, typename P3, typename P4>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4> > > > >
 {
-  static T* apply (const typevallist<typelist<P1, typelist<P2,
+  static T* call (const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4> > > > > &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
-  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4> > > > > &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
@@ -589,13 +589,13 @@ template <typename T, typename P1, typename P2, typename P3, typename P4,
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5> > > > > >
 {
-  static T* apply (const typevallist<typelist<P1, typelist<P2,
+  static T* call (const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4, typelist<P5> > > > > > &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
   }
-  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4, typelist<P5> > > > > > &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -608,13 +608,13 @@ template <typename T, typename P1, typename P2, typename P3, typename P4,
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6> > > > > > >
 {
-  static T* apply (const typevallist<typelist<P1, typelist<P2,
+  static T* call (const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4, typelist<P5, typelist<P6> > > > > > > &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
   }
-  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4, typelist<P5, typelist<P6> > > > > > > &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -627,7 +627,7 @@ template <typename T, typename P1, typename P2, typename P3, typename P4,
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6, typelist<P7> > > > > > > >
 {
-  static T* apply (const typevallist<typelist<P1, typelist<P2,
+  static T* call (const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4, typelist<P5, typelist<P6,
     typelist<P7> > > > > > > > &tvl)
   {
@@ -635,7 +635,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.tl.tl.hd);
   }
-  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4, typelist<P5, typelist<P6,
     typelist<P7> > > > > > > > &tvl)
   {
@@ -651,7 +651,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6, typelist<P7, 
   typelist<P8> > > > > > > > >
 {
-  static T* apply (const typevallist<typelist<P1, typelist<P2,
+  static T* call (const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4, typelist<P5, typelist<P6,
     typelist<P7, typelist<P8> > > > > > > > > &tvl)
   {
@@ -659,7 +659,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
   }
-  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
     typelist<P3, typelist<P4, typelist<P5, typelist<P6,
     typelist<P7, typelist<P8> > > > > > > > > &tvl)
   {
