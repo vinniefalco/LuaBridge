@@ -280,17 +280,8 @@ struct tdstack <bool>
   static bool get (lua_State *L, int index)
   {
     luaL_checktype(L, index, LUA_TBOOLEAN);
-    // In MSC, disable "bool to int conversion" warning
-#    ifdef _MSC_VER
-#      pragma warning (push)
-//#      pragma warning (disable: 4800)
-#    endif
 
     return lua_toboolean(L, index) ? true : false;
-
-#    ifdef _MSC_VER
-#      pragma warning (pop)
-#    endif
   }
 };
 

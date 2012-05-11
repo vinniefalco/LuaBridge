@@ -520,6 +520,11 @@ struct constructor <T, nil>
     (void)tvl;
     return new T;
   }
+  static T* apply (void* mem, const typevallist<nil> &tvl)
+  {
+    (void)tvl;
+    return new (mem) T;
+  }
 };
 
 template <typename T, typename P1>
@@ -529,6 +534,10 @@ struct constructor <T, typelist<P1> >
   {
     return new T(tvl.hd);
   }
+  static T* apply (void* mem, const typevallist<typelist<P1> > &tvl)
+  {
+    return new (mem) T(tvl.hd);
+  }
 };
 
 template <typename T, typename P1, typename P2>
@@ -537,6 +546,10 @@ struct constructor <T, typelist<P1, typelist<P2> > >
   static T* apply (const typevallist<typelist<P1, typelist<P2> > > &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd);
+  }
+  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2> > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd);
   }
 };
 
@@ -548,6 +561,11 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3> > > >
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
+  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3> > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
+  }
 };
 
 template <typename T, typename P1, typename P2, typename P3, typename P4>
@@ -558,6 +576,11 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
     typelist<P3, typelist<P4> > > > > &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
+  }
+  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4> > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
 };
 
@@ -572,6 +595,12 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
   }
+  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5> > > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd);
+  }
 };
 
 template <typename T, typename P1, typename P2, typename P3, typename P4,
@@ -583,6 +612,12 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
     typelist<P3, typelist<P4, typelist<P5, typelist<P6> > > > > > > &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
+  }
+  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5, typelist<P6> > > > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
   }
 };
@@ -600,6 +635,14 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.tl.tl.hd);
   }
+  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5, typelist<P6,
+    typelist<P7> > > > > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd);
+  }
 };
 
 template <typename T, typename P1, typename P2, typename P3, typename P4,
@@ -613,6 +656,14 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
     typelist<P7, typelist<P8> > > > > > > > > &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
+  }
+  static T* apply (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5, typelist<P6,
+    typelist<P7, typelist<P8> > > > > > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
   }
