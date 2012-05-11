@@ -321,9 +321,18 @@ struct AbstractPolicy
   */
   virtual void destroyUserdata (void* const userdata) const = 0;
 
-  /** Retrieve a pointer to the contained class from the userdata.
+  /** Retrieved a typed pointer to the contained class.
   */
-  virtual void* getClassPointer (void* const userdata) const = 0;
+  template <class T>
+  T* getClassPointer (void* const userdata) const
+  {
+    return static_cast <T*> (getPointer (userdata));
+  }
+
+private:
+  /** Retrieve a void pointer to the contained class from the userdata.
+  */
+  virtual void* getPointer (void* const userdata) const = 0;
 };
 
 //------------------------------------------------------------------------------
@@ -350,7 +359,7 @@ struct SharedPtrPolicy : AbstractPolicy
     (static_cast <Container*> (userdata))->~Container ();
   }
 
-  void* getClassPointer (void* const userdata) const
+  void* getPointer (void* const userdata) const
   {
     return static_cast <Container*> (userdata)->get ();
   }
@@ -378,7 +387,7 @@ struct LuaOwnedPolicy : AbstractPolicy
     *static_cast <T**> (userdata)->~T ();
   }
 
-  void* getClassPointer (void* const userdata) const
+  void* getPointer (void* const userdata) const
   {
     return *static_cast <T**> (userdata);
   }
@@ -407,7 +416,7 @@ struct UnmanagedPtrPolicy : AbstractPolicy
   {
   }
 
-  void* getClassPointer (void* const userdata) const
+  void* getPointer (void* const userdata) const
   {
     return *static_cast <T**> (userdata);
   }
@@ -1076,7 +1085,7 @@ struct detail
       // Use the policy to obtain the class pointer.
       AbstractPolicy const& policy = classname <T>::getPolicy ();
       void* const userdata = checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
-      T* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+      T* const obj (policy.getClassPointer <T> (userdata));
       MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
       arglist <params, 2> args(L);
       tdstack <ReturnType>::push (L, fnptr <MemberFunction>::call (obj, fp, args));
@@ -1098,7 +1107,7 @@ struct detail
       // Use the policy to obtain the class pointer.
       AbstractPolicy const& policy = classname <T>::getPolicy ();
       void* const userdata = checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
-      T* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+      T* const obj (policy.getClassPointer <T> (userdata));
       MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
       arglist <params, 2> args (L);
       fnptr <MemberFunction>::call (obj, fp, args);
@@ -1119,7 +1128,7 @@ struct detail
     // Use the policy to obtain the class pointer.
     AbstractPolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
-    T* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+    T* const obj (policy.getClassPointer <T> (userdata));
     U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
     tdstack <U>::push (L, obj->*mp);
     return 1;
@@ -1133,7 +1142,7 @@ struct detail
     // Use the policy to obtain the class pointer.
     AbstractPolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
-    T* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+    T* const obj (policy.getClassPointer <T> (userdata));
     U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
     obj->*mp = tdstack<U>::get(L, 2);
     return 0;

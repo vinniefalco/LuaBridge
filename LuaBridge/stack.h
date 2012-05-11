@@ -93,6 +93,11 @@ public:
 * push shared_ptrs, not naked pointers and references.
 */
 
+/**
+  Lua stack type-dispatch for pointers.
+
+  @note Pushing is disallowed.
+*/
 template <typename T>
 struct tdstack <T*>
 {
