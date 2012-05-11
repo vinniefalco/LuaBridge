@@ -420,11 +420,6 @@ struct UnmanagedPtrPolicy : AbstractPolicy
 };
 
 //==============================================================================
-
-#include "typelist.h"
-#include "stack.h"
-
-//==============================================================================
 /**
   Holds the address of a unique string to identify unregistered classes.
 
@@ -538,6 +533,11 @@ struct classname <const T> : public classname <T>
     return true;
   }
 };
+
+//==============================================================================
+
+#include "typelist.h"
+#include "stack.h"
 
 //==============================================================================
 /**
