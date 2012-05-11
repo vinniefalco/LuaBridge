@@ -300,7 +300,7 @@ namespace luabridge
 #include "stack.h"
 
 // forward declaration
-template <typename T, class Container>
+template <typename T, template <class> class Container>
 class class__;
 
 //==============================================================================
@@ -780,7 +780,7 @@ struct detail
     Create a metatable.
   */
 
-  template <typename T, class Container>
+  template <typename T, template <class> class Container>
   static void createMetaTable (lua_State *L, char const* name)
   {
     luaL_newmetatable (L, name);
@@ -804,7 +804,7 @@ struct detail
     Create a metatable suitable for a const object.
   */
 
-  template <typename T, class Container>
+  template <typename T, template <class> class Container>
   static void createConstMetaTable (lua_State *L, char const* name)
   {
     std::string const cname = std::string("const ") + name;
@@ -998,16 +998,14 @@ struct detail
     userdata, initialize it with a shared_ptr to an appropriately constructed
     new class object, and set the metatable so that Lua can use the object.
   */
-  template <typename T, typename Params, class Container>
+  template <typename T, typename Params, template <class> class Container>
   static int ctorProxy (lua_State *L)
   {
-    typedef typename Container::template rebind <T>::other ContainerType;
-
+    typedef typename Container <T> ContainerType;
     // Allocate a new userdata and construct a Container in-place there
     void* mem = lua_newuserdata (L, sizeof (ContainerType));
     arglist <Params, 2> args (L);
     new (mem) ContainerType (constructor <T, Params>::apply (args));
-
     // Set the userdata's metatable
     lua_pushvalue (L, lua_upvalueindex (1));
     lua_setmetatable (L, -2);
@@ -1027,11 +1025,10 @@ struct detail
   * we can ensure that we are destructing the right kind of object.
   */
 
-  template <typename T, class Container>
+  template <typename T, template <class> class Container>
   static int dtorProxy (lua_State *L)
   {
-    typedef typename Container::template rebind <T>::other ContainerType;
-
+    typedef typename Container <T> ContainerType;
     void* mem = checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), true);
     ContainerType& container (*(static_cast <ContainerType*> (mem)));
     container.~ContainerType ();
@@ -1256,9 +1253,15 @@ public:
     Register a new class.
   */
   template <class T>
-  class__ <T, shared_ptr <T> > class_ (char const* name)
+  class__ <T, shared_ptr> class_ (char const* name)
   {
-    return class__ <T, shared_ptr <T> > (L, name);
+    return class__ <T, shared_ptr> (L, name);
+  }
+
+  template <class T, template <class> class Container>
+  class__ <T, Container> class_ (char const* name)
+  {
+    return class__ <T, Container> (L, name);
   }
 
   //----------------------------------------------------------------------------
@@ -1269,9 +1272,15 @@ public:
   */
 
   template <class T>
-  class__<T, shared_ptr <T> > class_ ()
+  class__<T, shared_ptr> class_ ()
   {
-    return class__ <T, shared_ptr <T> > (L);
+    return class__ <T, shared_ptr> (L);
+  }
+
+  template <class T, template <class> class Container>
+  class__<T, Container> class_ ()
+  {
+    return class__ <T, Container> (L);
   }
 
   //----------------------------------------------------------------------------
@@ -1282,10 +1291,17 @@ public:
   */
 
   template <class T, class Base>
-  class__ <T, shared_ptr <T> > subclass (char const *name)
+  class__ <T, shared_ptr> subclass (char const *name)
   {
     assert (classname <Base>::isRegistered ());
-    return class__ <T, shared_ptr <T> > (L, name, classname <Base>::name ());
+    return class__ <T, shared_ptr> (L, name, classname <Base>::name ());
+  }
+
+  template <class T, class Base, template <class> class Container>
+  class__ <T, Container> subclass (char const *name)
+  {
+    assert (classname <Base>::isRegistered ());
+    return class__ <T, Container> (L, name, classname <Base>::name ());
   }
 
 protected:
@@ -1297,7 +1313,7 @@ protected:
 /**
   Perform registration for class members.
 */
-template <typename T, class Container = shared_ptr <T> >
+template <typename T, template <class> class Container>
 class class__ : public scope
 {
 public:
@@ -1310,8 +1326,8 @@ public:
   class__ (lua_State *L_, const char *name_)
     : scope(L_, name_)
   {
-    assert(!classname<T>::isConst());
-    classname<T>::registerClass(name_);
+    assert (!classname <T>::isConst ());
+    classname <T>::registerClass (name_);
 
     // Create metatable for this class.  The metatable is stored in the Lua
     // registry, keyed by the given class name.
@@ -1324,7 +1340,8 @@ public:
     createConstMetaTable <T, Container> (L, name_);
 
     // Set __const metafield to point to the const metatable
-    rawsetfield(L, -2, "__const");
+    rawsetfield (L, -2, "__const");
+
     // Pop the original metatable
     lua_pop(L, 1);
   }
@@ -1332,8 +1349,8 @@ public:
   class__ (lua_State *L_, const char *name_, const char *basename)
     : scope(L_, name_)
   {
-    assert(!classname<T>::isConst());
-    classname<T>::registerClass(name_);
+    assert (!classname <T>::isConst ());
+    classname <T>::registerClass (name_);
 
     // Create metatable for this class
     createMetaTable <T, Container> (L, name_);
