@@ -84,7 +84,7 @@ public:
     assert (classname <T>::isRegistered ());
 
     return *((shared_ptr<T> *)
-      util::checkClass(L, index, classname<T>::name()))->get();
+      detail::checkClass(L, index, classname<T>::name()))->get();
   }
 };
 
@@ -104,7 +104,7 @@ public:
   static T* get (lua_State *L, int index)
   {
     return ((shared_ptr<T> *)
-      util::checkClass(L, index, classname<T>::name(), false))->get();
+      detail::checkClass(L, index, classname<T>::name(), false))->get();
   }
 };
 
@@ -118,7 +118,7 @@ public:
   {
     std::string constname = std::string("const ") + classname<T>::name();
     return ((shared_ptr<const T> *)
-      util::checkClass (L, index, constname.c_str(), false))->get();
+      detail::checkClass (L, index, constname.c_str(), false))->get();
   }
 };
 
@@ -131,7 +131,7 @@ public:
   static T* const get (lua_State *L, int index)
   {
     return ((shared_ptr<T> *)
-      util::checkClass(L, index, classname<T>::name(), false))->get();
+      detail::checkClass(L, index, classname<T>::name(), false))->get();
   }
 };
 
@@ -145,7 +145,7 @@ public:
   {
     std::string constname = std::string("const ") + classname<T>::name();
     return ((shared_ptr<const T> *)
-      util::checkClass(L, index, constname.c_str(), false))->get();
+      detail::checkClass(L, index, constname.c_str(), false))->get();
   }
 };
 
@@ -158,7 +158,7 @@ public:
   static T& get (lua_State *L, int index)
   {
     return *((shared_ptr<T> *)
-      util::checkClass(L, index, classname<T>::name(), false))->get();
+      detail::checkClass(L, index, classname<T>::name(), false))->get();
   }
 };
 
@@ -172,7 +172,7 @@ public:
   {
     std::string constname = std::string("const ") + classname<T>::name();
     return *((shared_ptr<const T> *)
-      util::checkClass(L, index, constname.c_str(), false))->get();
+      detail::checkClass(L, index, constname.c_str(), false))->get();
   }
 };
 
@@ -207,7 +207,7 @@ struct tdstack <shared_ptr<T> >
     assert (classname <T>::isRegistered ());
 
     return *(shared_ptr<T> *)
-      util::checkClass(L, index, classname<T>::name(), false);
+      detail::checkClass(L, index, classname<T>::name(), false);
   }
 };
 
@@ -233,7 +233,7 @@ struct tdstack <shared_ptr<const T> >
   {
     std::string constname = std::string("const ") + classname<T>::name();
     return *(shared_ptr<const T> *)
-      util::checkClass(L, index, constname.c_str());
+      detail::checkClass(L, index, constname.c_str());
   }
 };
 

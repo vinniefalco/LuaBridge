@@ -305,6 +305,33 @@ class class__;
 
 //==============================================================================
 /**
+  Object lifetime management policy.
+*/
+class Policy
+{
+public:
+};
+
+//------------------------------------------------------------------------------
+/**
+  Retrieve an instance of the specified policy.
+*/
+template <typename T, template <typename> class PolicyType >
+Policy* getPolicy ()
+{
+  static PolicyType <T> s_policy;
+  return &s_policy;
+}
+
+//------------------------------------------------------------------------------
+
+template <typename T>
+class OurSharedPtrPolicy : public Policy
+{
+};
+
+//==============================================================================
+/**
   Holds the address of a unique string to identify unregistered classes.
 
   @internal
@@ -318,19 +345,21 @@ protected:
     return name;
   }
 };
-//http://bit.ly/KdT5x9
+
+//------------------------------------------------------------------------------
 /**
   Registered class attributes.
 
   This template provides introspection to retrieve the attributes associated
   with any class type. Attributes include whether or not the class is
-  registered, a name string for registered classes, and the const-ness.
+  registered, a name string for registered classes, the const-ness, and
+  the Policy object.
 
   @tparam T The class for obtaining attributes.
 
   @internal
 */
-template <typename T>
+template <class T>
 class classname : private classnamebase
 {
 public:
@@ -353,7 +382,9 @@ public:
 
   /** Determine if a registered class is const.
 
-      @note The class must already be registered.
+      @note Unregistered classes are not const.
+
+      @todo Should we require that the class is registered?
   */
   static inline bool isConst ()
   {
@@ -361,18 +392,32 @@ public:
     return false;
   }
 
-  /** Register a class name.
+  /** Register a class.
+
+      @tparam PolicyType The lifetime management policy.
   */
-  static inline void setName (const char *name)
+  template <template <class> class PolicyType>
+  static void registerClass (char const* name)
   {
+    assert (!isRegistered ());
     classname <T>::s_name = name;
+    classname <T>::s_policy = getPolicy <T, PolicyType> ();
+  }
+
+  static void registerClass (char const* name)
+  {
+    registerClass <OurSharedPtrPolicy> (name);
   }
 
 private:
+  static Policy* s_policy;
   static char const* s_name;
 };
 
-template <typename T>
+template <class T>
+Policy* classname <T>::s_policy = 0;
+
+template <class T>
 char const* classname <T>::s_name = classnamebase::unregisteredClassName ();
 
 //------------------------------------------------------------------------------
@@ -393,35 +438,6 @@ struct classname <const T> : public classname <T>
 };
 
 //==============================================================================
-
-/** Get a value, bypassing metamethods.
-    @internal
-*/  
-inline void rawgetfield (lua_State* const L, int const index, char const* const key)
-{
-  lua_pushstring (L, key);
-  if (index < 0)
-    lua_rawget (L, index-1);
-  else
-    lua_rawget (L, index);
-}
-
-//----------------------------------------------------------------------------
-
-/** Set a value, bypassing metamethods.
-    @internal
-*/  
-inline void rawsetfield (lua_State* const L, int const index, char const* const key)
-{
-  lua_pushstring (L, key);
-  lua_insert (L, -2);
-  if (index < 0)
-    lua_rawset (L, index-1);
-  else
-    lua_rawset (L, index);
-}
-
-//==============================================================================
 /**
   Utilities.
 
@@ -431,8 +447,39 @@ inline void rawsetfield (lua_State* const L, int const index, char const* const 
   units.
 */
 
-struct util
+struct detail
 {
+  //----------------------------------------------------------------------------
+  /**
+    Get a value, bypassing metamethods.
+    
+    @internal
+  */  
+  static inline void rawgetfield (lua_State* const L, int const index, char const* const key)
+  {
+    lua_pushstring (L, key);
+    if (index < 0)
+      lua_rawget (L, index-1);
+    else
+      lua_rawget (L, index);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    Set a value, bypassing metamethods.
+    
+    @internal
+  */  
+  static inline void rawsetfield (lua_State* const L, int const index, char const* const key)
+  {
+    lua_pushstring (L, key);
+    lua_insert (L, -2);
+    if (index < 0)
+      lua_rawset (L, index-1);
+    else
+      lua_rawset (L, index);
+  }
+
   //----------------------------------------------------------------------------
   /**
     Produce an error message.
@@ -1053,7 +1100,7 @@ struct util
 
   @todo namespace support.
 */
-class scope : public util
+class scope : public detail
 {
 public:
   //----------------------------------------------------------------------------
@@ -1234,16 +1281,16 @@ class class__ : public scope
 {
 public:
   class__ (lua_State *L_)
-: scope(L_, classname<T>::name())
+    : scope (L_, classname <T>::name ())
   {
-    assert(classname<T>::name() != classname_unknown ());
+    assert (classname <T>::isRegistered ());
   }
 
   class__ (lua_State *L_, const char *name_)
     : scope(L_, name_)
   {
     assert(!classname<T>::isConst());
-    classname<T>::setName(name_);
+    classname<T>::registerClass(name_);
 
     // Create metatable for this class.  The metatable is stored in the Lua
     // registry, keyed by the given class name.
@@ -1265,7 +1312,7 @@ public:
     : scope(L_, name_)
   {
     assert(!classname<T>::isConst());
-    classname<T>::setName(name_);
+    classname<T>::registerClass(name_);
 
     // Create metatable for this class
     createMetaTable<T>(L, name_);
