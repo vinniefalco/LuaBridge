@@ -1386,8 +1386,6 @@ template <class T, template <class> class Policy>
 class class__ : public scope
 {
 public:
-  typedef typename Policy <T>::Container Container;
-
   explicit class__ (lua_State *L_)
     : scope (L_, classname <T>::name ())
   {
