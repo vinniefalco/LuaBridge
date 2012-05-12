@@ -1854,7 +1854,7 @@ private:
   T m_t;
 
 public:
-  explicit UserdataByValue (T other) : m_t (t)
+  explicit UserdataByValue (T t) : m_t (t)
   {
   }
 
@@ -1863,11 +1863,11 @@ public:
     return typeid (*this).name ();
   }
 
-  static void push (lua_State* L, T other)
+  static void push (lua_State* L, T t)
   {
     assert (classname <T>::isRegistered ());
-    void* const userdata = lua_newuserdata (L, sizeof (*this));
-    new (userdata) UserdataByValue <T> (other);
+    void* const userdata = lua_newuserdata (L, sizeof (UserdataByValue <T>));
+    new (userdata) UserdataByValue <T> (t);
     luaL_getmetatable (L, classname <T>::name ());
     lua_setmetatable (L, -2);
   }
@@ -2006,14 +2006,18 @@ public:
 
     @note T must be copy-constructible.
   */
-  static void push (lua_State *L, T data)
+  static void push (lua_State *L, T t)
   {
+#if 0
+    UserdataByValue <T>::push (L, t);
+#else
     // Use the policy to construct a new userdata with the class metatable.
     LifetimePolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = lua_newuserdata (L, policy.getUserdataSize ());
-    policy.constructUserdata (userdata, new T (data));
+    policy.constructUserdata (userdata, new T (t));
     luaL_getmetatable (L, classname <T>::name ());
     lua_setmetatable (L, -2);
+#endif
   }
 
   /**
@@ -2023,11 +2027,15 @@ public:
   */
   static T get (lua_State *L, int index)
   {
+#if 0
+    return UserdataByValue <T>::get (L, index);
+#else
     // Use the policy to retrieve a pointer to the class.
     LifetimePolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = detail::checkClass (L, index, classname <T>::name());
     T const* const obj = policy.getClassPointer <T> (userdata);
     return *obj;
+#endif
   }
 };
 
