@@ -304,7 +304,7 @@ class class__;
 /**
   Object lifetime management policy.
 */
-struct AbstractPolicy
+struct LifetimePolicy
 {
   /** Returns the size of the userdata required to hold the container.
   */
@@ -327,7 +327,7 @@ struct AbstractPolicy
   }
 
 protected:
-  virtual ~AbstractPolicy () { }
+  virtual ~LifetimePolicy () { }
 
 private:
   /** Retrieve a void pointer to the contained class from the userdata.
@@ -340,7 +340,7 @@ private:
   Object policy that uses the original luabridge::shared_ptr
 */
 template <typename T>
-struct SharedPtrPolicy : AbstractPolicy
+struct SharedPtrPolicy : LifetimePolicy
 {
   typedef shared_ptr <T> Container;
 
@@ -370,7 +370,7 @@ struct SharedPtrPolicy : AbstractPolicy
   Object policy for exclusive Lua ownership.
 */
 template <typename T>
-struct LuaOwnedPolicy : AbstractPolicy
+struct LuaOwnedPolicy : LifetimePolicy
 {
   size_t getUserdataSize () const
   {
@@ -400,7 +400,7 @@ struct LuaOwnedPolicy : AbstractPolicy
   The object must outlive all Lua environments.
 */
 template <typename T>
-struct UnmanagedPtrPolicy : AbstractPolicy
+struct UnmanagedPtrPolicy : LifetimePolicy
 {
   size_t getUserdataSize () const
   {
@@ -503,19 +503,19 @@ public:
 
       @note The class must be registered.
   */
-  static AbstractPolicy const& getPolicy ()
+  static LifetimePolicy const& getPolicy ()
   {
     assert (isRegistered ());
     return *s_policy;
   }
 
 private:
-  static AbstractPolicy* s_policy;
+  static LifetimePolicy* s_policy;
   static char const* s_name;
 };
 
 template <class T>
-AbstractPolicy* classname <T>::s_policy = 0;
+LifetimePolicy* classname <T>::s_policy = 0;
 
 template <class T>
 char const* classname <T>::s_name = classnamebase::unregisteredClassName ();
@@ -981,7 +981,7 @@ public:
   static void push (lua_State *L, T data)
   {
     // Use the policy to construct a new userdata with the class metatable.
-    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    LifetimePolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = lua_newuserdata (L, policy.getUserdataSize ());
     policy.constructUserdata (userdata, new T (data));
     luaL_getmetatable (L, classname <T>::name ());
@@ -996,7 +996,7 @@ public:
   static T get (lua_State *L, int index)
   {
     // Use the policy to retrieve a pointer to the class.
-    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    LifetimePolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = detail::checkClass (L, index, classname <T>::name());
     T const* const obj = policy.getClassPointer <T> (userdata);
     return *obj;
@@ -1402,7 +1402,7 @@ template <typename T, typename Params>
 int ctorProxy (lua_State *L)
 {
   // Use the policy to construct a new userdata with the class metatable.
-  AbstractPolicy const& policy = classname <T>::getPolicy ();
+  LifetimePolicy const& policy = classname <T>::getPolicy ();
   void* const userdata = lua_newuserdata (L, policy.getUserdataSize ());
   arglist <Params, 2> args (L);
   policy.constructUserdata (userdata, constructor <T, Params>::call (args));
@@ -1426,7 +1426,7 @@ template <typename T>
 int gcProxy (lua_State *L)
 {
   // Use the policy to destroy the userdata.
-  AbstractPolicy const& policy = classname <T>::getPolicy ();
+  LifetimePolicy const& policy = classname <T>::getPolicy ();
   void* const userdata = detail::checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), true);
   policy.destroyUserdata (userdata);
   return 0;
@@ -1452,7 +1452,7 @@ struct methodProxy
   static int f (lua_State *L)
   {
     // Use the policy to obtain the class pointer.
-    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    LifetimePolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = detail::checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
     T* const obj (policy.getClassPointer <T> (userdata));
     MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
@@ -1474,7 +1474,7 @@ struct methodProxy <MemberFunction, void>
   static int f (lua_State *L)
   {
     // Use the policy to obtain the class pointer.
-    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    LifetimePolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = detail::checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
     T* const obj (policy.getClassPointer <T> (userdata));
     MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
@@ -1495,7 +1495,7 @@ template <typename T, typename U>
 int propgetMemberProxy (lua_State *L)
 {
   // Use the policy to obtain the class pointer.
-  AbstractPolicy const& policy = classname <T>::getPolicy ();
+  LifetimePolicy const& policy = classname <T>::getPolicy ();
   void* const userdata = detail::checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
   T* const obj (policy.getClassPointer <T> (userdata));
   U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
@@ -1509,7 +1509,7 @@ template <typename T, typename U>
 int propsetMemberProxy (lua_State *L)
 {
   // Use the policy to obtain the class pointer.
-  AbstractPolicy const& policy = classname <T>::getPolicy ();
+  LifetimePolicy const& policy = classname <T>::getPolicy ();
   void* const userdata = detail::checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
   T* const obj (policy.getClassPointer <T> (userdata));
   U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
