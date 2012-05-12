@@ -31,7 +31,7 @@
 #include <lua.hpp>
 #include <string>
 #include <vector>
-#include "../include/luabridge.hpp"
+#include "../luabridge.h"
 
 using namespace std;
 
@@ -61,7 +61,7 @@ int main (int argc, char **argv)
 	int errfunc_index = lua_gettop(L);
 
 	// Execute lua files in order
-	if (luaL_loadfile(L, "src/test.lua") != 0)
+	if (luaL_loadfile(L, "test.lua") != 0)
 	{
 		// compile-time error
 		cerr << lua_tostring(L, -1) << endl;

@@ -47,8 +47,17 @@
 #ifndef LUABRIDGE_LUABRIDGE_HEADER
 #define LUABRIDGE_LUABRIDGE_HEADER
 
-#include <cstdio>
+#include <stdint.h>
 
+#ifdef _MSC_VER
+# include <hash_map>
+#else
+# include <ext/hash_map>
+#endif
+
+// The dependence on stdio was removed
+/*
+#include <cstdio>
 #ifdef _MSC_VER
 #  if (_MSC_VER >= 1400)
 #    define snprintf _snprintf_s
@@ -56,6 +65,7 @@
 #    define snprintf _snprintf
 # endif
 #endif
+*/
 
 //==============================================================================
 /**
@@ -74,6 +84,8 @@
   advanced template features it uses, I can't guarantee LuaBridge will compile
   correctly with anything else, but it is written in standard-compliant C++, so
   if you have a compliant compiler you *should* be fine.
+
+  Lua headers need to be included before including luabridge.h.
 
   Compiling should be very simple.  Ensure that Lua is installed and its headers
   are in your include path.  If you are using MSVC, load the provided solution
@@ -289,9 +301,9 @@
 #include <cassert>
 #include <string>
 
-#ifndef USE_OTHER_SHARED_PTR
-#include "shared_ptr.h"
-#endif
+//#ifndef USE_OTHER_SHARED_PTR
+//#include "shared_ptr.h"
+//#endif
 
 namespace luabridge
 {
@@ -299,6 +311,197 @@ namespace luabridge
 // forward declaration
 template <class T, template <class> class Policy>
 class class__;
+
+//==============================================================================
+/**
+  Support for our shared_ptr.
+
+  @internal
+*/
+struct shared_ptr_base
+{
+  // Declaration of container for the refcounts
+#ifdef _MSC_VER
+  typedef stdext::hash_map <const void *, int> refcounts_t;
+#else
+  struct ptr_hash
+  {
+    size_t operator () (const void * const v) const
+    {
+      static __gnu_cxx::hash<unsigned int> H;
+      return H(uintptr_t(v));
+    }
+  };
+  typedef __gnu_cxx::hash_map<const void *, int, ptr_hash> refcounts_t;
+#endif
+
+protected:
+  inline refcounts_t& refcounts_ ()
+  {
+    static refcounts_t refcounts;
+    return refcounts ;
+  }
+};
+
+//==============================================================================
+/**
+  A reference counted smart pointer.
+
+  The api is compatible with boost::shared_ptr and std::shared_ptr, in the
+  sense that it implements a strict subset of the functionality.
+
+  This implementation uses a hash table to look up the reference count
+  associated with a particular pointer.
+
+  @tparam T The class type.
+
+  @todo Decompose shared_ptr using a policy. At a minimum, the underlying
+        reference count should be policy based (to support atomic operations)
+        and the delete behavior should be policy based (to support custom
+        disposal methods).
+
+  @todo Provide an intrusive version of shared_ptr.
+*/
+template <typename T>
+class shared_ptr : private shared_ptr_base
+{
+public:
+  template <typename Other>
+  struct rebind
+  {
+    typedef shared_ptr <Other> other;
+  };
+
+  /** Construct as nullptr or from existing pointer to T.
+
+      @param p The optional, existing pointer to assign from.
+  */
+  shared_ptr (T* p = 0) : m_p (p)
+  {
+    ++refcounts_ () [m_p];
+  }
+
+  /** Construct from another shared_ptr.
+
+      @param rhs The shared_ptr to assign from.
+  */
+  shared_ptr (shared_ptr <T> const& rhs) : m_p (rhs.get())
+  {
+    ++refcounts_ () [m_p];
+  }
+
+  /** Construct from a shared_ptr of a different type.
+
+      @invariant A pointer to U must be convertible to a pointer to T.
+
+      @param  rhs The shared_ptr to assign from.
+      @tparam U   The other object type.
+  */
+  template <typename U>
+  shared_ptr (shared_ptr <U> const& rhs) : m_p (static_cast <T*> (rhs.get()))
+  {
+    ++refcounts_ () [m_p];
+  }
+
+  /** Release the object.
+
+      If there are no more references then the object is deleted.
+  */
+  ~shared_ptr ()
+  {
+    reset();
+  }
+
+  /** Assign from another shared_ptr.
+
+      @param  rhs The shared_ptr to assign from.
+      @return     A reference to the shared_ptr.
+  */
+  shared_ptr <T>& operator= (shared_ptr <T> const& rhs)
+  {
+    if (m_p != rhs.m_p)
+    {
+      reset ();
+      m_p = rhs.m_p;
+      ++refcounts_ () [m_p];
+    }
+    return *this;
+  }
+
+  /** Assign from another shared_ptr of a different type.
+
+      @note A pointer to U must be convertible to a pointer to T.
+
+      @tparam U   The other object type.
+      @param  rhs The other shared_ptr to assign from.
+      @return     A reference to the shared_ptr.
+  */
+  template <typename U>
+  shared_ptr <T>& operator= (shared_ptr <U> const& rhs)
+  {
+    reset ();
+    m_p = static_cast <T*> (rhs.get());
+    ++refcounts_ () [m_p];
+    return *this;
+  }
+
+  /** Retrieve the raw pointer.
+
+      @return A pointer to the object.
+  */
+  T* get () const
+  {
+    return m_p;
+  }
+
+  /** Retrieve the raw pointer.
+
+      @return A pointer to the object.
+  */
+  T* operator* () const
+  {
+    return m_p;
+  }
+
+  /** Retrieve the raw pointer.
+
+      @return A pointer to the object.
+  */
+  T* operator-> () const
+  {
+    return m_p;
+  }
+
+  /** Determine the number of references.
+
+      @note This is not thread-safe.
+
+      @return The number of active references.
+  */
+  long use_count () const
+  {
+    return refcounts_ () [m_p];
+  }
+
+  /** Release the pointer.
+
+      The reference count is decremented. If the reference count reaches
+      zero, the object is deleted.
+  */
+  void reset ()
+  {
+    if (m_p != 0)
+    {
+      if (--refcounts_ () [m_p] <= 0)
+        delete m_p;
+
+      m_p = 0;
+    }
+  }
+
+private:
+  T* m_p;
+};
 
 //==============================================================================
 /**
@@ -1616,12 +1819,15 @@ static void* checkClass (lua_State *L, int index, const char *tname, bool exact)
       lua_getmetatable(L, index);
       rawgetfield(L, -1, "__type");
 
-      char buffer[256];
-      snprintf(buffer, 256, "%s expected, got %s", tname,
-        lua_tostring(L, -1));
-      // luaL_argerror does not return
-      luaL_argerror(L, index, buffer);
-      return 0;
+#if 1
+      luaL_argerror (L, index, lua_pushfstring (L,
+        "%s expected, got %s", tname , lua_tostring (L, -1)));
+#else
+      char buffer [256];
+      snprintf (buffer, 256, "%s expected, got %s", tname, lua_tostring (L, -1));
+      luaL_argerror (L, index, buffer);
+#endif
+      return 0; // doesn't get here
     }
 
     // Remove the old metatable from the stack

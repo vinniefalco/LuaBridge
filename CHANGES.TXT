@@ -1,3 +1,9 @@
+2012-05-11 Vinnie Falco <vinnie.falco@gmail.com>
+
+  * Initial implementation of object lifetime management policies.
+  * Merge the entire library into a single header.
+  * Eliminate dependencies on some standard libraries.
+  * Fix potential buffer overrun with snprintf.
 
 2012-05-08 Vinnie Falco <vinnie.falco@gmail.com>
 
