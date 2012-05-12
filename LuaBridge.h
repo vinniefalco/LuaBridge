@@ -2871,7 +2871,7 @@ public:
   // Constructor registration.  The template parameter should be passed
   // a function pointer type; only the argument list will be used (since
   // you can't take the address of a ctor).
-  template <typename MemFn, template <class> class SharedPtr = shared_ptr>
+  template <typename MemFn, template <class> class SharedPtr>
   class__ <T>& constructor ()
   {
     // Get a reference to the class's static table
