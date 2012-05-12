@@ -306,8 +306,6 @@ class class__;
 */
 struct AbstractPolicy
 {
-  virtual ~AbstractPolicy () = 0;
-
   /** Returns the size of the userdata required to hold the container.
   */
   virtual size_t getUserdataSize () const = 0;
@@ -328,15 +326,14 @@ struct AbstractPolicy
     return static_cast <T*> (getPointer (userdata));
   }
 
+protected:
+  virtual ~AbstractPolicy () { }
+
 private:
   /** Retrieve a void pointer to the contained class from the userdata.
   */
   virtual void* getPointer (void* const userdata) const = 0;
 };
-
-AbstractPolicy::~AbstractPolicy()
-{
-}
 
 //------------------------------------------------------------------------------
 /**
@@ -1402,7 +1399,7 @@ public:
     : scope(L_, name_)
   {
     assert (!classname <T>::isConst ());
-    classname <T>::registerClass <Policy> (name_);
+    classname <T>::template registerClass <Policy> (name_);
 
     // Create metatable for this class.  The metatable is stored in the Lua
     // registry, keyed by the given class name.
@@ -1425,7 +1422,7 @@ public:
     : scope(L_, name_)
   {
     assert (!classname <T>::isConst ());
-    classname <T>::registerClass <Policy> (name_);
+    classname <T>::template registerClass <Policy> (name_);
 
     // Create metatable for this class
     createMetaTable <T> (L, name_);
