@@ -538,8 +538,679 @@ struct classname <const T> : public classname <T>
 };
 
 //==============================================================================
+//
+// typelist
+//
+//==============================================================================
+/*
+  Implementation of C++ template type lists and related tools.
+  Type list and definition of nil type list, which is void.
+*/
 
-#include "typelist.h"
+typedef void nil;
+
+template <typename Head, typename Tail = nil>
+struct typelist {};
+
+/*
+* Type/value list.
+*/
+
+template <typename Typelist>
+struct typevallist {};
+
+template <typename Head, typename Tail>
+struct typevallist <typelist<Head, Tail> >
+{
+  Head hd;
+  typevallist<Tail> tl;
+  typevallist(Head hd_, const typevallist<Tail> &tl_):
+  hd(hd_), tl(tl_)
+  {}
+};
+
+// Specializations of type/value list for head types that are references and
+// const-references.  We need to handle these specially since we can't count
+// on the referenced object hanging around for the lifetime of the list.
+
+template <typename Head, typename Tail>
+struct typevallist <typelist<Head &, Tail> >
+{
+  Head hd;
+  typevallist<Tail> tl;
+  typevallist(Head &hd_, const typevallist<Tail> &tl_):
+  hd(hd_), tl(tl_)
+  {}
+};
+
+template <typename Head, typename Tail>
+struct typevallist <typelist<const Head &, Tail> >
+{
+  Head hd;
+  typevallist<Tail> tl;
+  typevallist(const Head &hd_, const typevallist<Tail> &tl_):
+  hd(hd_), tl(tl_)
+  {}
+};
+
+/*
+* Containers for function pointer types.  We have three kinds of containers:
+* one for global functions, one for non-const member functions, and one for
+* const member functions.  These containers allow the function pointer types
+* to be broken down into their components.
+*
+* Of course, because of the limitations of C++ templates, we can only define
+* this for up to a constant number of function parameters.  We give the
+* definitions for up to 8 parameters here, though this can be easily
+* increased if necessary.
+*/
+
+template <typename FnPtr>
+struct fnptr {};
+
+/* Ordinary function pointers. */
+
+template <typename Ret>
+struct fnptr <Ret (*) ()>
+{
+  static const bool mfp = false;
+  typedef Ret resulttype;
+  typedef nil params;
+  static Ret call (Ret (*fp) (), const typevallist<params> &tvl)
+  {
+    (void)tvl;
+    return fp();
+  }
+};
+
+template <typename Ret, typename P1>
+struct fnptr <Ret (*) (P1)>
+{
+  static const bool mfp = false;
+  typedef Ret resulttype;
+  typedef typelist<P1> params;
+  static Ret call (Ret (*fp) (P1), const typevallist<params> &tvl)
+  {
+    return fp(tvl.hd);
+  }
+};
+
+template <typename Ret, typename P1, typename P2>
+struct fnptr <Ret (*) (P1, P2)>
+{
+  static const bool mfp = false;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2> > params;
+  static Ret call (Ret (*fp) (P1, P2), const typevallist<params> &tvl)
+  {
+    return fp(tvl.hd, tvl.tl.hd);
+  }
+};
+
+template <typename Ret, typename P1, typename P2, typename P3>
+struct fnptr <Ret (*) (P1, P2, P3)>
+{
+  static const bool mfp = false;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3> > > params;
+  static Ret call (Ret (*fp) (P1, P2, P3), const typevallist<params> &tvl)
+  {
+    return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
+  }
+};
+
+template <typename Ret, typename P1, typename P2, typename P3, typename P4>
+struct fnptr <Ret (*) (P1, P2, P3, P4)>
+{
+  static const bool mfp = false;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
+  static Ret call (Ret (*fp) (P1, P2, P3, P4),
+    const typevallist<params> &tvl)
+  {
+    return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
+  }
+};
+
+template <typename Ret, typename P1, typename P2, typename P3, typename P4,
+  typename P5>
+struct fnptr <Ret (*) (P1, P2, P3, P4, P5)>
+{
+  static const bool mfp = false;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4,
+    typelist<P5> > > > > params;
+  static Ret call (Ret (*fp) (P1, P2, P3, P4, P5),
+    const typevallist<params> &tvl)
+  {
+    return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename Ret, typename P1, typename P2, typename P3, typename P4,
+  typename P5, typename P6>
+struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6)>
+{
+  static const bool mfp = false;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5, 
+    typelist<P6> > > > > > params;
+  static Ret call (Ret (*fp) (P1, P2, P3, P4, P5, P6),
+    const typevallist<params> &tvl)
+  {
+    return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename Ret, typename P1, typename P2, typename P3, typename P4,
+  typename P5, typename P6, typename P7>
+struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6, P7)>
+{
+  static const bool mfp = false;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
+    typelist<P6, typelist<P7> > > > > > > params;
+  static Ret call (Ret (*fp) (P1, P2, P3, P4, P5, P6, P7),
+    const typevallist<params> &tvl)
+  {
+    return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename Ret, typename P1, typename P2, typename P3, typename P4,
+  typename P5, typename P6, typename P7, typename P8>
+struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
+{
+  static const bool mfp = false;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
+    typelist<P6, typelist<P7, typelist<P8> > > > > > > > params;
+  static Ret call (Ret (*fp) (P1, P2, P3, P4, P5, P6, P7, P8),
+    const typevallist<params> &tvl)
+  {
+    return fp(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+/* Non-const member function pointers. */
+
+template <typename T, typename Ret>
+struct fnptr <Ret (T::*) ()>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = false;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef nil params;
+  static Ret call (T *obj, Ret (T::*fp) (), const typevallist<params> &tvl)
+  {
+    (void)tvl;
+    return (obj->*fp)();
+  }
+};
+
+template <typename T, typename Ret, typename P1>
+struct fnptr <Ret (T::*) (P1)>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = false;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1> params;
+  static Ret call (T *obj, Ret (T::*fp) (P1),
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2>
+struct fnptr <Ret (T::*) (P1, P2)>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = false;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2> > params;
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2),
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3>
+struct fnptr <Ret (T::*) (P1, P2, P3)>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = false;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3> > > params;
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3),
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4)>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = false;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4),
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4, typename P5>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = false;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4,
+    typelist<P5> > > > > params;
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5),
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4, typename P5, typename P6>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6)>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = false;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
+    typelist<P6> > > > > > params;
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5, P6),
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4, typename P5, typename P6, typename P7>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7)>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = false;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
+    typelist<P6, typelist<P7> > > > > > > params;
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7),
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4, typename P5, typename P6, typename P7, typename P8>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = false;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
+    typelist<P6, typelist<P7, typelist <P8> > > > > > > > params;
+  static Ret call (T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7, P8),
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+/* Const member function pointers. */
+
+template <typename T, typename Ret>
+struct fnptr <Ret (T::*) () const>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = true;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef nil params;
+  static Ret call (const T *obj, Ret (T::*fp) () const,
+    const typevallist<params> &tvl)
+  {
+    (void)tvl;
+    return (obj->*fp)();
+  }
+};
+
+template <typename T, typename Ret, typename P1>
+struct fnptr <Ret (T::*) (P1) const>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = true;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1> params;
+  static Ret call (const T *obj, Ret (T::*fp) (P1) const,
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2>
+struct fnptr <Ret (T::*) (P1, P2) const>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = true;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2> > params;
+  static Ret call (const T *obj, Ret (T::*fp) (P1, P2) const,
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3>
+struct fnptr <Ret (T::*) (P1, P2, P3) const>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = true;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3> > > params;
+  static Ret call (const T *obj, Ret (T::*fp) (P1, P2, P3) const,
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4) const>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = true;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
+  static Ret call (const T *obj, Ret (T::*fp) (P1, P2, P3, P4) const,
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4, typename P5>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5) const>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = true;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4,
+    typelist<P5> > > > > params;
+  static Ret call (const T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5) const,
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4, typename P5, typename P6>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6) const>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = true;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
+    typelist<P6> > > > > > params;
+  static Ret call (const T *obj,
+    Ret (T::*fp) (P1, P2, P3, P4, P5, P6) const,
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4, typename P5, typename P6, typename P7>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = true;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
+    typelist<P6, typelist<P7> > > > > > > params;
+  static Ret call (const T *obj,
+    Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7) const,
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename Ret, typename P1, typename P2, typename P3,
+  typename P4, typename P5, typename P6, typename P7, typename P8>
+struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
+{
+  static const bool mfp = true;
+  static const bool const_mfp = true;
+  typedef T classtype;
+  typedef Ret resulttype;
+  typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
+    typelist<P6, typelist<P7, typelist<P8> > > > > > > > params;
+  static Ret call (const T *obj,
+    Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7, P8) const,
+    const typevallist<params> &tvl)
+  {
+    return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+/*
+* Constructor generators.  These templates allow you to call operator new and
+* pass the contents of a type/value list to the constructor.  Like the
+* function pointer containers, these are only defined up to 8 parameters.
+*/
+
+template <typename T, typename Typelist>
+struct constructor {};
+
+template <typename T>
+struct constructor <T, nil>
+{
+  static T* call (const typevallist<nil> &tvl)
+  {
+    (void)tvl;
+    return new T;
+  }
+  static T* call (void* mem, const typevallist<nil> &tvl)
+  {
+    (void)tvl;
+    return new (mem) T;
+  }
+};
+
+template <typename T, typename P1>
+struct constructor <T, typelist<P1> >
+{
+  static T* call (const typevallist<typelist<P1> > &tvl)
+  {
+    return new T(tvl.hd);
+  }
+  static T* call (void* mem, const typevallist<typelist<P1> > &tvl)
+  {
+    return new (mem) T(tvl.hd);
+  }
+};
+
+template <typename T, typename P1, typename P2>
+struct constructor <T, typelist<P1, typelist<P2> > >
+{
+  static T* call (const typevallist<typelist<P1, typelist<P2> > > &tvl)
+  {
+    return new T(tvl.hd, tvl.tl.hd);
+  }
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2> > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd);
+  }
+};
+
+template <typename T, typename P1, typename P2, typename P3>
+struct constructor <T, typelist<P1, typelist<P2, typelist<P3> > > >
+{
+  static T* call (const typevallist<typelist<P1, typelist<P2,
+    typelist<P3> > > > &tvl)
+  {
+    return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
+  }
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3> > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename P1, typename P2, typename P3, typename P4>
+struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
+  typelist<P4> > > > >
+{
+  static T* call (const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4> > > > > &tvl)
+  {
+    return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
+  }
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4> > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename P1, typename P2, typename P3, typename P4,
+  typename P5>
+struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
+  typelist<P4, typelist<P5> > > > > >
+{
+  static T* call (const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5> > > > > > &tvl)
+  {
+    return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd);
+  }
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5> > > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename P1, typename P2, typename P3, typename P4,
+  typename P5, typename P6>
+struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
+  typelist<P4, typelist<P5, typelist<P6> > > > > > >
+{
+  static T* call (const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5, typelist<P6> > > > > > > &tvl)
+  {
+    return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
+  }
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5, typelist<P6> > > > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename P1, typename P2, typename P3, typename P4,
+  typename P5, typename P6, typename P7>
+struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
+  typelist<P4, typelist<P5, typelist<P6, typelist<P7> > > > > > > >
+{
+  static T* call (const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5, typelist<P6,
+    typelist<P7> > > > > > > > &tvl)
+  {
+    return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd);
+  }
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5, typelist<P6,
+    typelist<P7> > > > > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd);
+  }
+};
+
+template <typename T, typename P1, typename P2, typename P3, typename P4,
+  typename P5, typename P6, typename P7, typename P8>
+struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
+  typelist<P4, typelist<P5, typelist<P6, typelist<P7, 
+  typelist<P8> > > > > > > > >
+{
+  static T* call (const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5, typelist<P6,
+    typelist<P7, typelist<P8> > > > > > > > > &tvl)
+  {
+    return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
+  }
+  static T* call (void* mem, const typevallist<typelist<P1, typelist<P2,
+    typelist<P3, typelist<P4, typelist<P5, typelist<P6,
+    typelist<P7, typelist<P8> > > > > > > > > &tvl)
+  {
+    return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
+      tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
+  }
+};
 
 //==============================================================================
 /*
@@ -1179,40 +1850,59 @@ struct tdstack <shared_ptr<const T> >
 * Primitive types, including const char * and std::string
 */
 
-// Create a macro for handling numeric types,
-// since they follow the same pattern
-
-#define TDSTACK_NUMERIC(T) \
-  template <> \
-struct tdstack <T> \
-{ \
-  static void push (lua_State *L, T data) \
-{ \
-  lua_pushnumber(L, (lua_Number)data); \
-} \
-  static T get (lua_State *L, int index) \
-{ \
-  return (T)(luaL_checknumber(L, index)); \
-} \
-}
-
 template <> struct tdstack <
   int > { static void push (lua_State* L,
   int value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   int get (lua_State* L, int index) { return static_cast <
   int > (luaL_checknumber (L, index)); } };
 
-//TDSTACK_NUMERIC(int);
-TDSTACK_NUMERIC(unsigned int);
-TDSTACK_NUMERIC(unsigned char);
-TDSTACK_NUMERIC(short);
-TDSTACK_NUMERIC(unsigned short);
-TDSTACK_NUMERIC(long);
-TDSTACK_NUMERIC(unsigned long);
-TDSTACK_NUMERIC(float);
-TDSTACK_NUMERIC(double);
+template <> struct tdstack <
+  unsigned int > { static void push (lua_State* L,
+  unsigned int value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  unsigned int get (lua_State* L, int index) { return static_cast <
+  unsigned int > (luaL_checknumber (L, index)); } };
 
-#undef TDSTACK_NUMERIC
+template <> struct tdstack <
+  unsigned char > { static void push (lua_State* L,
+  unsigned char value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  unsigned char get (lua_State* L, int index) { return static_cast <
+  unsigned char > (luaL_checknumber (L, index)); } };
+
+template <> struct tdstack <
+  short > { static void push (lua_State* L,
+  short value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  short get (lua_State* L, int index) { return static_cast <
+  short > (luaL_checknumber (L, index)); } };
+
+template <> struct tdstack <
+  unsigned short > { static void push (lua_State* L,
+  unsigned short value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  unsigned short get (lua_State* L, int index) { return static_cast <
+  unsigned short > (luaL_checknumber (L, index)); } };
+
+template <> struct tdstack <
+  long > { static void push (lua_State* L,
+  long value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  long get (lua_State* L, int index) { return static_cast <
+  long > (luaL_checknumber (L, index)); } };
+
+template <> struct tdstack <
+  unsigned long > { static void push (lua_State* L,
+  unsigned long value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  unsigned long get (lua_State* L, int index) { return static_cast <
+  unsigned long > (luaL_checknumber (L, index)); } };
+
+template <> struct tdstack <
+  float > { static void push (lua_State* L,
+  float value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  float get (lua_State* L, int index) { return static_cast <
+  float > (luaL_checknumber (L, index)); } };
+
+template <> struct tdstack <
+  double > { static void push (lua_State* L,
+  double value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  double get (lua_State* L, int index) { return static_cast <
+  double > (luaL_checknumber (L, index)); } };
 
 //------------------------------------------------------------------------------
 
