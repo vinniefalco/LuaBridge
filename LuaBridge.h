@@ -47,25 +47,15 @@
 #ifndef LUABRIDGE_LUABRIDGE_HEADER
 #define LUABRIDGE_LUABRIDGE_HEADER
 
+#include <typeinfo>
 #include <stdint.h>
+#include <string.h>
 
 #ifdef _MSC_VER
 # include <hash_map>
 #else
 # include <ext/hash_map>
 #endif
-
-// The dependence on stdio was removed
-/*
-#include <cstdio>
-#ifdef _MSC_VER
-#  if (_MSC_VER >= 1400)
-#    define snprintf _snprintf_s
-#  else
-#    define snprintf _snprintf
-# endif
-#endif
-*/
 
 //==============================================================================
 /**
@@ -1783,15 +1773,8 @@ static void* checkClass (lua_State *L, int index, const char *tname, bool exact)
     {
       // Generate an informative error message
       rawgetfield(L, -1, "__type");
-#if 1
       luaL_argerror (L, index, lua_pushfstring (L,
         "%s expected, got %s", tname , lua_typename (L, lua_type (L, index))));
-#else
-      char buffer[256];
-      snprintf(buffer, 256, "%s expected, got %s", tname, lua_tostring(L, -1));
-      luaL_argerror(L, index, buffer);
-#endif
-
       return 0; // doesn't get here
     }
   }
@@ -1818,15 +1801,8 @@ static void* checkClass (lua_State *L, int index, const char *tname, bool exact)
       // generate an informative error message
       lua_getmetatable(L, index);
       rawgetfield(L, -1, "__type");
-
-#if 1
       luaL_argerror (L, index, lua_pushfstring (L,
         "%s expected, got %s", tname , lua_tostring (L, -1)));
-#else
-      char buffer [256];
-      snprintf (buffer, 256, "%s expected, got %s", tname, lua_tostring (L, -1));
-      luaL_argerror (L, index, buffer);
-#endif
       return 0; // doesn't get here
     }
 
@@ -1838,6 +1814,181 @@ static void* checkClass (lua_State *L, int index, const char *tname, bool exact)
   return lua_touserdata(L, index);
 }
 
+};
+
+//==============================================================================
+/**
+  Contents of userdata for classes.
+*/
+class Userdata
+{
+public:
+  virtual ~Userdata () { }
+
+  template <class T>
+  T* getClassPointer ()
+  {
+    return static_cast <T*> (getPointer ());
+  }
+
+  /** For diagonstics.
+  */
+  virtual char const* getTypename () const = 0;
+
+private:
+  virtual void* getPointer () = 0;
+};
+
+//------------------------------------------------------------------------------
+/**
+  Class passed by value.
+
+  The object lifetime is fully managed by Lua.
+
+  @note T must be copy-constructible.
+*/
+template <class T>
+class UserdataByValue
+{
+private:
+  T m_t;
+
+public:
+  explicit UserdataByValue (T other) : m_t (t)
+  {
+  }
+
+  char const* getTypename () const
+  {
+    return typeid (*this).name ();
+  }
+
+  static void push (lua_State* L, T other)
+  {
+    assert (classname <T>::isRegistered ());
+    void* const userdata = lua_newuserdata (L, sizeof (*this));
+    new (userdata) UserdataByValue <T> (other);
+    luaL_getmetatable (L, classname <T>::name ());
+    lua_setmetatable (L, -2);
+  }
+
+  static T get (lua_State* L, int index)
+  {
+    Userdata* userdata = static_cast <Userdata*> (
+      detail::checkClass (L, index, classname <T>::name ()));
+
+    return *userdata->getClassPointer <T> ();
+  }
+
+private:
+  void* getPointer ()
+  {
+    return &m_t;
+  }
+};
+
+//------------------------------------------------------------------------------
+/**
+  Class passed by reference.
+
+  The object lifetime is fully managed by C++.
+*/
+template <class T>
+class UserdataByReference
+{
+private:
+  T& m_t;
+
+public:
+  explicit UserdataByReference (T& t) : m_t (t)
+  {
+  }
+
+  char const* getTypename () const
+  {
+    return typeid (*this).name ();
+  }
+
+  static void push (lua_State* L, T& t)
+  {
+    assert (classname <T>::isRegistered ());
+    void* const userdata = lua_newuserdata (L, sizeof (*this));
+    new (userdata) UserdataByReference <T> (t);
+    luaL_getmetatable (L, classname <T>::name ());
+    lua_setmetatable (L, -2);
+  }
+
+  static T& get (lua_State* L, int index)
+  {
+    Userdata* userdata = static_cast <Userdata*> (
+      detail::checkClass (L, index, classname <T>::name ()));
+
+    UserdataByReference <T>* p = dynamic_cast <UserdataByReference <T>*> (userdata);
+    if (p == 0)
+      luaL_argerror (L, index, lua_pushfstring (L,
+        "%s expected, got %s", getTypename (), userdata->getTypename ()));
+
+    return p->m_t;
+  }
+
+private:
+  void* getPointer ()
+  {
+    return &m_t;
+  }
+};
+
+//------------------------------------------------------------------------------
+/**
+  Class passed by container.
+
+  The object lifetime is managed by the container.
+
+  @note Container must implement a strict subset of shared_ptr.
+*/
+template <class T, template <class> class Container>
+class UserdataByContainer
+{
+private:
+  typename Container <T> m_p;
+
+public:
+  explicit UserdataByContainer (T* const t) : m_p (t)
+  {
+  }
+
+  char const* getTypename () const
+  {
+    return typeid (*this).name ();
+  }
+
+  static void push (lua_State* L, Container <T> p)
+  {
+    assert (classname <T>::isRegistered ());
+    void* const userdata = lua_newuserdata (L, sizeof (*this));
+    new (userdata) UserdataByContainer <T, Container> (p);
+    luaL_getmetatable (L, classname <T>::name ());
+    lua_setmetatable (L, -2);
+  }
+
+  static Container <T> get (lua_State* L, int index)
+  {
+    Userdata* userdata = static_cast <Userdata*> (
+      detail::checkClass (L, index, classname <T>::name ()));
+
+    UserdataByContainer <T>* p = dynamic_cast <UserdataByContainer <T>*> (userdata);
+    if (p == 0)
+      luaL_argerror (L, index, lua_pushfstring (L,
+        "%s expected, got %s", getTypename (), userdata->getTypename ()));
+
+    return m_p;
+  }
+
+private:
+  void* getPointer ()
+  {
+    return static_cast <void*> (*m_p);
+  }
 };
 
 //==============================================================================
@@ -2052,139 +2203,139 @@ struct tdstack <shared_ptr<const T> >
 
 //------------------------------------------------------------------------------
 
-/*
-* Primitive types, including const char * and std::string
-*/
-
+// int
 template <> struct tdstack <
   int > { static void push (lua_State* L,
   int value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   int get (lua_State* L, int index) { return static_cast <
   int > (luaL_checknumber (L, index)); } };
 
+// unsigned int
 template <> struct tdstack <
   unsigned int > { static void push (lua_State* L,
   unsigned int value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   unsigned int get (lua_State* L, int index) { return static_cast <
   unsigned int > (luaL_checknumber (L, index)); } };
 
+// unsigned char
 template <> struct tdstack <
   unsigned char > { static void push (lua_State* L,
   unsigned char value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   unsigned char get (lua_State* L, int index) { return static_cast <
   unsigned char > (luaL_checknumber (L, index)); } };
 
+// short
 template <> struct tdstack <
   short > { static void push (lua_State* L,
   short value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   short get (lua_State* L, int index) { return static_cast <
   short > (luaL_checknumber (L, index)); } };
 
+// unsigned short
 template <> struct tdstack <
   unsigned short > { static void push (lua_State* L,
   unsigned short value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   unsigned short get (lua_State* L, int index) { return static_cast <
   unsigned short > (luaL_checknumber (L, index)); } };
 
+// long
 template <> struct tdstack <
   long > { static void push (lua_State* L,
   long value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   long get (lua_State* L, int index) { return static_cast <
   long > (luaL_checknumber (L, index)); } };
 
+// unsigned long
 template <> struct tdstack <
   unsigned long > { static void push (lua_State* L,
   unsigned long value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   unsigned long get (lua_State* L, int index) { return static_cast <
   unsigned long > (luaL_checknumber (L, index)); } };
 
+// float
 template <> struct tdstack <
   float > { static void push (lua_State* L,
   float value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   float get (lua_State* L, int index) { return static_cast <
   float > (luaL_checknumber (L, index)); } };
 
+// double
 template <> struct tdstack <
   double > { static void push (lua_State* L,
   double value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   double get (lua_State* L, int index) { return static_cast <
   double > (luaL_checknumber (L, index)); } };
 
-//------------------------------------------------------------------------------
-
+// bool
 template <>
 struct tdstack <bool>
 {
-  static void push (lua_State *L, bool data)
+  static void push (lua_State* L, bool value)
   {
-    lua_pushboolean(L, data ? 1 : 0);
+    lua_pushboolean (L, value ? 1 : 0);
   }
   static bool get (lua_State *L, int index)
   {
-    luaL_checktype(L, index, LUA_TBOOLEAN);
+    luaL_checktype (L, index, LUA_TBOOLEAN);
 
-    return lua_toboolean(L, index) ? true : false;
+    return lua_toboolean (L, index) ? true : false;
   }
 };
 
-//------------------------------------------------------------------------------
-
+// char
 template <>
 struct tdstack <char>
 {
-  static void push (lua_State *L, char data)
+  static void push (lua_State *L, char value)
   {
-    char str[2] = { data, 0 };
-    lua_pushstring(L, str);
+    char str [2] = { value, 0 };
+    lua_pushstring (L, str);
   }
   static char get (lua_State *L, int index)
   {
-    return luaL_checkstring(L, index)[0];
+    return luaL_checkstring (L, index) [0];
   }
 };
 
-//------------------------------------------------------------------------------
-
+// null terminated string
 template <>
-struct tdstack <const char *>
+struct tdstack <char const*>
 {
-  static void push (lua_State *L, const char *data)
+  static void push (lua_State *L, char const* str)
   {
-    lua_pushstring(L, data);
+    lua_pushstring (L, str);
   }
-  static const char *get (lua_State *L, int index)
+  static char const* get (lua_State *L, int index)
   {
-    return luaL_checkstring(L, index);
+    return luaL_checkstring (L, index);
   }
 };
 
-//------------------------------------------------------------------------------
-
+// std::string
 template <>
 struct tdstack <std::string>
 {
-  static void push (lua_State *L, const std::string &data)
+  static void push (lua_State *L, std::string const& str)
   {
-    lua_pushstring(L, data.c_str());
+    lua_pushstring (L, str.c_str ());
   }
   static std::string get (lua_State *L, int index)
   {
-    return std::string(luaL_checkstring(L, index));
+    return std::string (luaL_checkstring (L, index));
   }
 };
 
-//------------------------------------------------------------------------------
-
+// std::string const&
 template <>
-struct tdstack <const std::string &>
+struct tdstack <std::string const&>
 {
-  static void push (lua_State *L, const std::string &data)
+  static void push (lua_State *L, std::string const& str)
   {
-    lua_pushstring(L, data.c_str());
+    lua_pushstring (L, str.c_str());
   }
   static std::string get (lua_State *L, int index)
   {
-    return std::string(luaL_checkstring(L, index));
+    return std::string (luaL_checkstring (L, index));
   }
 };
 
@@ -2200,11 +2351,10 @@ struct arglist
 };
 
 template <int start>
-struct arglist <nil, start>: public typevallist <nil>
+struct arglist <nil, start> : public typevallist <nil>
 {
-  arglist (lua_State *L)
+  arglist (lua_State*)
   {
-    (void) L;
   }
 };
 
