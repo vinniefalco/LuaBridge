@@ -350,7 +350,7 @@ protected:
 
   @todo Provide an intrusive version of shared_ptr.
 */
-template <typename T>
+template <class T>
 class shared_ptr : private shared_ptr_base
 {
 public:
@@ -591,7 +591,7 @@ char const* classname <T>::s_name = classnamebase::unregisteredClassName ();
 
   The mapped name is the same.
 */
-template <typename T>
+template <class T>
 struct classname <const T> : public classname <T>
 {
   static inline bool isConst ()
@@ -803,7 +803,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 
 /* Non-const member function pointers. */
 
-template <typename T, typename Ret>
+template <class T, typename Ret>
 struct fnptr <Ret (T::*) ()>
 {
   static const bool mfp = true;
@@ -818,7 +818,7 @@ struct fnptr <Ret (T::*) ()>
   }
 };
 
-template <typename T, typename Ret, typename P1>
+template <class T, typename Ret, typename P1>
 struct fnptr <Ret (T::*) (P1)>
 {
   static const bool mfp = true;
@@ -833,7 +833,7 @@ struct fnptr <Ret (T::*) (P1)>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2>
+template <class T, typename Ret, typename P1, typename P2>
 struct fnptr <Ret (T::*) (P1, P2)>
 {
   static const bool mfp = true;
@@ -848,7 +848,7 @@ struct fnptr <Ret (T::*) (P1, P2)>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3>
+template <class T, typename Ret, typename P1, typename P2, typename P3>
 struct fnptr <Ret (T::*) (P1, P2, P3)>
 {
   static const bool mfp = true;
@@ -863,7 +863,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3)>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4)>
 {
@@ -879,7 +879,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4)>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
 {
@@ -897,7 +897,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6)>
 {
@@ -915,7 +915,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6)>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7)>
 {
@@ -934,7 +934,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7)>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 {
@@ -955,7 +955,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 
 /* Const member function pointers. */
 
-template <typename T, typename Ret>
+template <class T, typename Ret>
 struct fnptr <Ret (T::*) () const>
 {
   static const bool mfp = true;
@@ -971,7 +971,7 @@ struct fnptr <Ret (T::*) () const>
   }
 };
 
-template <typename T, typename Ret, typename P1>
+template <class T, typename Ret, typename P1>
 struct fnptr <Ret (T::*) (P1) const>
 {
   static const bool mfp = true;
@@ -986,7 +986,7 @@ struct fnptr <Ret (T::*) (P1) const>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2>
+template <class T, typename Ret, typename P1, typename P2>
 struct fnptr <Ret (T::*) (P1, P2) const>
 {
   static const bool mfp = true;
@@ -1001,7 +1001,7 @@ struct fnptr <Ret (T::*) (P1, P2) const>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3>
+template <class T, typename Ret, typename P1, typename P2, typename P3>
 struct fnptr <Ret (T::*) (P1, P2, P3) const>
 {
   static const bool mfp = true;
@@ -1016,7 +1016,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3) const>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4) const>
 {
@@ -1032,7 +1032,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4) const>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5) const>
 {
@@ -1050,7 +1050,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5) const>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6) const>
 {
@@ -1069,7 +1069,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6) const>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
 {
@@ -1089,7 +1089,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
   }
 };
 
-template <typename T, typename Ret, typename P1, typename P2, typename P3,
+template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
 struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
 {
@@ -1115,10 +1115,10 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
 * function pointer containers, these are only defined up to 8 parameters.
 */
 
-template <typename T, typename Typelist>
+template <class T, typename Typelist>
 struct constructor {};
 
-template <typename T>
+template <class T>
 struct constructor <T, nil>
 {
   static T* call (const typevallist<nil> &tvl)
@@ -1133,7 +1133,7 @@ struct constructor <T, nil>
   }
 };
 
-template <typename T, typename P1>
+template <class T, typename P1>
 struct constructor <T, typelist<P1> >
 {
   static T* call (const typevallist<typelist<P1> > &tvl)
@@ -1146,7 +1146,7 @@ struct constructor <T, typelist<P1> >
   }
 };
 
-template <typename T, typename P1, typename P2>
+template <class T, typename P1, typename P2>
 struct constructor <T, typelist<P1, typelist<P2> > >
 {
   static T* call (const typevallist<typelist<P1, typelist<P2> > > &tvl)
@@ -1159,7 +1159,7 @@ struct constructor <T, typelist<P1, typelist<P2> > >
   }
 };
 
-template <typename T, typename P1, typename P2, typename P3>
+template <class T, typename P1, typename P2, typename P3>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3> > > >
 {
   static T* call (const typevallist<typelist<P1, typelist<P2,
@@ -1174,7 +1174,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3> > > >
   }
 };
 
-template <typename T, typename P1, typename P2, typename P3, typename P4>
+template <class T, typename P1, typename P2, typename P3, typename P4>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4> > > > >
 {
@@ -1190,7 +1190,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <typename T, typename P1, typename P2, typename P3, typename P4,
+template <class T, typename P1, typename P2, typename P3, typename P4,
   typename P5>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5> > > > > >
@@ -1209,7 +1209,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <typename T, typename P1, typename P2, typename P3, typename P4,
+template <class T, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6> > > > > > >
@@ -1228,7 +1228,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <typename T, typename P1, typename P2, typename P3, typename P4,
+template <class T, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6, typelist<P7> > > > > > > >
@@ -1251,7 +1251,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <typename T, typename P1, typename P2, typename P3, typename P4,
+template <class T, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7, typename P8>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6, typelist<P7, 
@@ -1698,7 +1698,7 @@ public:
     @note The expected class name is passed as an upvalue so that we can
           ensure that we are destroying the right kind of object.
   */
-  template <typename T>
+  template <class T>
   static int gcProxy (lua_State* L)
   {
     void* const p = detail::checkClass (
@@ -1775,7 +1775,7 @@ public:
     @note The expected class name is in upvalue 1, and the pointer to the
           data member is in upvalue 2.
   */
-  template <typename T, typename U>
+  template <class T, typename U>
   static int propgetProxy (lua_State* L)
   {
     void* const p = detail::checkClass (
@@ -1794,7 +1794,7 @@ public:
     @note The expected class name is in upvalue 1, and the pointer to the
           data member is in upvalue 2.
   */
-  template <typename T, typename U>
+  template <class T, typename U>
   static int propsetProxy (lua_State* L)
   {
     void* const p = detail::checkClass (
@@ -2051,7 +2051,7 @@ private:
   @note Container must implement a strict subset of shared_ptr.
 */
 template <class T, template <class> class Container = shared_ptr>
-class UserdataByContainer : public Userdata
+class UserdataBySharedPtr : public Userdata
 {
 public:
   /**
@@ -2073,20 +2073,20 @@ public:
   char const* getName () const { return classname <T>::name (); }
   char const* getTypename () const { return typeid (*this).name (); }
 
-  explicit UserdataByContainer (T* const t) : m_p (t)
+  explicit UserdataBySharedPtr (T* const t) : m_p (t)
   {
   }
 
   template <class U>
-  explicit UserdataByContainer (U* const u) : m_p (u)
+  explicit UserdataBySharedPtr (U* const u) : m_p (u)
   {
   }
 
   static void push (lua_State* L, T* const t)
   {
     assert (classname <T>::isRegistered ());
-    void* const p = lua_newuserdata (L, sizeof (UserdataByContainer <T, Container>));
-    new (p) UserdataByContainer <T, Container> (t);
+    void* const p = lua_newuserdata (L, sizeof (UserdataBySharedPtr <T, Container>));
+    new (p) UserdataBySharedPtr <T, Container> (t);
     luaL_getmetatable (L, classname <T>::name ());
     lua_setmetatable (L, -2);
   }
@@ -2095,10 +2095,10 @@ public:
   {
     void* const p = detail::checkClass (L, index, classname <T>::name (), false);
     Userdata* const pb = static_cast <Userdata*> (p);
-    UserdataByContainer <T>* ud = reinterpret_cast <UserdataByContainer <T>*> (pb);
+    UserdataBySharedPtr <T>* ud = reinterpret_cast <UserdataBySharedPtr <T>*> (pb);
     if (ud == 0)
       luaL_argerror (L, index, lua_pushfstring (L, "%s expected, got %s",
-        typeid (UserdataByContainer <T, Container>).name (), pb->getTypename ()));
+        typeid (UserdataBySharedPtr <T, Container>).name (), pb->getTypename ()));
     return ud->m_p;
   }
 
@@ -2128,26 +2128,26 @@ private:
   @note Container must implement a strict subset of shared_ptr.
 */
 template <class T, template <class> class Container = shared_ptr>
-class UserdataByConstContainer : public Userdata
+class UserdataByConstSharedPtr : public Userdata
 {
 public:
   char const* getName () const { return classname <T>::name (); }
   char const* getTypename () const { return typeid (*this).name (); }
 
-  explicit UserdataByConstContainer (T const* const t) : m_p (t)
+  explicit UserdataByConstSharedPtr (T const* const t) : m_p (t)
   {
   }
 
   template <class U>
-  explicit UserdataByConstContainer (U const* const u) : m_p (u)
+  explicit UserdataByConstSharedPtr (U const* const u) : m_p (u)
   {
   }
 
   static void push (lua_State* L, T const* const t)
   {
     assert (classname <T>::isRegistered ());
-    void* const p = lua_newuserdata (L, sizeof (UserdataByContainer <T, Container>));
-    new (p) UserdataByConstContainer <T, Container> (t);
+    void* const p = lua_newuserdata (L, sizeof (UserdataBySharedPtr <T, Container>));
+    new (p) UserdataByConstSharedPtr <T, Container> (t);
     luaL_getmetatable (L, classname <T>::const_name ());
     lua_setmetatable (L, -2);
   }
@@ -2157,10 +2157,10 @@ public:
   {
     void* const p = detail::checkClass (L, index, classname <T>::name (), false);
     Userdata* const pb = static_cast <Userdata*> (p);
-    UserdataByContainer <T>* ud = reinterpret_cast <UserdataByContainer <T>*> (pb);
+    UserdataBySharedPtr <T>* ud = reinterpret_cast <UserdataBySharedPtr <T>*> (pb);
     if (ud == 0)
       luaL_argerror (L, index, lua_pushfstring (L, "%s expected, got %s",
-        typeid (UserdataByContainer <T, Container>).name (), pb->getTypename ()));
+        typeid (UserdataBySharedPtr <T, Container>).name (), pb->getTypename ()));
     return ud->m_p;
   }
   */
@@ -2194,7 +2194,7 @@ private:
 
   @note T must be copy-constructible.
 */
-template <typename T>
+template <class T>
 struct tdstack
 {
 public:
@@ -2213,7 +2213,7 @@ public:
 /**
   Lua stack objects with pointer semantics.
 */
-template <typename T>
+template <class T>
 struct tdstack <T*>
 {
   static void push (lua_State* L, T* t)
@@ -2231,7 +2231,7 @@ struct tdstack <T*>
 /**
   Lua stack objects with pointer semantics.
 */
-template <typename T>
+template <class T>
 struct tdstack <T* const>
 {
   static void push (lua_State* L, T* const t)
@@ -2249,7 +2249,7 @@ struct tdstack <T* const>
 /**
   Lua stack objects with const pointer semantics.
 */
-template <typename T>
+template <class T>
 struct tdstack <T const*>
 {
   static void push (lua_State* L, T const* t)
@@ -2266,7 +2266,7 @@ struct tdstack <T const*>
 /**
   Lua stack objects with const pointer semantics.
 */
-template <typename T>
+template <class T>
 struct tdstack <T const* const>
 {
   static void push (lua_State* L, T const* const t)
@@ -2283,7 +2283,7 @@ struct tdstack <T const* const>
 /**
   Lua stack objects with reference semantics.
 */
-template <typename T>
+template <class T>
 struct tdstack <T&>
 {
   static void push (lua_State* L, T& t)
@@ -2301,7 +2301,7 @@ struct tdstack <T&>
 /**
   Lua stack objects with const reference semantics.
 */
-template <typename T>
+template <class T>
 struct tdstack <T const&>
 {
   static void push (lua_State* L, T const& t)
@@ -2317,53 +2317,38 @@ struct tdstack <T const&>
 
 //------------------------------------------------------------------------------
 /**
-  Lua stack objects with shared_ptr semantics.
+  Lua stack objects with shared_ptr-like container semantics.
 */
-template <typename T>
-struct tdstack <shared_ptr <T> >
+template <class T, template <class> class SharedPtr>
+struct tdstack <SharedPtr <T> >
 {
-  static void push (lua_State* L, shared_ptr <T> p)
+  static void push (lua_State* L, SharedPtr <T> p)
   {
-    UserdataByContainer <T, shared_ptr>::push (L, *p);
+    UserdataBySharedPtr <T, SharedPtr>::push (L, *p);
   }
 
-  static shared_ptr<T> get (lua_State* L, int index)
+  static SharedPtr <T> get (lua_State* L, int index)
   {
-    return UserdataByContainer <T, shared_ptr>::get (L, index);
+    return UserdataBySharedPtr <T, SharedPtr>::get (L, index);
   }
 };
 
 //------------------------------------------------------------------------------
 /**
-  Lua stack objects with const shared_ptr semantics.
+  Lua stack objects with const shared_ptr-like semantics.
 */
-#if 0
-template <typename T>
-struct tdstack <shared_ptr<const T> >
+template <class T, template <class> class SharedPtr>
+struct tdstack <SharedPtr <T const> >
 {
-  static void push (lua_State* L, shared_ptr <const T> p)
+  static void push (lua_State* L, SharedPtr <T const> p)
   {
-    UserdataByContainer <T, shared_ptr>::push (L, const_cast <T*>(*p));
-  }
-  static shared_ptr <T> get (lua_State* L, int index)
-  {
-    return UserdataByContainer <const T, shared_ptr>::get (L, index);
-  }
-};
-#else
-template <typename T>
-struct tdstack <shared_ptr <T const> >
-{
-  static void push (lua_State* L, shared_ptr <T const> p)
-  {
-    UserdataByConstContainer <T, shared_ptr>::push (L, *p);
+    UserdataByConstSharedPtr <T, SharedPtr>::push (L, *p);
   }
   static shared_ptr <T const> get (lua_State* L, int index)
   {
-    return UserdataByConstContainer <T, shared_ptr>::get (L, index);
+    return UserdataByConstSharedPtr <T, SharedPtr>::get (L, index);
   }
 };
-#endif
 
 //------------------------------------------------------------------------------
 
@@ -2576,7 +2561,7 @@ struct functionProxy <Function, void>
 
   This is also used for static data members of classes
 */
-template <typename T>
+template <class T>
 int propgetProxy (lua_State* L)
 {
   // The upvalue holds a pointer to the variable.
@@ -2592,7 +2577,7 @@ int propgetProxy (lua_State* L)
   This is also used for static data members of classes.
 */
 
-template <typename T>
+template <class T>
 int propsetProxy (lua_State* L)
 {
   // The upvalue holds a pointer to the variable.
@@ -2606,7 +2591,7 @@ int propsetProxy (lua_State* L)
   Create a metatable.
 */
 
-template <typename T>
+template <class T>
 void createMetaTable (lua_State* L)
 {
   char const* const name = classname <T>::name ();
@@ -2631,7 +2616,7 @@ void createMetaTable (lua_State* L)
   Create a metatable suitable for a const object.
 */
 
-template <typename T>
+template <class T>
 void createConstMetaTable (lua_State* L)
 {
   char const* const name = classname <T>::const_name ();
@@ -2701,7 +2686,7 @@ public:
 
     @note The proxy function is stored in the __propget table.
   */
-  template <typename T>
+  template <class T>
   scope& variable_ro (char const* name, T const* data)
   {
     // Currently can't register properties at global scope.
@@ -2724,7 +2709,7 @@ public:
 
     @note The proxy function is stored in the __propget table.
   */
-  template <typename T>
+  template <class T>
   scope& variable_ro (char const* name, T (*getFunction) ())
   {
     // Currently can't register properties at global scope.
@@ -2747,7 +2732,7 @@ public:
 
     @note The proxy function is stored in the __propset table.
   */
-  template <typename T>
+  template <class T>
   scope& variable_rw (char const* name, T* data)
   {
     // Currently can't register properties at global scope.
@@ -2771,7 +2756,7 @@ public:
 
     @note The proxy function is stored in the __propset table.
   */
-  template <typename T>
+  template <class T>
   scope& variable_rw (char const* name, T (*getFunction) (), void (*setFunction) (T))
   {
     // Currently can't register properties at global scope.
@@ -2909,7 +2894,7 @@ public:
 
     // Push the constructor proxy, with the class's metatable as an upvalue
     luaL_getmetatable(L, name.c_str());
-    lua_pushcclosure (L, &UserdataByContainer <T>::ctorProxy <typename fnptr <FnPtr>::params>, 1);
+    lua_pushcclosure (L, &UserdataBySharedPtr <T>::ctorProxy <typename fnptr <FnPtr>::params>, 1);
 
     // Set the constructor proxy as the __call metamethod of the static table
     rawsetfield(L, -2, "__call");
