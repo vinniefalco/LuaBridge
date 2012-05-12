@@ -1868,6 +1868,7 @@ public:
     typedef typename fnptr <MemberFunction>::params params;
     static int f (lua_State* L)
     {
+      //char const* n = typeid (MemberFunction).name ();
       void* const p = detail::checkClass (
         L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
       Userdata* const ud = static_cast <Userdata*> (p);
@@ -2309,8 +2310,14 @@ public:
 private:
   void* getPointer (lua_State* L)
   {
+#if 0
     luaL_error (L, "illegal non-const use of %s", getName ());
     return 0; // never gets here
+#else
+    (void)L;
+    void const* p = *m_p;
+    return const_cast <void*> (p);
+#endif
   }
 
   void const* getConstPointer (lua_State* L)
