@@ -668,7 +668,7 @@ struct typevallist <typelist<const Head &, Tail> >
 * increased if necessary.
 */
 
-template <typename FnPtr>
+template <typename MemFn>
 struct fnptr {};
 
 /* Ordinary function pointers. */
@@ -963,7 +963,7 @@ struct fnptr <Ret (T::*) () const>
   typedef T classtype;
   typedef Ret resulttype;
   typedef nil params;
-  static Ret call (const T *obj, Ret (T::*fp) () const,
+  static Ret call (T const* const obj, Ret (T::*fp) () const,
     const typevallist<params> &tvl)
   {
     (void)tvl;
@@ -979,7 +979,7 @@ struct fnptr <Ret (T::*) (P1) const>
   typedef T classtype;
   typedef Ret resulttype;
   typedef typelist<P1> params;
-  static Ret call (const T *obj, Ret (T::*fp) (P1) const,
+  static Ret call (T const* const obj, Ret (T::*fp) (P1) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd);
@@ -994,7 +994,7 @@ struct fnptr <Ret (T::*) (P1, P2) const>
   typedef T classtype;
   typedef Ret resulttype;
   typedef typelist<P1, typelist<P2> > params;
-  static Ret call (const T *obj, Ret (T::*fp) (P1, P2) const,
+  static Ret call (T const* const obj, Ret (T::*fp) (P1, P2) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
@@ -1009,7 +1009,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3) const>
   typedef T classtype;
   typedef Ret resulttype;
   typedef typelist<P1, typelist<P2, typelist<P3> > > params;
-  static Ret call (const T *obj, Ret (T::*fp) (P1, P2, P3) const,
+  static Ret call (T const* const obj, Ret (T::*fp) (P1, P2, P3) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
@@ -1025,7 +1025,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4) const>
   typedef T classtype;
   typedef Ret resulttype;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4> > > > params;
-  static Ret call (const T *obj, Ret (T::*fp) (P1, P2, P3, P4) const,
+  static Ret call (T const* const obj, Ret (T::*fp) (P1, P2, P3, P4) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
@@ -1042,7 +1042,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5) const>
   typedef Ret resulttype;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4,
     typelist<P5> > > > > params;
-  static Ret call (const T *obj, Ret (T::*fp) (P1, P2, P3, P4, P5) const,
+  static Ret call (T const* const obj, Ret (T::*fp) (P1, P2, P3, P4, P5) const,
     const typevallist<params> &tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
@@ -1060,7 +1060,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6) const>
   typedef Ret resulttype;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6> > > > > > params;
-  static Ret call (const T *obj,
+  static Ret call (T const* const obj,
     Ret (T::*fp) (P1, P2, P3, P4, P5, P6) const,
     const typevallist<params> &tvl)
   {
@@ -1079,7 +1079,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
   typedef Ret resulttype;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6, typelist<P7> > > > > > > params;
-  static Ret call (const T *obj,
+  static Ret call (T const* const obj,
     Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7) const,
     const typevallist<params> &tvl)
   {
@@ -1099,7 +1099,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
   typedef Ret resulttype;
   typedef typelist<P1, typelist<P2, typelist<P3, typelist<P4, typelist<P5,
     typelist<P6, typelist<P7, typelist<P8> > > > > > > > params;
-  static Ret call (const T *obj,
+  static Ret call (T const* const obj,
     Ret (T::*fp) (P1, P2, P3, P4, P5, P6, P7, P8) const,
     const typevallist<params> &tvl)
   {
@@ -1718,23 +1718,37 @@ public:
     @note The expected class name is in upvalue 1, and the member function
           pointer is in upvalue 2.
   */
-  template <typename MemberFunction,
-            typename ReturnType = typename fnptr <MemberFunction>::resulttype>
+  template <typename MemFn,
+            typename RetVal = typename fnptr <MemFn>::resulttype>
   struct methodProxy
   {
-    typedef typename fnptr <MemberFunction>::classtype T;
-    typedef typename fnptr <MemberFunction>::params params;
-    static int f (lua_State* L)
+    typedef typename fnptr <MemFn>::classtype T;
+    typedef typename fnptr <MemFn>::params params;
+
+    static int func (lua_State* L)
     {
-      //char const* n = typeid (MemberFunction).name ();
       void* const p = detail::checkClass (
         L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
       Userdata* const ud = static_cast <Userdata*> (p);
       T* const t = ud->get <T> (L);
-      MemberFunction fp = *static_cast <MemberFunction*> (
+      MemFn fp = *static_cast <MemFn*> (
         lua_touserdata (L, lua_upvalueindex (2)));
       arglist <params, 2> args(L);
-      tdstack <ReturnType>::push (L, fnptr <MemberFunction>::call (t, fp, args));
+      tdstack <RetVal>::push (L, fnptr <MemFn>::call (t, fp, args));
+      return 1;
+    }
+
+    // const class member functions
+    static int const_func (lua_State* L)
+    {
+      void* const p = detail::checkClass (
+        L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+      Userdata* const ud = static_cast <Userdata*> (p);
+      T const* const t = ud->getConst <T> (L);
+      MemFn fp = *static_cast <MemFn*> (
+        lua_touserdata (L, lua_upvalueindex (2)));
+      arglist <params, 2> args(L);
+      tdstack <RetVal>::push (L, fnptr <MemFn>::call (t, fp, args));
       return 1;
     }
   };
@@ -1749,21 +1763,36 @@ public:
     @note The expected class name is in upvalue 1, and the member function
           pointer is in upvalue 2.
   */
-  template <typename MemberFunction>
-  struct methodProxy <MemberFunction, void>
+  template <typename MemFn>
+  struct methodProxy <MemFn, void>
   {
-    typedef typename fnptr <MemberFunction>::classtype T;
-    typedef typename fnptr <MemberFunction>::params params;
-    static int f (lua_State* L)
+    typedef typename fnptr <MemFn>::classtype T;
+    typedef typename fnptr <MemFn>::params params;
+
+    static int func (lua_State* L)
     {
       void* const p = detail::checkClass (
         L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
       Userdata* const ud = static_cast <Userdata*> (p);
       T* const t = ud->get <T> (L);
-      MemberFunction fp = *static_cast <MemberFunction*> (
+      MemFn fp = *static_cast <MemFn*> (
         lua_touserdata (L, lua_upvalueindex (2)));
       arglist <params, 2> args (L);
-      fnptr <MemberFunction>::call (t, fp, args);
+      fnptr <MemFn>::call (t, fp, args);
+      return 0;
+    }
+
+    // const class member functions
+    static int const_func (lua_State* L)
+    {
+      void* const p = detail::checkClass (
+        L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+      Userdata* const ud = static_cast <Userdata*> (p);
+      T const* const t = ud->getConst <T> (L);
+      MemFn fp = *static_cast <MemFn*> (
+        lua_touserdata (L, lua_upvalueindex (2)));
+      arglist <params, 2> args (L);
+      fnptr <MemFn>::call (t, fp, args);
       return 0;
     }
   };
@@ -2886,7 +2915,7 @@ public:
   // Constructor registration.  The template parameter should be passed
   // a function pointer type; only the argument list will be used (since
   // you can't take the address of a ctor).
-  template <typename FnPtr>
+  template <typename MemFn>
   class__ <T>& constructor ()
   {
     // Get a reference to the class's static table
@@ -2894,7 +2923,8 @@ public:
 
     // Push the constructor proxy, with the class's metatable as an upvalue
     luaL_getmetatable(L, name.c_str());
-    lua_pushcclosure (L, &UserdataBySharedPtr <T>::ctorProxy <typename fnptr <FnPtr>::params>, 1);
+    lua_pushcclosure (L,
+      &UserdataBySharedPtr <T>::ctorProxy <typename fnptr <MemFn>::params>, 1);
 
     // Set the constructor proxy as the __call metamethod of the static table
     rawsetfield(L, -2, "__call");
@@ -2908,28 +2938,39 @@ public:
   * registered as values in the class's metatable, which is searched by the
   * indexer function we've installed as __index metamethod.
   */
-  template <typename FnPtr>
-  class__ <T>& method (char const *name, FnPtr fp)
+  template <typename MemFn>
+  class__ <T>& method (char const *name, MemFn fp)
   {
-    assert (fnptr <FnPtr>::mfp);
+    assert (fnptr <MemFn>::mfp);
     std::string metatable_name = this->name;
-    // Disable MSVC's warning 'conditional expression is constant'
-  #ifdef _MSC_VER
-  #  pragma warning (push)
-  #  pragma warning (disable: 4127)
-  #endif
-    if (fnptr<FnPtr>::const_mfp)
-      metatable_name.insert(0, "const ");
-  #ifdef _MSC_VER
-  #  pragma warning (pop)
-  #endif
-    luaL_getmetatable(L, metatable_name.c_str());
-    lua_pushstring(L, metatable_name.c_str());
-    void *v = lua_newuserdata(L, sizeof(FnPtr));
-    memcpy(v, &fp, sizeof(FnPtr));
-    lua_pushcclosure(L, &Userdata::methodProxy<FnPtr>::f, 2);
-    rawsetfield(L, -2, name);
-    lua_pop(L, 1);
+
+#ifdef _MSC_VER
+#pragma warning (push)
+#pragma warning (disable: 4127) // constant conditional expression
+#endif
+    if (fnptr <MemFn>::const_mfp)
+      metatable_name.insert (0, "const ");
+#ifdef _MSC_VER
+#pragma warning (pop)
+#endif
+    luaL_getmetatable (L, metatable_name.c_str ());
+    lua_pushstring (L, metatable_name.c_str ());
+    void* const v = lua_newuserdata (L, sizeof (MemFn));
+    memcpy (v, &fp, sizeof (MemFn));
+#ifdef _MSC_VER
+#pragma warning (push)
+#pragma warning (disable: 4127) // constant conditional expression
+#endif
+    if (fnptr <MemFn>::const_mfp)
+      lua_pushcclosure (L, &Userdata::methodProxy <MemFn>::func, 2);
+      //lua_pushcclosure (L, &Userdata::methodProxy <MemFn>::const_func, 2);
+    else
+      lua_pushcclosure (L, &Userdata::methodProxy <MemFn>::func, 2);
+#ifdef _MSC_VER
+#pragma warning (pop)
+#endif
+    rawsetfield (L, -2, name);
+    lua_pop (L, 1);
     return *this;
   }
 
@@ -2971,10 +3012,10 @@ public:
     rawgetfield(L, -2, "__propget");
     rawgetfield(L, -2, "__propget");
     lua_pushstring(L, cname.c_str());
-    typedef U (T::*FnPtr) () const;
-    void *v = lua_newuserdata(L, sizeof(FnPtr));
-    memcpy(v, &get, sizeof(FnPtr));
-    lua_pushcclosure(L, &Userdata::methodProxy <FnPtr>::f, 2);
+    typedef U (T::*MemFn) () const;
+    void *v = lua_newuserdata(L, sizeof(MemFn));
+    memcpy(v, &get, sizeof(MemFn));
+    lua_pushcclosure (L, &Userdata::methodProxy <MemFn>::const_func, 2);
     lua_pushvalue(L, -1);
     rawsetfield(L, -3, name);
     rawsetfield(L, -3, name);
@@ -2992,7 +3033,7 @@ public:
     lua_pushstring(L, this->name.c_str());
     void *v = lua_newuserdata(L, sizeof(U T::*));
     memcpy(v, &mp, sizeof(U T::*));
-    lua_pushcclosure(L, &Userdata::propsetProxy<T, U>, 2);
+    lua_pushcclosure(L, &Userdata::propsetProxy <T, U>, 2);
     rawsetfield(L, -2, name);
     lua_pop(L, 2);
     return *this;
@@ -3005,18 +3046,18 @@ public:
     luaL_getmetatable(L, this->name.c_str());
     rawgetfield(L, -1, "__propset");
     lua_pushstring(L, this->name.c_str());
-    typedef void (T::*FnPtr) (U);
-    void *v = lua_newuserdata(L, sizeof(FnPtr));
-    memcpy(v, &set, sizeof(FnPtr));
-    lua_pushcclosure(L, &Userdata::methodProxy <FnPtr>::f, 2);
+    typedef void (T::*MemFn) (U);
+    void *v = lua_newuserdata(L, sizeof(MemFn));
+    memcpy(v, &set, sizeof(MemFn));
+    lua_pushcclosure(L, &Userdata::methodProxy <MemFn>::func, 2);
     rawsetfield(L, -2, name);
     lua_pop(L, 2);
     return *this;
   }
 
   // Static method registration
-  template <typename FnPtr>
-  class__ <T>& static_method (char const *name, FnPtr fp)
+  template <typename MemFn>
+  class__ <T>& static_method (char const *name, MemFn fp)
   {
     return *(class__ <T>*)&(function (name, fp));
   }
