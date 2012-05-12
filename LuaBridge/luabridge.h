@@ -306,6 +306,8 @@ class class__;
 */
 struct AbstractPolicy
 {
+  virtual ~AbstractPolicy () = 0;
+
   /** Returns the size of the userdata required to hold the container.
   */
   virtual size_t getUserdataSize () const = 0;
@@ -331,6 +333,10 @@ private:
   */
   virtual void* getPointer (void* const userdata) const = 0;
 };
+
+AbstractPolicy::~AbstractPolicy()
+{
+}
 
 //------------------------------------------------------------------------------
 /**
@@ -537,51 +543,50 @@ struct classname <const T> : public classname <T>
 //==============================================================================
 
 #include "typelist.h"
-#include "stack.h"
 
 //==============================================================================
 /**
   Utilities.
 
-  These are provided as static class members so the definitions may be placed
+  Some are provided as static class members so the definitions may be placed
   in the header rather than a source file. Only one instance of the definition
   will be linked in even though the header is included in multiple translation
   units.
 */
 
+//------------------------------------------------------------------------------
+/**
+  Get a value, bypassing metamethods.
+  
+  @internal
+*/  
+inline void rawgetfield (lua_State* const L, int const index, char const* const key)
+{
+  lua_pushstring (L, key);
+  if (index < 0)
+    lua_rawget (L, index-1);
+  else
+    lua_rawget (L, index);
+}
+
+//------------------------------------------------------------------------------
+/**
+  Set a value, bypassing metamethods.
+  
+  @internal
+*/  
+inline void rawsetfield (lua_State* const L, int const index, char const* const key)
+{
+  lua_pushstring (L, key);
+  lua_insert (L, -2);
+  if (index < 0)
+    lua_rawset (L, index-1);
+  else
+    lua_rawset (L, index);
+}
+
 struct detail
 {
-  //----------------------------------------------------------------------------
-  /**
-    Get a value, bypassing metamethods.
-    
-    @internal
-  */  
-  static inline void rawgetfield (lua_State* const L, int const index, char const* const key)
-  {
-    lua_pushstring (L, key);
-    if (index < 0)
-      lua_rawget (L, index-1);
-    else
-      lua_rawget (L, index);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Set a value, bypassing metamethods.
-    
-    @internal
-  */  
-  static inline void rawsetfield (lua_State* const L, int const index, char const* const key)
-  {
-    lua_pushstring (L, key);
-    lua_insert (L, -2);
-    if (index < 0)
-      lua_rawset (L, index-1);
-    else
-      lua_rawset (L, index);
-  }
-
   //----------------------------------------------------------------------------
   /**
     Produce an error message.
@@ -954,249 +959,250 @@ struct detail
     // Found a matching metatable; return the userdata
     return lua_touserdata(L, index);
   }
+};
 
+#include "stack.h"
 
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to call a function with a return value.
-  */
-  template <typename Function,
-            typename Retval = typename fnptr <Function>::resulttype>
-  struct functionProxy
+//------------------------------------------------------------------------------
+/**
+  lua_CFunction to call a function with a return value.
+*/
+template <typename Function,
+          typename Retval = typename fnptr <Function>::resulttype>
+struct functionProxy
+{
+  typedef typename fnptr <Function>::params params;
+  static int f (lua_State *L)
   {
-    typedef typename fnptr <Function>::params params;
-    static int f (lua_State *L)
-    {
-      // The upvalue contains the function pointer.
-      Function fp = static_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
-      arglist <params> args (L);
-      tdstack <Retval>::push (L, fnptr <Function>::call (fp, args));
-      return 1;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to call a function with no return value.
-  */
-  template <typename Function>
-  struct functionProxy <Function, void>
-  {
-    typedef typename fnptr <Function>::params params;
-    static int f (lua_State *L)
-    {
-      // The upvalue contains the function pointer.
-      Function fp = static_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
-      arglist <params> args (L);
-      fnptr <Function>::call (fp, args);
-      return 0;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to get a variable.
-
-    This is also used for static data members of classes
-  */
-  template <typename T>
-  static int propgetProxy (lua_State *L)
-  {
-    // The upvalue holds a pointer to the variable.
-    T* data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
-    tdstack <T>::push (L, *data);
+    // The upvalue contains the function pointer.
+    Function fp = reinterpret_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
+    arglist <params> args (L);
+    tdstack <Retval>::push (L, fnptr <Function>::call (fp, args));
     return 1;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to set a variable.
-
-    This is also used for static data members of classes.
-  */
-
-  template <typename T>
-  static int propsetProxy (lua_State *L)
-  {
-    // The upvalue holds a pointer to the variable.
-    T* data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
-    *data = tdstack <T>::get (L, 1);
-    return 0;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to construct a class object.
-
-    These are registered to Lua as global functions with the name of the class,
-    with the appropriate metatable passed as an upvalue.
-  */
-  template <typename T, typename Params>
-  static int ctorProxy (lua_State *L)
-  {
-    // Use the policy to construct a new userdata with the class metatable.
-    AbstractPolicy const& policy = classname <T>::getPolicy ();
-    void* const userdata = lua_newuserdata (L, policy.getUserdataSize ());
-    arglist <Params, 2> args (L);
-    policy.constructUserdata (userdata, constructor <T, Params>::call (args));
-    lua_pushvalue (L, lua_upvalueindex (1));
-    lua_setmetatable (L, -2);
-    return 1;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to garbage collect a class object.
-
-    This is used for the __gc metamethod. The policy determines what actually
-    happens to the object. It could decrement a reference count, delete the
-    object, do nothing, or any other policy-dependent action.
-
-    @note The expected classname is passed as an upvalue so that we can
-          ensure that we are destroying the right kind of object.
-  */
-  template <typename T>
-  static int gcProxy (lua_State *L)
-  {
-    // Use the policy to destroy the userdata.
-    AbstractPolicy const& policy = classname <T>::getPolicy ();
-    void* const userdata = checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), true);
-    policy.destroyUserdata (userdata);
-    return 0;
-  }
-
-  //----------------------------------------------------------------------------
-  /*
-  * Lua-registerable C function templates for method proxies.  These are
-  * registered with the expected classname as upvalue 1 and the member function
-  * pointer as upvalue 2.  When called from Lua, they will receive the object
-  * on which they are called as argument 1 and all the method arguments as
-  * args 2 and up.
-  */
-  /**
-    lua_CFunction to call a class member function with a return value.
-  */
-  template <typename MemberFunction,
-            typename ReturnType = typename fnptr <MemberFunction>::resulttype>
-  struct methodProxy
-  {
-    typedef typename fnptr <MemberFunction>::classtype T;
-    typedef typename fnptr <MemberFunction>::params params;
-    static int f (lua_State *L)
-    {
-      // Use the policy to obtain the class pointer.
-      AbstractPolicy const& policy = classname <T>::getPolicy ();
-      void* const userdata = checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
-      T* const obj (policy.getClassPointer <T> (userdata));
-      MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
-      arglist <params, 2> args(L);
-      tdstack <ReturnType>::push (L, fnptr <MemberFunction>::call (obj, fp, args));
-      return 1;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to call a class member function with no return value.
-  */
-  template <typename MemberFunction>
-  struct methodProxy <MemberFunction, void>
-  {
-    typedef typename fnptr <MemberFunction>::classtype T;
-    typedef typename fnptr <MemberFunction>::params params;
-    static int f (lua_State *L)
-    {
-      // Use the policy to obtain the class pointer.
-      AbstractPolicy const& policy = classname <T>::getPolicy ();
-      void* const userdata = checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
-      T* const obj (policy.getClassPointer <T> (userdata));
-      MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
-      arglist <params, 2> args (L);
-      fnptr <MemberFunction>::call (obj, fp, args);
-      return 0;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /*
-  * Lua-registerable C function templates for getting and setting the value of
-  * an object member through a member pointer; similiar to the global property
-  * proxies, but they take both the expected classname for type-checking and
-  * the member pointer as upvalues.
-  */
-  template <typename T, typename U>
-  static int propgetMemberProxy (lua_State *L)
-  {
-    // Use the policy to obtain the class pointer.
-    AbstractPolicy const& policy = classname <T>::getPolicy ();
-    void* const userdata = checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
-    T* const obj (policy.getClassPointer <T> (userdata));
-    U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
-    tdstack <U>::push (L, obj->*mp);
-    return 1;
-  }
-
-  //----------------------------------------------------------------------------
-
-  template <typename T, typename U>
-  static int propsetMemberProxy (lua_State *L)
-  {
-    // Use the policy to obtain the class pointer.
-    AbstractPolicy const& policy = classname <T>::getPolicy ();
-    void* const userdata = checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
-    T* const obj (policy.getClassPointer <T> (userdata));
-    U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
-    obj->*mp = tdstack<U>::get(L, 2);
-    return 0;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Create a metatable.
-  */
-
-  template <typename T>
-  static void createMetaTable (lua_State *L, char const* name)
-  {
-    luaL_newmetatable (L, name);
-    lua_pushcfunction (L, &indexer);
-    rawsetfield (L, -2, "__index");                     // Use our __index.
-    lua_pushcfunction (L, &object_newindexer);
-    rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
-    lua_pushstring (L, name);
-    lua_pushcclosure (L, &gcProxy <T>, 1);
-    rawsetfield (L, -2, "__gc");                        // Use our __gc
-    lua_pushstring (L, name);
-    rawsetfield (L, -2, "__type");                      // Set __type to class name.
-    lua_newtable (L);
-    rawsetfield (L, -2, "__propget");                   // Create empty __propget.
-    lua_newtable (L);
-    rawsetfield (L, -2, "__propset");                   // Create empty __propset.
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Create a metatable suitable for a const object.
-  */
-
-  template <typename T>
-  static void createConstMetaTable (lua_State *L, char const* name)
-  {
-    std::string const cname = std::string("const ") + name;
-    luaL_newmetatable (L, cname.c_str());
-    lua_pushcfunction (L, &indexer);
-    rawsetfield (L, -2, "__index");                     // Use our __index.
-    lua_pushcfunction (L, &object_newindexer);
-    rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
-    lua_pushstring (L, cname.c_str());
-    lua_pushcclosure (L, &gcProxy <T>, 1);
-    rawsetfield (L, -2, "__gc");                        // Use our __gc.
-    lua_pushstring (L, cname.c_str());
-    rawsetfield (L, -2, "__type");                      // Store the class type.
-    lua_newtable (L);
-    rawsetfield (L, -2, "__propget");                   // Create empty __propget.
   }
 };
+
+//------------------------------------------------------------------------------
+/**
+  lua_CFunction to call a function with no return value.
+*/
+template <typename Function>
+struct functionProxy <Function, void>
+{
+  typedef typename fnptr <Function>::params params;
+  static int f (lua_State *L)
+  {
+    // The upvalue contains the function pointer.
+    Function fp = reinterpret_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
+    arglist <params> args (L);
+    fnptr <Function>::call (fp, args);
+    return 0;
+  }
+};
+
+//------------------------------------------------------------------------------
+/**
+  lua_CFunction to get a variable.
+
+  This is also used for static data members of classes
+*/
+template <typename T>
+int propgetProxy (lua_State *L)
+{
+  // The upvalue holds a pointer to the variable.
+  T* data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
+  tdstack <T>::push (L, *data);
+  return 1;
+}
+
+//------------------------------------------------------------------------------
+/**
+  lua_CFunction to set a variable.
+
+  This is also used for static data members of classes.
+*/
+
+template <typename T>
+int propsetProxy (lua_State *L)
+{
+  // The upvalue holds a pointer to the variable.
+  T* data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
+  *data = tdstack <T>::get (L, 1);
+  return 0;
+}
+
+//------------------------------------------------------------------------------
+/**
+  lua_CFunction to construct a class object.
+
+  These are registered to Lua as global functions with the name of the class,
+  with the appropriate metatable passed as an upvalue.
+*/
+template <typename T, typename Params>
+int ctorProxy (lua_State *L)
+{
+  // Use the policy to construct a new userdata with the class metatable.
+  AbstractPolicy const& policy = classname <T>::getPolicy ();
+  void* const userdata = lua_newuserdata (L, policy.getUserdataSize ());
+  arglist <Params, 2> args (L);
+  policy.constructUserdata (userdata, constructor <T, Params>::call (args));
+  lua_pushvalue (L, lua_upvalueindex (1));
+  lua_setmetatable (L, -2);
+  return 1;
+}
+
+//------------------------------------------------------------------------------
+/**
+  lua_CFunction to garbage collect a class object.
+
+  This is used for the __gc metamethod. The policy determines what actually
+  happens to the object. It could decrement a reference count, delete the
+  object, do nothing, or any other policy-dependent action.
+
+  @note The expected classname is passed as an upvalue so that we can
+        ensure that we are destroying the right kind of object.
+*/
+template <typename T>
+int gcProxy (lua_State *L)
+{
+  // Use the policy to destroy the userdata.
+  AbstractPolicy const& policy = classname <T>::getPolicy ();
+  void* const userdata = detail::checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), true);
+  policy.destroyUserdata (userdata);
+  return 0;
+}
+
+//------------------------------------------------------------------------------
+/*
+* Lua-registerable C function templates for method proxies.  These are
+* registered with the expected classname as upvalue 1 and the member function
+* pointer as upvalue 2.  When called from Lua, they will receive the object
+* on which they are called as argument 1 and all the method arguments as
+* args 2 and up.
+*/
+/**
+  lua_CFunction to call a class member function with a return value.
+*/
+template <typename MemberFunction,
+          typename ReturnType = typename fnptr <MemberFunction>::resulttype>
+struct methodProxy
+{
+  typedef typename fnptr <MemberFunction>::classtype T;
+  typedef typename fnptr <MemberFunction>::params params;
+  static int f (lua_State *L)
+  {
+    // Use the policy to obtain the class pointer.
+    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    void* const userdata = detail::checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+    T* const obj (policy.getClassPointer <T> (userdata));
+    MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
+    arglist <params, 2> args(L);
+    tdstack <ReturnType>::push (L, fnptr <MemberFunction>::call (obj, fp, args));
+    return 1;
+  }
+};
+
+//------------------------------------------------------------------------------
+/**
+  lua_CFunction to call a class member function with no return value.
+*/
+template <typename MemberFunction>
+struct methodProxy <MemberFunction, void>
+{
+  typedef typename fnptr <MemberFunction>::classtype T;
+  typedef typename fnptr <MemberFunction>::params params;
+  static int f (lua_State *L)
+  {
+    // Use the policy to obtain the class pointer.
+    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    void* const userdata = detail::checkClass (L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+    T* const obj (policy.getClassPointer <T> (userdata));
+    MemberFunction fp = *static_cast <MemberFunction*> (lua_touserdata(L, lua_upvalueindex(2)));
+    arglist <params, 2> args (L);
+    fnptr <MemberFunction>::call (obj, fp, args);
+    return 0;
+  }
+};
+
+//------------------------------------------------------------------------------
+/*
+* Lua-registerable C function templates for getting and setting the value of
+* an object member through a member pointer; similiar to the global property
+* proxies, but they take both the expected classname for type-checking and
+* the member pointer as upvalues.
+*/
+template <typename T, typename U>
+int propgetMemberProxy (lua_State *L)
+{
+  // Use the policy to obtain the class pointer.
+  AbstractPolicy const& policy = classname <T>::getPolicy ();
+  void* const userdata = detail::checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+  T* const obj (policy.getClassPointer <T> (userdata));
+  U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
+  tdstack <U>::push (L, obj->*mp);
+  return 1;
+}
+
+//------------------------------------------------------------------------------
+
+template <typename T, typename U>
+int propsetMemberProxy (lua_State *L)
+{
+  // Use the policy to obtain the class pointer.
+  AbstractPolicy const& policy = classname <T>::getPolicy ();
+  void* const userdata = detail::checkClass(L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+  T* const obj (policy.getClassPointer <T> (userdata));
+  U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
+  obj->*mp = tdstack<U>::get(L, 2);
+  return 0;
+}
+
+//------------------------------------------------------------------------------
+/**
+  Create a metatable.
+*/
+
+template <typename T>
+void createMetaTable (lua_State *L, char const* name)
+{
+  luaL_newmetatable (L, name);
+  lua_pushcfunction (L, &detail::indexer);
+  rawsetfield (L, -2, "__index");                     // Use our __index.
+  lua_pushcfunction (L, &detail::object_newindexer);
+  rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
+  lua_pushstring (L, name);
+  lua_pushcclosure (L, &gcProxy <T>, 1);
+  rawsetfield (L, -2, "__gc");                        // Use our __gc
+  lua_pushstring (L, name);
+  rawsetfield (L, -2, "__type");                      // Set __type to class name.
+  lua_newtable (L);
+  rawsetfield (L, -2, "__propget");                   // Create empty __propget.
+  lua_newtable (L);
+  rawsetfield (L, -2, "__propset");                   // Create empty __propset.
+}
+
+//------------------------------------------------------------------------------
+/**
+  Create a metatable suitable for a const object.
+*/
+
+template <typename T>
+void createConstMetaTable (lua_State *L, char const* name)
+{
+  std::string const cname = std::string("const ") + name;
+  luaL_newmetatable (L, cname.c_str());
+  lua_pushcfunction (L, &detail::indexer);
+  rawsetfield (L, -2, "__index");                     // Use our __index.
+  lua_pushcfunction (L, &detail::object_newindexer);
+  rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
+  lua_pushstring (L, cname.c_str());
+  lua_pushcclosure (L, &gcProxy <T>, 1);
+  rawsetfield (L, -2, "__gc");                        // Use our __gc.
+  lua_pushstring (L, cname.c_str());
+  rawsetfield (L, -2, "__type");                      // Store the class type.
+  lua_newtable (L);
+  rawsetfield (L, -2, "__propget");                   // Create empty __propget.
+}
 
 //==============================================================================
 /**
@@ -1235,7 +1241,7 @@ public:
   scope& function (char const* const name, Function fp)
   {
     findStaticTable (L, this->name.c_str());
-    lua_pushlightuserdata (L, static_cast <void*> (fp));
+    lua_pushlightuserdata (L, reinterpret_cast <void*> (fp));
     lua_pushcclosure (L, &functionProxy <Function>::f, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
@@ -1281,7 +1287,7 @@ public:
 
     findStaticTable (L, this->name.c_str ());
     rawgetfield(L, -1, "__propget");
-    lua_pushlightuserdata (L, static_cast <void*> (getFunction));
+    lua_pushlightuserdata (L, reinterpret_cast <void*> (getFunction));
     lua_pushcclosure (L, &functionProxy<T (*) ()>::f, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 2);
@@ -1329,7 +1335,7 @@ public:
     variable_ro <T> (name, getFunction);
     findStaticTable (L, this->name.c_str ());
     rawgetfield (L, -1, "__propset");
-    lua_pushlightuserdata (L, static_cast <void*> (setFunction));
+    lua_pushlightuserdata (L, reinterpret_cast <void*> (setFunction));
     lua_pushcclosure (L, &functionProxy <void (*) (T)>::f, 1);
     rawsetfield(L, -2, name);
     lua_pop(L, 2);

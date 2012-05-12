@@ -79,7 +79,7 @@ public:
     // Use the policy to retrieve a pointer to the class.
     AbstractPolicy const& policy = classname <T>::getPolicy ();
     void* const userdata = detail::checkClass (L, index, classname <T>::name());
-    T const* const obj = static_cast <T*> (policy.getClassPointer (userdata));
+    T const* const obj = policy.getClassPointer <T> (userdata);
     return *obj;
   }
 };
@@ -246,7 +246,7 @@ struct tdstack <shared_ptr<const T> >
   {
     std::string constname = std::string("const ") + classname<T>::name();
     return *(shared_ptr<const T> *)
-      detail::checkClass(L, index, constname.c_str());
+      detail::checkClass(L, index, constname.c_str(), false);
   }
 };
 
