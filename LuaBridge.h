@@ -299,7 +299,7 @@ namespace luabridge
 {
 
 // forward declaration
-template <class T, template <class> class Policy>
+template <class T>
 class class__;
 
 //==============================================================================
@@ -493,128 +493,6 @@ private:
 
 //==============================================================================
 /**
-  Object lifetime management policy.
-*/
-struct LifetimePolicy
-{
-  /** Returns the size of the userdata required to hold the container.
-  */
-  virtual size_t getUserdataSize () const = 0;
-
-  /** Construct the container in the userdata.
-  */
-  virtual void constructUserdata (void* const userdata, void* const object) const = 0;
-
-  /** Destroy the container in the userdata.
-  */
-  virtual void destroyUserdata (void* const userdata) const = 0;
-
-  /** Retrieved a typed pointer to the contained class.
-  */
-  template <class T>
-  T* getClassPointer (void* const userdata) const
-  {
-    return static_cast <T*> (getPointer (userdata));
-  }
-
-protected:
-  virtual ~LifetimePolicy () { }
-
-private:
-  /** Retrieve a void pointer to the contained class from the userdata.
-  */
-  virtual void* getPointer (void* const userdata) const = 0;
-};
-
-//------------------------------------------------------------------------------
-/**
-  Object policy that uses the original luabridge::shared_ptr
-*/
-template <typename T>
-struct SharedPtrPolicy : LifetimePolicy
-{
-  typedef shared_ptr <T> Container;
-
-  size_t getUserdataSize () const
-  {
-    return sizeof (Container);
-  }
-
-  void constructUserdata (void* const userdata, void* const object) const
-  {
-    new (userdata) Container (static_cast <T*> (object));
-  }
-
-  void destroyUserdata (void* const userdata) const
-  {
-    (static_cast <Container*> (userdata))->~Container ();
-  }
-
-  void* getPointer (void* const userdata) const
-  {
-    return static_cast <Container*> (userdata)->get ();
-  }
-};
-
-//------------------------------------------------------------------------------
-/**
-  Object policy for exclusive Lua ownership.
-*/
-template <typename T>
-struct LuaOwnedPolicy : LifetimePolicy
-{
-  size_t getUserdataSize () const
-  {
-    return sizeof (T*);
-  }
-
-  void constructUserdata (void* const userdata, void* const object) const
-  {
-    *static_cast <T**> (userdata) = static_cast <T*> (object);
-  }
-
-  void destroyUserdata (void* const userdata) const
-  {
-    *static_cast <T**> (userdata)->~T ();
-  }
-
-  void* getPointer (void* const userdata) const
-  {
-    return *static_cast <T**> (userdata);
-  }
-};
-
-//------------------------------------------------------------------------------
-/**
-  Object policy for an unmanaged pointer.
-
-  The object must outlive all Lua environments.
-*/
-template <typename T>
-struct UnmanagedPtrPolicy : LifetimePolicy
-{
-  size_t getUserdataSize () const
-  {
-    return sizeof (T*);
-  }
-
-  void constructUserdata (void* const userdata, void* const object) const
-  {
-    *static_cast <T**> (userdata) = static_cast <T*> (object);
-  }
-
-  void destroyUserdata (void* const userdata) const
-  {
-  }
-
-  void* getPointer (void* const userdata) const
-  {
-    return *static_cast <T**> (userdata);
-  }
-};
-
-//==============================================================================
-/**
   Holds the address of a unique string to identify unregistered classes.
 */
 class classnamebase
@@ -643,27 +521,21 @@ class classname : private classnamebase
 {
 public:
   /** Register a class.
-
-      @tparam Policy The lifetime management policy.
   */
-  template <template <class> class Policy>
   static void registerClass (char const* name)
   {
     assert (!isRegistered ());
 
-    static Policy <T> policy;
-
     classname <T>::s_string = std::string ("const ") + std::string (name);
     classname <T>::s_constname = classname <T>::s_string.c_str ();
     classname <T>::s_name = classname <T>::s_constname + 6;
-    classname <T>::s_policy = &policy;
   }
 
   /** Determine if the class is registered to Lua.
   */
   static inline bool isRegistered ()
   {
-    return classname <T>::s_policy != 0;
+    return classname <T>::s_name != unregisteredClassName ();
   }
 
   /** Retrieve the class name.
@@ -698,25 +570,11 @@ public:
     return false;
   }
 
-  /** Retrieve the policy for the class.
-
-      @note The class must be registered.
-  */
-  static LifetimePolicy const& getPolicy ()
-  {
-    assert (isRegistered ());
-    return *s_policy;
-  }
-
 private:
-  static LifetimePolicy* s_policy;
   static char const* s_constname;
   static char const* s_name;
   static std::string s_string;
 };
-
-template <class T>
-LifetimePolicy* classname <T>::s_policy = 0;
 
 template <class T>
 std::string classname <T>::s_string;
@@ -2934,9 +2792,9 @@ public:
     Register a new class.
   */
   template <class T>
-  class__ <T, SharedPtrPolicy> class_ (char const* name)
+  class__ <T> class_ (char const* name)
   {
-    return class__ <T, SharedPtrPolicy> (L, name);
+    return class__ <T> (L, name);
   }
 
   //----------------------------------------------------------------------------
@@ -2947,9 +2805,9 @@ public:
   */
 
   template <class T>
-  class__<T, SharedPtrPolicy> class_ ()
+  class__ <T> class_ ()
   {
-    return class__ <T, SharedPtrPolicy> (L);
+    return class__ <T> (L);
   }
 
   //----------------------------------------------------------------------------
@@ -2960,10 +2818,10 @@ public:
   */
 
   template <class T, class Base>
-  class__ <T, SharedPtrPolicy> subclass (char const *name)
+  class__ <T> subclass (char const *name)
   {
     assert (classname <Base>::isRegistered ());
-    return class__ <T, SharedPtrPolicy> (L, name, classname <Base>::name ());
+    return class__ <T> (L, name, classname <Base>::name ());
   }
 
 protected:
@@ -2975,21 +2833,21 @@ protected:
 /**
   Perform registration for class members.
 */
-template <class T, template <class> class Policy>
+template <class T>
 class class__ : public scope
 {
 public:
-  explicit class__ (lua_State *L_)
-    : scope (L_, classname <T>::name ())
+  //----------------------------------------------------------------------------
+  explicit class__ (lua_State *L_) : scope (L_, classname <T>::name ())
   {
     assert (classname <T>::isRegistered ());
   }
 
-  class__ (lua_State *L_, const char *name_)
-    : scope(L_, name_)
+  //----------------------------------------------------------------------------
+  class__ (lua_State *L_, char const *name_) : scope(L_, name_)
   {
     assert (!classname <T>::isConst ());
-    classname <T>::template registerClass <Policy> (name_);
+    classname <T>::registerClass (name_);
 
     // Create metatable for this class.  The metatable is stored in the Lua
     // registry, keyed by the given class name.
@@ -3008,11 +2866,11 @@ public:
     lua_pop(L, 1);
   }
 
-  class__ (lua_State *L_, const char *name_, const char *basename)
-    : scope(L_, name_)
+  //----------------------------------------------------------------------------
+  class__ (lua_State *L_, char const *name_, char const *basename) : scope(L_, name_)
   {
     assert (!classname <T>::isConst ());
-    classname <T>::template registerClass <Policy> (name_);
+    classname <T>::registerClass (name_);
 
     // Create metatable for this class
     createMetaTable <T> (L);
@@ -3039,36 +2897,36 @@ public:
     lua_pop(L, 1);
   }
 
+  //----------------------------------------------------------------------------
   // Constructor registration.  The template parameter should be passed
   // a function pointer type; only the argument list will be used (since
   // you can't take the address of a ctor).
   template <typename FnPtr>
-  class__<T,Policy>& constructor ()
+  class__ <T>& constructor ()
   {
     // Get a reference to the class's static table
-    findStaticTable(L, name.c_str());
+    findStaticTable (L, name.c_str());
 
     // Push the constructor proxy, with the class's metatable as an upvalue
     luaL_getmetatable(L, name.c_str());
-    //lua_pushcclosure(L, &ctorProxy<T, typename fnptr<FnPtr>::params>, 1);
-    lua_pushcclosure (L, &UserdataByContainer <T>::ctorProxy <typename fnptr<FnPtr>::params>, 1);
+    lua_pushcclosure (L, &UserdataByContainer <T>::ctorProxy <typename fnptr <FnPtr>::params>, 1);
 
     // Set the constructor proxy as the __call metamethod of the static table
     rawsetfield(L, -2, "__call");
-    lua_pop(L, 1);
+    lua_pop (L, 1);
     return *this;
   }
 
+  //----------------------------------------------------------------------------
   /*
   * Perform method registration in a class.  The method proxies are all
   * registered as values in the class's metatable, which is searched by the
   * indexer function we've installed as __index metamethod.
   */
-
   template <typename FnPtr>
-  class__<T,Policy>& method (const char *name, FnPtr fp)
+  class__ <T>& method (char const *name, FnPtr fp)
   {
-    assert(fnptr<FnPtr>::mfp);
+    assert (fnptr <FnPtr>::mfp);
     std::string metatable_name = this->name;
     // Disable MSVC's warning 'conditional expression is constant'
   #ifdef _MSC_VER
@@ -3084,13 +2942,13 @@ public:
     lua_pushstring(L, metatable_name.c_str());
     void *v = lua_newuserdata(L, sizeof(FnPtr));
     memcpy(v, &fp, sizeof(FnPtr));
-    //lua_pushcclosure(L, &methodProxy<FnPtr>::f, 2);
     lua_pushcclosure(L, &Userdata::methodProxy<FnPtr>::f, 2);
     rawsetfield(L, -2, name);
     lua_pop(L, 1);
     return *this;
   }
 
+  //----------------------------------------------------------------------------
   // Property registration.  Properties can be read/write (rw)
   // or read-only (ro).  Varieties that access member pointers directly
   // and varieties that access through function calls are provided.
@@ -3099,9 +2957,8 @@ public:
   * + "_set" as the set-function.  Note that property getters are stored
   * both in the regular metatable and the const metatable.
   */
-
   template <typename U>
-  class__<T,Policy>& property_ro (const char *name, const U T::* mp)
+  class__ <T>& property_ro (char const* name, const U T::* mp)
   {
     luaL_getmetatable(L, this->name.c_str());
     std::string cname = "const " + this->name;
@@ -3119,8 +2976,9 @@ public:
     return *this;
   }
 
+  //----------------------------------------------------------------------------
   template <typename U>
-  class__<T,Policy>& property_ro (const char *name, U (T::*get) () const)
+  class__ <T>& property_ro (char const *name, U (T::*get) () const)
   {
     luaL_getmetatable(L, this->name.c_str());
     std::string cname = "const " + this->name;
@@ -3139,8 +2997,9 @@ public:
     return *this;
   }
 
+  //----------------------------------------------------------------------------
   template <typename U>
-  class__<T,Policy>& property_rw (const char *name, U T::* mp)
+  class__ <T>& property_rw (char const *name, U T::* mp)
   {
     property_ro<U>(name, mp);
     luaL_getmetatable(L, this->name.c_str());
@@ -3155,7 +3014,7 @@ public:
   }
 
   template <typename U>
-  class__<T,Policy>& property_rw (const char *name, U (T::*get) () const, void (T::*set) (U))
+  class__ <T>& property_rw (char const *name, U (T::*get) () const, void (T::*set) (U))
   {
     property_ro<U>(name, get);
     luaL_getmetatable(L, this->name.c_str());
@@ -3172,34 +3031,34 @@ public:
 
   // Static method registration
   template <typename FnPtr>
-  class__<T,Policy>& static_method (const char *name, FnPtr fp)
+  class__ <T>& static_method (char const *name, FnPtr fp)
   {
-    return *(class__<T,Policy>*)&(function(name, fp));
+    return *(class__ <T>*)&(function (name, fp));
   }
 
   // Static property registration
   template <typename U>
-  class__<T,Policy>& static_property_ro (const char *name, const U *data)
+  class__ <T>& static_property_ro (char const *name, const U *data)
   {
-    return *(class__<T,Policy>*)&(variable_ro<U>(name, data));
+    return *(class__ <T>*)&(variable_ro <U> (name, data));
   }
   
   template <typename U>
-  class__<T,Policy>& static_property_ro (const char *name, U (*get) ())
+  class__ <T>& static_property_ro (char const *name, U (*get) ())
   {
-    return *(class__<T,Policy>*)&(variable_ro<U>(name, get));
+    return *(class__ <T>*)&(variable_ro <U> (name, get));
   }
   
   template <typename U>
-  class__<T,Policy>& static_property_rw (const char *name, U *data)
+  class__ <T>& static_property_rw (char const *name, U *data)
   {
-    return *(class__<T,Policy>*)&(variable_rw<U>(name, data));
+    return *(class__ <T>*)&(variable_rw <U> (name, data));
   }
   
   template <typename U>
-  class__<T,Policy>& static_property_rw (const char *name, U (*get) (), void (*set) (U))
+  class__ <T>& static_property_rw (char const *name, U (*get) (), void (*set) (U))
   {
-    return *(class__<T,Policy>*)&(variable_rw<U>(name, get, set));
+    return *(class__ <T>*)&(variable_rw <U> (name, get, set));
   }
 
   /** @todo Inherit Lua classes from C++ classes */
