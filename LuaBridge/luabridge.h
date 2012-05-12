@@ -542,7 +542,7 @@ struct classname <const T> : public classname <T>
 #include "typelist.h"
 
 //==============================================================================
-/**
+/*
   Utilities.
 
   Some are provided as static class members so the definitions may be placed
@@ -582,42 +582,76 @@ inline void rawsetfield (lua_State* const L, int const index, char const* const 
     lua_rawset (L, index);
 }
 
-struct detail
+struct detail // namespace detail
 {
-  //----------------------------------------------------------------------------
-  /**
-    Produce an error message.
 
-    This is our version of luaL_typerror, which was removed in Lua 5.2.
+//------------------------------------------------------------------------------
+/**
+  Produce an error message.
 
-    @internal
-  */
-  static int typeError (lua_State *L, int narg, const char *tname)
+  This is our version of luaL_typerror, which was removed in Lua 5.2.
+
+  @internal
+*/
+static int typeError (lua_State *L, int narg, const char *tname)
+{
+  const char *msg = lua_pushfstring (L, "%s expected, got %s",
+    tname, luaL_typename (L, narg));
+
+  return luaL_argerror (L, narg, msg);
+}
+
+//------------------------------------------------------------------------------
+/**
+  Custom __index metamethod for C++ classes.
+
+  If the given key is not found, the search will be delegated up the parent
+  hierarchy.
+
+  @internal
+*/
+static int indexer (lua_State *L)
+{
+  int result = 0;
+
+  lua_getmetatable (L, 1);
+
+  for (;;)
   {
-    const char *msg = lua_pushfstring (L, "%s expected, got %s",
-      tname, luaL_typename (L, narg));
-
-    return luaL_argerror (L, narg, msg);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Custom __index metamethod for C++ classes.
-
-    If the given key is not found, the search will be delegated up the parent
-    hierarchy.
-
-    @internal
-  */
-  static int indexer (lua_State *L)
-  {
-    int result = 0;
-
-    lua_getmetatable (L, 1);
-
-    for (;;)
+    // Check the metatable.
+    lua_pushvalue (L, 2);
+    lua_rawget (L, -2);
+    if (!lua_isnil (L, -1))
     {
-      // Check the metatable.
+      // found
+      result = 1;
+      break;
+    }
+    lua_pop(L, 1);
+
+    // Check the __propget metafield.
+    rawgetfield (L, -1, "__propget");
+    if (!lua_isnil (L, -1))
+    {
+      lua_pushvalue (L, 2);
+      lua_rawget (L, -2);
+      if (!lua_isnil (L, -1))
+      {
+        // found
+        assert (lua_isfunction (L, -1));
+        lua_pushvalue (L, 1);
+        lua_call (L, 1, 1);
+        result = 1;
+        break;
+      }
+      lua_pop (L, 1);
+    }
+    lua_pop (L, 1);
+
+    // Check the __const metafield.
+    rawgetfield (L, -1, "__const");
+    if (!lua_isnil (L, -1))
+    {
       lua_pushvalue (L, 2);
       lua_rawget (L, -2);
       if (!lua_isnil (L, -1))
@@ -627,340 +661,669 @@ struct detail
         break;
       }
       lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
 
-      // Check the __propget metafield.
-      rawgetfield (L, -1, "__propget");
+    // Repeat the lookup in the __parent metafield,
+    // or return nil if the field doesn't exist.
+    rawgetfield (L, -1, "__parent");
+    if (lua_isnil(L, -1))
+    {
+      // no parent
+      result = 1;
+      break;
+    }
+    lua_remove(L, -2);
+  }
+
+  return result;
+}
+
+//------------------------------------------------------------------------------
+/**
+  Custom __newindex metamethod for static tables.
+
+  This supports properties on scopes, and static properties of classes.
+
+  @internal
+*/
+static int newindexer (lua_State *L)
+{
+  int result = 0;
+
+  lua_getmetatable (L, 1);
+
+  for (;;)
+  {
+    // Check the __propset metafield.
+    rawgetfield (L, -1, "__propset");
+    if (!lua_isnil (L, -1))
+    {
+      lua_pushvalue (L, 2);
+      lua_rawget (L, -2);
       if (!lua_isnil (L, -1))
       {
-        lua_pushvalue (L, 2);
-        lua_rawget (L, -2);
-        if (!lua_isnil (L, -1))
-        {
-          // found
-          assert (lua_isfunction (L, -1));
-          lua_pushvalue (L, 1);
-          lua_call (L, 1, 1);
-          result = 1;
-          break;
-        }
-        lua_pop (L, 1);
-      }
-      lua_pop (L, 1);
-
-      // Check the __const metafield.
-      rawgetfield (L, -1, "__const");
-      if (!lua_isnil (L, -1))
-      {
-        lua_pushvalue (L, 2);
-        lua_rawget (L, -2);
-        if (!lua_isnil (L, -1))
-        {
-          // found
-          result = 1;
-          break;
-        }
-        lua_pop(L, 1);
-      }
-      lua_pop(L, 1);
-
-      // Repeat the lookup in the __parent metafield,
-      // or return nil if the field doesn't exist.
-      rawgetfield (L, -1, "__parent");
-      if (lua_isnil(L, -1))
-      {
-        // no parent
-        result = 1;
+        // found
+        assert (lua_isfunction (L, -1));
+        lua_pushvalue (L, 3);
+        lua_call (L, 1, 0);
+        result = 0;
         break;
       }
-      lua_remove(L, -2);
+      lua_pop(L, 1);
     }
+    lua_pop(L, 1);
 
-    return result;
+    // Repeat the lookup in the __parent metafield.
+    rawgetfield (L, -1, "__parent");
+    if (lua_isnil (L, -1))
+    {
+      // Either the property or __parent must exist.
+      result = luaL_error (L,
+        "attempt to set %s, which isn't a property", lua_tostring(L, 2));
+      break;
+    }
+    lua_remove(L, -2);
   }
 
-  //----------------------------------------------------------------------------
-  /**
-    Custom __newindex metamethod for static tables.
+  return result;
+}
 
-    This supports properties on scopes, and static properties of classes.
+//------------------------------------------------------------------------------
+/**
+  Custom __newindex metamethod for metatables.
 
-    @internal
-  */
-  static int newindexer (lua_State *L)
+  This supports properties on class objects. The corresponding object is
+  passed in the first parameter to the setFunction.
+
+  @internal
+*/
+
+static int object_newindexer (lua_State *L)
+{
+  int result = 0;
+
+  lua_getmetatable (L, 1);
+
+  for (;;)
   {
-    int result = 0;
-
-    lua_getmetatable (L, 1);
-
-    for (;;)
+    // Check __propset
+    rawgetfield (L, -1, "__propset");
+    if (!lua_isnil (L, -1))
     {
-      // Check the __propset metafield.
-      rawgetfield (L, -1, "__propset");
+      lua_pushvalue (L, 2);
+      lua_rawget (L, -2);
       if (!lua_isnil (L, -1))
       {
-        lua_pushvalue (L, 2);
-        lua_rawget (L, -2);
-        if (!lua_isnil (L, -1))
-        {
-          // found
-          assert (lua_isfunction (L, -1));
-          lua_pushvalue (L, 3);
-          lua_call (L, 1, 0);
-          result = 0;
-          break;
-        }
-        lua_pop(L, 1);
-      }
-      lua_pop(L, 1);
-
-      // Repeat the lookup in the __parent metafield.
-      rawgetfield (L, -1, "__parent");
-      if (lua_isnil (L, -1))
-      {
-        // Either the property or __parent must exist.
-        result = luaL_error (L,
-          "attempt to set %s, which isn't a property", lua_tostring(L, 2));
+        // found it, call the setFunction.
+        assert (lua_isfunction (L, -1));
+        lua_pushvalue (L, 1);
+        lua_pushvalue (L, 3);
+        lua_call (L, 2, 0);
+        result = 0;
         break;
       }
-      lua_remove(L, -2);
-    }
-
-    return result;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Custom __newindex metamethod for metatables.
-
-    This supports properties on class objects. The corresponding object is
-    passed in the first parameter to the setFunction.
-
-    @internal
-  */
-
-  static int object_newindexer (lua_State *L)
-  {
-    int result = 0;
-
-    lua_getmetatable (L, 1);
-
-    for (;;)
-    {
-      // Check __propset
-      rawgetfield (L, -1, "__propset");
-      if (!lua_isnil (L, -1))
-      {
-        lua_pushvalue (L, 2);
-        lua_rawget (L, -2);
-        if (!lua_isnil (L, -1))
-        {
-          // found it, call the setFunction.
-          assert (lua_isfunction (L, -1));
-          lua_pushvalue (L, 1);
-          lua_pushvalue (L, 3);
-          lua_call (L, 2, 0);
-          result = 0;
-          break;
-        }
-        lua_pop (L, 1);
-      }
       lua_pop (L, 1);
-
-      // Repeat the lookup in the __parent metafield.
-      rawgetfield (L, -1, "__parent");
-      if (lua_isnil (L, -1))
-      {
-        // Either the property or __parent must exist.
-        result = luaL_error (L,
-          "attempt to set %s, which isn't a property", lua_tostring (L, 2));
-      }
-      lua_remove (L, -2);
     }
+    lua_pop (L, 1);
 
-    return result;
+    // Repeat the lookup in the __parent metafield.
+    rawgetfield (L, -1, "__parent");
+    if (lua_isnil (L, -1))
+    {
+      // Either the property or __parent must exist.
+      result = luaL_error (L,
+        "attempt to set %s, which isn't a property", lua_tostring (L, 2));
+    }
+    lua_remove (L, -2);
   }
 
-  //----------------------------------------------------------------------------
-  /**
-    Create a static table.
+  return result;
+}
 
-    The resulting table is placed on the stack.
-  */
-  static void createStaticTable (lua_State *L)
-  {
-    lua_newtable (L);                         // Create the table.
-    lua_pushvalue (L, -1);
-    lua_setmetatable (L, -2);                 // Set it as its own metatable.
-    lua_pushcfunction (L, &indexer);
-    rawsetfield (L, -2, "__index");           // Use our __index.
-    lua_pushcfunction (L, &newindexer);
-    rawsetfield (L, -2, "__newindex");        // Use our __newindex.
-    lua_newtable (L);
-    rawsetfield (L, -2, "__propget");         // Create empty __propget.
-    lua_newtable (L);
-    rawsetfield (L, -2, "__propset");         // Create empty __propset.
-  }
+//------------------------------------------------------------------------------
+/**
+  Create a static table.
 
-  //----------------------------------------------------------------------------
-  /**
-    Create static tables from a dot-separated identifier.
+  The resulting table is placed on the stack.
+*/
+static void createStaticTable (lua_State *L)
+{
+  lua_newtable (L);                         // Create the table.
+  lua_pushvalue (L, -1);
+  lua_setmetatable (L, -2);                 // Set it as its own metatable.
+  lua_pushcfunction (L, &indexer);
+  rawsetfield (L, -2, "__index");           // Use our __index.
+  lua_pushcfunction (L, &newindexer);
+  rawsetfield (L, -2, "__newindex");        // Use our __newindex.
+  lua_newtable (L);
+  rawsetfield (L, -2, "__propget");         // Create empty __propget.
+  lua_newtable (L);
+  rawsetfield (L, -2, "__propset");         // Create empty __propset.
+}
 
-    "x.y.z" produces _G["x"] = x[], x["y"] = y[], and y["z"] = z[].
+//------------------------------------------------------------------------------
+/**
+  Create static tables from a dot-separated identifier.
+
+  "x.y.z" produces _G["x"] = x[], x["y"] = y[], and y["z"] = z[].
     
-    The last table (z[] in the example) is left on the stack.
-  */
-  static void createStaticTables (lua_State* L, std::string name)
+  The last table (z[] in the example) is left on the stack.
+*/
+static void createStaticTables (lua_State* L, std::string name)
+{
+  assert (name.length () > 0);
+
+  lua_getglobal (L, "_G");
+
+  // Process each dot-separated namespace identifier.
+  size_t start = 0;
+  size_t pos = 0;
+  while ((pos = name.find ('.', start)) != std::string::npos)
   {
-    assert (name.length () > 0);
+    std::string const id = name.substr (start, pos - start);
+    lua_getfield (L, -1, id.c_str ()); //! @todo Do we need rawgetfield() here?
+    if (lua_isnil (L, -1))
+    {
+      lua_pop (L, 1);
+      createStaticTable (L);
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -3, id.c_str ());
+    }
+    lua_remove(L, -2);
+    start = pos + 1;
+  }
 
-    lua_getglobal (L, "_G");
+  // Create a new table with the remaining portion of the name.
+  createStaticTable (L);
+  rawsetfield (L, -2, name.c_str() + start);
+  lua_pop (L, 1);
+}
 
-    // Process each dot-separated namespace identifier.
+//------------------------------------------------------------------------------
+/**
+  Look up a static table.
+
+  The table is identified by its fully qualified dot-separated name. The
+  resulting table is returned on the stack.
+
+  @note The table must exist.
+*/
+static void findStaticTable (lua_State* const L, char const* const name)
+{
+  lua_getglobal (L, "_G");
+
+  if (name && name [0] != '\0')
+  {
+    std::string namestr (name);
     size_t start = 0;
     size_t pos = 0;
-    while ((pos = name.find ('.', start)) != std::string::npos)
+    while ((pos = namestr.find ('.', start)) != std::string::npos)
     {
-      std::string const id = name.substr (start, pos - start);
-      lua_getfield (L, -1, id.c_str ()); //! @todo Do we need rawgetfield() here?
-      if (lua_isnil (L, -1))
-      {
-        lua_pop (L, 1);
-        createStaticTable (L);
-        lua_pushvalue (L, -1);
-        rawsetfield (L, -3, id.c_str ());
-      }
-      lua_remove(L, -2);
-      start = pos + 1;
-    }
-
-    // Create a new table with the remaining portion of the name.
-    createStaticTable (L);
-    rawsetfield (L, -2, name.c_str() + start);
-    lua_pop (L, 1);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Look up a static table.
-
-    The table is identified by its fully qualified dot-separated name. The
-    resulting table is returned on the stack.
-
-    @note The table must exist.
-  */
-  static void findStaticTable (lua_State* const L, char const* const name)
-  {
-    lua_getglobal (L, "_G");
-
-    if (name && name [0] != '\0')
-    {
-      std::string namestr (name);
-      size_t start = 0;
-      size_t pos = 0;
-      while ((pos = namestr.find ('.', start)) != std::string::npos)
-      {
-        lua_getfield (L, -1, namestr.substr(start, pos - start).c_str());
-        assert (!lua_isnil(L, -1));
-        lua_remove (L, -2);
-        start = pos + 1;
-      }
-      lua_getfield (L, -1, namestr.substr(start).c_str());
+      lua_getfield (L, -1, namestr.substr(start, pos - start).c_str());
       assert (!lua_isnil(L, -1));
       lua_remove (L, -2);
+      start = pos + 1;
+    }
+    lua_getfield (L, -1, namestr.substr(start).c_str());
+    assert (!lua_isnil(L, -1));
+    lua_remove (L, -2);
+  }
+}
+
+//------------------------------------------------------------------------------
+/*
+* Class type checker.  Given the index of a userdata on the stack, makes
+* sure that it's an object of the given classname or a subclass thereof.
+* If yes, returns the address of the data; otherwise, throws an error.
+* Works like the luaL_checkudata function.
+*/
+
+static void* checkClass (lua_State *L, int index, const char *tname, bool exact)
+{
+  // If index is relative to the top of the stack, convert it into an index
+  // relative to the bottom of the stack, so we can push our own stuff
+  if (index < 0)
+    index += lua_gettop(L) + 1;
+
+  // Check that the thing on the stack is indeed a userdata
+  if (!lua_isuserdata(L, index))
+    typeError (L, index, tname);
+
+  // Lookup the given name in the registry
+  luaL_getmetatable(L, tname);
+
+  // Lookup the metatable of the given userdata
+  lua_getmetatable(L, index);
+
+  // If exact match required, simply test for identity.
+  if (exact)
+  {
+    // Ignore "const" for exact tests (which are used for destructors).
+    if (!strncmp(tname, "const ", 6))
+      tname += 6;
+
+    if (lua_rawequal(L, -1, -2))
+      return lua_touserdata(L, index);
+    else
+    {
+      // Generate an informative error message
+      rawgetfield(L, -1, "__type");
+#if 1
+      luaL_argerror (L, index, lua_pushfstring (L,
+        "%s expected, got %s", tname , lua_typename (L, lua_type (L, index))));
+#else
+      char buffer[256];
+      snprintf(buffer, 256, "%s expected, got %s", tname, lua_tostring(L, -1));
+      luaL_argerror(L, index, buffer);
+#endif
+
+      return 0; // doesn't get here
     }
   }
 
-  //----------------------------------------------------------------------------
-  /*
-  * Class type checker.  Given the index of a userdata on the stack, makes
-  * sure that it's an object of the given classname or a subclass thereof.
-  * If yes, returns the address of the data; otherwise, throws an error.
-  * Works like the luaL_checkudata function.
-  */
-
-  static void* checkClass (lua_State *L, int index, const char *tname, bool exact)
+  // Navigate up the chain of parents if necessary
+  while (!lua_rawequal(L, -1, -2))
   {
-    // If index is relative to the top of the stack, convert it into an index
-    // relative to the bottom of the stack, so we can push our own stuff
-    if (index < 0)
-      index += lua_gettop(L) + 1;
-
-    // Check that the thing on the stack is indeed a userdata
-    if (!lua_isuserdata(L, index))
-      typeError (L, index, tname);
-
-    // Lookup the given name in the registry
-    luaL_getmetatable(L, tname);
-
-    // Lookup the metatable of the given userdata
-    lua_getmetatable(L, index);
-
-    // If exact match required, simply test for identity.
-    if (exact)
+    // Check for equality to the const metatable
+    rawgetfield(L, -1, "__const");
+    if (!lua_isnil(L, -1))
     {
-      // Ignore "const" for exact tests (which are used for destructors).
-      if (!strncmp(tname, "const ", 6))
-        tname += 6;
+      if (lua_rawequal(L, -1, -3))
+        break;
+    }
+    lua_pop(L, 1);
 
-      if (lua_rawequal(L, -1, -2))
-        return lua_touserdata(L, index);
-      else
-      {
-        // Generate an informative error message
-        rawgetfield(L, -1, "__type");
-        //luaL_argerror(L,index,lua_pushfstring (L,"%s expected, got %s", tname , lua_typename(L,lua_type(L,index))));
-        char buffer[256];
-        snprintf(buffer, 256, "%s expected, got %s", tname,
-          lua_tostring(L, -1));
-        // luaL_argerror does not return
-        luaL_argerror(L, index, buffer);
-        return 0;
-      }
+    // Look for the metatable's parent field
+    rawgetfield(L, -1, "__parent");
+
+    // No parent field?  We've failed; generate appropriate error
+    if (lua_isnil(L, -1))
+    {
+      // Lookup the __type field of the original metatable, so we can
+      // generate an informative error message
+      lua_getmetatable(L, index);
+      rawgetfield(L, -1, "__type");
+
+      char buffer[256];
+      snprintf(buffer, 256, "%s expected, got %s", tname,
+        lua_tostring(L, -1));
+      // luaL_argerror does not return
+      luaL_argerror(L, index, buffer);
+      return 0;
     }
 
-    // Navigate up the chain of parents if necessary
-    while (!lua_rawequal(L, -1, -2))
-    {
-      // Check for equality to the const metatable
-      rawgetfield(L, -1, "__const");
-      if (!lua_isnil(L, -1))
-      {
-        if (lua_rawequal(L, -1, -3))
-          break;
-      }
-      lua_pop(L, 1);
+    // Remove the old metatable from the stack
+    lua_remove(L, -2);
+  }
 
-      // Look for the metatable's parent field
-      rawgetfield(L, -1, "__parent");
+  // Found a matching metatable; return the userdata
+  return lua_touserdata(L, index);
+}
 
-      // No parent field?  We've failed; generate appropriate error
-      if (lua_isnil(L, -1))
-      {
-        // Lookup the __type field of the original metatable, so we can
-        // generate an informative error message
-        lua_getmetatable(L, index);
-        rawgetfield(L, -1, "__type");
+};
 
-        char buffer[256];
-        snprintf(buffer, 256, "%s expected, got %s", tname,
-          lua_tostring(L, -1));
-        // luaL_argerror does not return
-        luaL_argerror(L, index, buffer);
-        return 0;
-      }
+//==============================================================================
+/**
+  Lua stack type-dispatch for objects with value semantics
 
-      // Remove the old metatable from the stack
-      lua_remove(L, -2);
-    }
+  @note Pointers and references are specialized separately.
+*/
+template <typename T>
+struct tdstack
+{
+public:
+  /**
+    Push a copy of a registered class onto the stack.
 
-    // Found a matching metatable; return the userdata
-    return lua_touserdata(L, index);
+    @note T must be copy-constructible.
+  */
+  static void push (lua_State *L, T data)
+  {
+    // Use the policy to construct a new userdata with the class metatable.
+    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    void* const userdata = lua_newuserdata (L, policy.getUserdataSize ());
+    policy.constructUserdata (userdata, new T (data));
+    luaL_getmetatable (L, classname <T>::name ());
+    lua_setmetatable (L, -2);
+  }
+
+  /**
+    Retrieve a copy of a registered class from the stack.
+
+    @note T must be copy-constructible.
+  */
+  static T get (lua_State *L, int index)
+  {
+    // Use the policy to retrieve a pointer to the class.
+    AbstractPolicy const& policy = classname <T>::getPolicy ();
+    void* const userdata = detail::checkClass (L, index, classname <T>::name());
+    T const* const obj = policy.getClassPointer <T> (userdata);
+    return *obj;
   }
 };
 
-#include "stack.h"
+//------------------------------------------------------------------------------
+
+/*
+* Pointers and references: getting is done by retrieving the address from
+* the Lua-owned shared_ptr, but pushing is not allowed since luabridge
+* has no idea of the ownership semantics of these objects.  You can only
+* push shared_ptrs, not naked pointers and references.
+*/
+
+/**
+  Lua stack type-dispatch for pointers.
+
+  @note Pushing is disallowed.
+*/
+template <typename T>
+struct tdstack <T*>
+{
+private:
+  static void push (lua_State *L, T *data);
+public:
+  static T* get (lua_State *L, int index)
+  {
+    return ((shared_ptr<T> *)
+      detail::checkClass(L, index, classname<T>::name(), false))->get();
+  }
+};
 
 //------------------------------------------------------------------------------
+
+template <typename T>
+struct tdstack <const T *>
+{
+private:
+  static void push (lua_State *L, const T *data);
+public:
+  static const T* get (lua_State *L, int index)
+  {
+    std::string constname = std::string("const ") + classname<T>::name();
+    return ((shared_ptr<const T> *)
+      detail::checkClass (L, index, constname.c_str(), false))->get();
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <typename T>
+struct tdstack <T* const>
+{
+private:
+  static void push (lua_State *L, T * const data);
+public:
+  static T* const get (lua_State *L, int index)
+  {
+    return ((shared_ptr<T> *)
+      detail::checkClass(L, index, classname<T>::name(), false))->get();
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <typename T>
+struct tdstack <const T* const>
+{
+private:
+  static void push (lua_State *L, const T * const data);
+public:
+  static const T* const get (lua_State *L, int index)
+  {
+    std::string constname = std::string("const ") + classname<T>::name();
+    return ((shared_ptr<const T> *)
+      detail::checkClass(L, index, constname.c_str(), false))->get();
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <typename T>
+struct tdstack <T&>
+{
+private:
+  static void push (lua_State *L, T &data);
+public:
+  static T& get (lua_State *L, int index)
+  {
+    return *((shared_ptr<T> *)
+      detail::checkClass(L, index, classname<T>::name(), false))->get();
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <typename T>
+struct tdstack <const T&>
+{
+private:
+  static void push (lua_State *L, const T &data);
+public:
+  static const T& get (lua_State *L, int index)
+  {
+    std::string constname = std::string("const ") + classname<T>::name();
+    return *((shared_ptr<const T> *)
+      detail::checkClass(L, index, constname.c_str(), false))->get();
+  }
+};
+
+//------------------------------------------------------------------------------
+
+/*
+* shared_ptr: we can push these.
+* There is a specialization for const types, which produces a Lua userdata
+* whose metatable is the class's const metatable.
+*/
+
+template <typename T>
+struct tdstack <shared_ptr<T> >
+{
+  static void push (lua_State *L, shared_ptr<T> data)
+  {
+    // Make sure we don't try to push ptrs to objects of
+    // unregistered classes or primitive types
+    assert (classname <T>::isRegistered ());
+
+    // Allocate a new userdata and construct the pointer in-place there
+    void *block = lua_newuserdata(L, sizeof(shared_ptr<T>));
+    new(block) shared_ptr<T>(data);
+
+    // Set the userdata's metatable
+    luaL_getmetatable(L, classname<T>::name());
+    lua_setmetatable(L, -2);
+  }
+
+  static shared_ptr<T> get (lua_State *L, int index)
+  {
+    // Make sure we don't try to retrieve ptrs to objects of
+    // unregistered classes or primitive types
+    assert (classname <T>::isRegistered ());
+
+    return *(shared_ptr<T> *)
+      detail::checkClass(L, index, classname<T>::name(), false);
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <typename T>
+struct tdstack <shared_ptr<const T> >
+{
+  static void push (lua_State *L, shared_ptr<const T> data)
+  {
+    // Make sure we don't try to push ptrs to objects of
+    // unregistered classes or primitive types
+    assert (classname <T>::isRegistered ());
+
+    // Allocate a new userdata and construct the pointer in-place there
+    void *block = lua_newuserdata(L, sizeof(shared_ptr<const T>));
+    new(block) shared_ptr<const T>(data);
+
+    // Set the userdata's metatable
+    std::string constname = std::string("const ") + classname<T>::name();
+    luaL_getmetatable(L, constname.c_str());
+    lua_setmetatable(L, -2);
+  }
+  static shared_ptr<const T> get (lua_State *L, int index)
+  {
+    std::string constname = std::string("const ") + classname<T>::name();
+    return *(shared_ptr<const T> *)
+      detail::checkClass(L, index, constname.c_str(), false);
+  }
+};
+
+//------------------------------------------------------------------------------
+
+/*
+* Primitive types, including const char * and std::string
+*/
+
+// Create a macro for handling numeric types,
+// since they follow the same pattern
+
+#define TDSTACK_NUMERIC(T) \
+  template <> \
+struct tdstack <T> \
+{ \
+  static void push (lua_State *L, T data) \
+{ \
+  lua_pushnumber(L, (lua_Number)data); \
+} \
+  static T get (lua_State *L, int index) \
+{ \
+  return (T)(luaL_checknumber(L, index)); \
+} \
+}
+
+template <> struct tdstack <
+  int > { static void push (lua_State* L,
+  int value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
+  int get (lua_State* L, int index) { return static_cast <
+  int > (luaL_checknumber (L, index)); } };
+
+//TDSTACK_NUMERIC(int);
+TDSTACK_NUMERIC(unsigned int);
+TDSTACK_NUMERIC(unsigned char);
+TDSTACK_NUMERIC(short);
+TDSTACK_NUMERIC(unsigned short);
+TDSTACK_NUMERIC(long);
+TDSTACK_NUMERIC(unsigned long);
+TDSTACK_NUMERIC(float);
+TDSTACK_NUMERIC(double);
+
+#undef TDSTACK_NUMERIC
+
+//------------------------------------------------------------------------------
+
+template <>
+struct tdstack <bool>
+{
+  static void push (lua_State *L, bool data)
+  {
+    lua_pushboolean(L, data ? 1 : 0);
+  }
+  static bool get (lua_State *L, int index)
+  {
+    luaL_checktype(L, index, LUA_TBOOLEAN);
+
+    return lua_toboolean(L, index) ? true : false;
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <>
+struct tdstack <char>
+{
+  static void push (lua_State *L, char data)
+  {
+    char str[2] = { data, 0 };
+    lua_pushstring(L, str);
+  }
+  static char get (lua_State *L, int index)
+  {
+    return luaL_checkstring(L, index)[0];
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <>
+struct tdstack <const char *>
+{
+  static void push (lua_State *L, const char *data)
+  {
+    lua_pushstring(L, data);
+  }
+  static const char *get (lua_State *L, int index)
+  {
+    return luaL_checkstring(L, index);
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <>
+struct tdstack <std::string>
+{
+  static void push (lua_State *L, const std::string &data)
+  {
+    lua_pushstring(L, data.c_str());
+  }
+  static std::string get (lua_State *L, int index)
+  {
+    return std::string(luaL_checkstring(L, index));
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <>
+struct tdstack <const std::string &>
+{
+  static void push (lua_State *L, const std::string &data)
+  {
+    lua_pushstring(L, data.c_str());
+  }
+  static std::string get (lua_State *L, int index)
+  {
+    return std::string(luaL_checkstring(L, index));
+  }
+};
+
+//------------------------------------------------------------------------------
+
+/*
+* Subclass of a type/value list, constructable from the Lua stack.
+*/
+
+template <typename Typelist, int start = 1>
+struct arglist
+{
+};
+
+template <int start>
+struct arglist <nil, start>: public typevallist <nil>
+{
+  arglist (lua_State *L)
+  {
+    (void) L;
+  }
+};
+
+template <typename Head, typename Tail, int start>
+struct arglist <typelist <Head, Tail>, start>
+  : public typevallist <typelist <Head, Tail> >
+{
+  arglist (lua_State *L)
+    : typevallist <typelist <Head, Tail> > (tdstack <Head>::get (L, start),
+                                            arglist <Tail, start + 1> (L))
+  {
+  }
+};
+
+//==============================================================================
 /**
   lua_CFunction to call a function with a return value.
 */
