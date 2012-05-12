@@ -1806,7 +1806,7 @@ private:
 
 //------------------------------------------------------------------------------
 /**
-  Class passed by reference.
+  Class passed by pointer.
 
   The object lifetime is fully managed by C++.
 */
@@ -2918,8 +2918,11 @@ public:
 #pragma warning (disable: 4127) // constant conditional expression
 #endif
     if (fnptr <MemFn>::const_mfp)
+#if 0
+      lua_pushcclosure (L, &methodProxy <MemFn>::const_func, 2);
+#else
       lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
-      //lua_pushcclosure (L, &methodProxy <MemFn>::const_func, 2);
+#endif
     else
       lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
 #ifdef _MSC_VER
