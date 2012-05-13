@@ -2189,7 +2189,7 @@ struct tdstack <SharedPtr <T const> >
   {
     UserdataByConstSharedPtr <T, SharedPtr>::push (L, *p);
   }
-  static shared_ptr <T const> get (lua_State* L, int index)
+  static SharedPtr <T const> get (lua_State* L, int index)
   {
     return UserdataByConstSharedPtr <T, SharedPtr>::get (L, index);
   }
