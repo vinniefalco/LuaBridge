@@ -517,7 +517,7 @@ protected:
   @tparam T The class for obtaining attributes.
 */
 template <class T>
-class classname : private classnamebase
+class classinfo : private classnamebase
 {
 public:
   /** Register a class.
@@ -526,16 +526,16 @@ public:
   {
     assert (!isRegistered ());
 
-    classname <T>::s_string = std::string ("const ") + std::string (name);
-    classname <T>::s_constname = classname <T>::s_string.c_str ();
-    classname <T>::s_name = classname <T>::s_constname + 6;
+    classinfo <T>::s_string = std::string ("const ") + std::string (name);
+    classinfo <T>::s_constname = classinfo <T>::s_string.c_str ();
+    classinfo <T>::s_name = classinfo <T>::s_constname + 6;
   }
 
   /** Determine if the class is registered to Lua.
   */
   static inline bool isRegistered ()
   {
-    return classname <T>::s_name != unregisteredClassName ();
+    return classinfo <T>::s_name != unregisteredClassName ();
   }
 
   /** Retrieve the class name.
@@ -545,7 +545,7 @@ public:
   static inline char const* name ()
   {
     assert (isRegistered ());
-    return classname <T>::s_name;
+    return classinfo <T>::s_name;
   }
 
   /** Retrieve the class const name.
@@ -555,7 +555,7 @@ public:
   static inline char const* const_name ()
   {
     assert (isRegistered ());
-    return classname <T>::s_constname;
+    return classinfo <T>::s_constname;
   }
 
   /** Determine if a registered class is const.
@@ -577,13 +577,13 @@ private:
 };
 
 template <class T>
-std::string classname <T>::s_string;
+std::string classinfo <T>::s_string;
 
 template <class T>
-char const* classname <T>::s_constname = classnamebase::unregisteredClassName ();
+char const* classinfo <T>::s_constname = classnamebase::unregisteredClassName ();
 
 template <class T>
-char const* classname <T>::s_name = classnamebase::unregisteredClassName ();
+char const* classinfo <T>::s_name = classnamebase::unregisteredClassName ();
 
 //------------------------------------------------------------------------------
 /**
@@ -592,7 +592,7 @@ char const* classname <T>::s_name = classnamebase::unregisteredClassName ();
   The mapped name is the same.
 */
 template <class T>
-struct classname <const T> : public classname <T>
+struct classinfo <const T> : public classinfo <T>
 {
   static inline bool isConst ()
   {
@@ -1595,7 +1595,7 @@ static void findStaticTable (lua_State* const L, char const* const name)
 //------------------------------------------------------------------------------
 /*
 * Class type checker.  Given the index of a userdata on the stack, makes
-* sure that it's an object of the given classname or a subclass thereof.
+* sure that it's an object of the given classinfo or a subclass thereof.
 * If yes, returns the address of the data; otherwise, throws an error.
 * Works like the luaL_checkudata function.
 */
@@ -1696,7 +1696,7 @@ public:
   template <class T>
   static T* get (lua_State* L, int index)
   {
-    void* const p = detail::checkClass (L, index, classname <T>::name(), false);
+    void* const p = detail::checkClass (L, index, classinfo <T>::name(), false);
     Userdata* const ud = static_cast <Userdata*> (p);
     return ud->get <T> (L);
   }
@@ -1708,7 +1708,7 @@ public:
   template <class T>
   static T const* getConst (lua_State* L, int index)
   {
-    void* const p = detail::checkClass (L, index, classname <T>::const_name (), false);
+    void* const p = detail::checkClass (L, index, classinfo <T>::const_name (), false);
     Userdata* const ud = static_cast <Userdata*> (p);
     return ud->getConst <T> (L);
   }
@@ -1737,7 +1737,7 @@ public:
   template <class T>
   T* get (lua_State* L)
   {
-    //assert (classname <T>::name () == getName ());
+    //assert (classinfo <T>::name () == getName ());
     return static_cast <T*> (getPointer (L));
   }
 
@@ -1750,7 +1750,7 @@ public:
   template <class T>
   T const* getConst (lua_State* L)
   {
-    //assert (classname <T>::name () == getName ());
+    //assert (classinfo <T>::name () == getName ());
     return static_cast <T const*> (getConstPointer (L));
   }
 
@@ -1771,7 +1771,7 @@ template <class T>
 class UserdataByValue : public Userdata
 {
 public:
-  char const* getName () const { return classname <T>::name (); }
+  char const* getName () const { return classinfo <T>::name (); }
   char const* getTypename () const { return typeid (*this).name (); }
 
   explicit UserdataByValue (T t) : m_t (t)
@@ -1780,10 +1780,10 @@ public:
 
   static void push (lua_State* L, T t)
   {
-    assert (classname <T>::isRegistered ());
+    assert (classinfo <T>::isRegistered ());
     void* const p = lua_newuserdata (L, sizeof (UserdataByValue <T>));
     new (p) UserdataByValue <T> (t);
-    luaL_getmetatable (L, classname <T>::name ());
+    luaL_getmetatable (L, classinfo <T>::name ());
     lua_setmetatable (L, -2);
   }
 
@@ -1814,7 +1814,7 @@ template <class T>
 class UserdataByReference : public Userdata
 {
 public:
-  char const* getName () const { return classname <T>::name (); }
+  char const* getName () const { return classinfo <T>::name (); }
   char const* getTypename () const { return typeid (*this).name (); }
 
   explicit UserdataByReference (T& t) : m_t (t)
@@ -1836,10 +1836,10 @@ public:
 
   static void push (lua_State* L, T& t)
   {
-    assert (classname <T>::isRegistered ());
+    assert (classinfo <T>::isRegistered ());
     void* const p = lua_newuserdata (L, sizeof (UserdataByReference <T>));
     new (p) UserdataByReference <T> (t);
-    luaL_getmetatable (L, classname <T>::name ());
+    luaL_getmetatable (L, classinfo <T>::name ());
     lua_setmetatable (L, -2);
   }
 
@@ -1872,7 +1872,7 @@ template <class T>
 class UserdataByConstReference : public Userdata
 {
 public:
-  char const* getName () const { return classname <T>::name (); }
+  char const* getName () const { return classinfo <T>::name (); }
   char const* getTypename () const { return typeid (*this).name (); }
 
   explicit UserdataByConstReference (T const& t) : m_t (t)
@@ -1890,10 +1890,10 @@ public:
 
   static void push (lua_State* L, T const& t)
   {
-    assert (classname <T>::isRegistered ());
+    assert (classinfo <T>::isRegistered ());
     void* const p = lua_newuserdata (L, sizeof (UserdataByConstReference <T>));
     new (p) UserdataByConstReference <T> (t);
-    luaL_getmetatable (L, classname <T>::const_name ());
+    luaL_getmetatable (L, classinfo <T>::const_name ());
     lua_setmetatable (L, -2);
   }
 
@@ -1927,7 +1927,7 @@ template <class T, template <class> class SharedPtr>
 class UserdataBySharedPtr : public Userdata
 {
 public:
-  char const* getName () const { return classname <T>::name (); }
+  char const* getName () const { return classinfo <T>::name (); }
   char const* getTypename () const { return typeid (*this).name (); }
 
   explicit UserdataBySharedPtr (T* const t) : m_p (t)
@@ -1941,16 +1941,16 @@ public:
 
   static void push (lua_State* L, T* const t)
   {
-    assert (classname <T>::isRegistered ());
+    assert (classinfo <T>::isRegistered ());
     void* const p = lua_newuserdata (L, sizeof (UserdataBySharedPtr <T, SharedPtr>));
     new (p) UserdataBySharedPtr <T, SharedPtr> (t);
-    luaL_getmetatable (L, classname <T>::name ());
+    luaL_getmetatable (L, classinfo <T>::name ());
     lua_setmetatable (L, -2);
   }
 
   static SharedPtr <T> get (lua_State* L, int index)
   {
-    void* const p = detail::checkClass (L, index, classname <T>::name (), false);
+    void* const p = detail::checkClass (L, index, classinfo <T>::name (), false);
     Userdata* const pb = static_cast <Userdata*> (p);
     UserdataBySharedPtr <T, SharedPtr>* ud =
       reinterpret_cast <UserdataBySharedPtr <T, SharedPtr>*> (pb);
@@ -1989,7 +1989,7 @@ template <class T, template <class> class SharedPtr = shared_ptr>
 class UserdataByConstSharedPtr : public Userdata
 {
 public:
-  char const* getName () const { return classname <T>::name (); }
+  char const* getName () const { return classinfo <T>::name (); }
   char const* getTypename () const { return typeid (*this).name (); }
 
   explicit UserdataByConstSharedPtr (T const* const t) : m_p (t)
@@ -2003,10 +2003,10 @@ public:
 
   static void push (lua_State* L, T const* const t)
   {
-    assert (classname <T>::isRegistered ());
+    assert (classinfo <T>::isRegistered ());
     void* const p = lua_newuserdata (L, sizeof (UserdataBySharedPtr <T, SharedPtr>));
     new (p) UserdataByConstSharedPtr <T, SharedPtr> (t);
-    luaL_getmetatable (L, classname <T>::const_name ());
+    luaL_getmetatable (L, classinfo <T>::const_name ());
     lua_setmetatable (L, -2);
   }
 
@@ -2601,7 +2601,7 @@ int propsetProxy (lua_State* L)
 template <class T>
 void createMetaTable (lua_State* L)
 {
-  char const* const name = classname <T>::name ();
+  char const* const name = classinfo <T>::name ();
   luaL_newmetatable (L, name);
   lua_pushcfunction (L, &detail::indexer);
   rawsetfield (L, -2, "__index");                     // Use our __index.
@@ -2626,7 +2626,7 @@ void createMetaTable (lua_State* L)
 template <class T>
 void createConstMetaTable (lua_State* L)
 {
-  char const* const name = classname <T>::const_name ();
+  char const* const name = classinfo <T>::const_name ();
   luaL_newmetatable (L, name);
   lua_pushcfunction (L, &detail::indexer);
   rawsetfield (L, -2, "__index");                     // Use our __index.
@@ -2812,8 +2812,8 @@ public:
   template <class T, class Base>
   class__ <T> subclass (char const *name)
   {
-    assert (classname <Base>::isRegistered ());
-    return class__ <T> (L, name, classname <Base>::name ());
+    assert (classinfo <Base>::isRegistered ());
+    return class__ <T> (L, name, classinfo <Base>::name ());
   }
 
 protected:
@@ -2830,16 +2830,16 @@ class class__ : public scope
 {
 public:
   //----------------------------------------------------------------------------
-  explicit class__ (lua_State *L_) : scope (L_, classname <T>::name ())
+  explicit class__ (lua_State *L_) : scope (L_, classinfo <T>::name ())
   {
-    assert (classname <T>::isRegistered ());
+    assert (classinfo <T>::isRegistered ());
   }
 
   //----------------------------------------------------------------------------
   class__ (lua_State *L_, char const *name_) : scope(L_, name_)
   {
-    assert (!classname <T>::isConst ());
-    classname <T>::registerClass (name_);
+    assert (!classinfo <T>::isConst ());
+    classinfo <T>::registerClass (name_);
 
     // Create metatable for this class.  The metatable is stored in the Lua
     // registry, keyed by the given class name.
@@ -2861,8 +2861,8 @@ public:
   //----------------------------------------------------------------------------
   class__ (lua_State *L_, char const *name_, char const *basename) : scope(L_, name_)
   {
-    assert (!classname <T>::isConst ());
-    classname <T>::registerClass (name_);
+    assert (!classinfo <T>::isConst ());
+    classinfo <T>::registerClass (name_);
 
     // Create metatable for this class
     createMetaTable <T> (L);
