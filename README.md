@@ -172,11 +172,11 @@ LuaBridge also supports properties, which allow class data members to be read
 and written from Lua as if they were variables.  Properties work much like
 variables do, and the syntax for registering them is as follows:
 
-  s .class_ <MyClass> ()
-    .property_rw ("property1", &MyClass::property1)
-    .property_rw ("property2", &MyClass::getter2, &MyClass::setter2)
-    .property_ro ("property3", &MyClass::property3)
-    .property_ro ("property4", &MyClass::getter4)
+    s .class_ <MyClass> ()
+      .property_rw ("property1", &MyClass::property1)
+      .property_rw ("property2", &MyClass::getter2, &MyClass::setter2)
+      .property_ro ("property3", &MyClass::property3)
+      .property_ro ("property4", &MyClass::getter4)
 
 Static properties on classes are also supported, using `static_property_rw`
 and `static_property_ro`, which are simply aliases for `variable_rw` and

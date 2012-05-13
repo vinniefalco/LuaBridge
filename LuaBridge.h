@@ -97,7 +97,7 @@
   Functions can then be registered as follows:
 
       s .function ("foo", &foo)
-       .function ("bar", &bar);
+        .function ("bar", &bar);
 
   The `function` function returns a reference to `s`, so you can chain many
   definitions together.  The first argument is the name by which the function
@@ -113,9 +113,9 @@
   wrap it in getter and setter functions:
 
       s .variable_rw ("var1", &var1)
-       .variable_rw ("var2", &getter2, &setter2)
-       .variable_ro ("var3", &var3)
-       .variable_ro ("var4", &getter4)
+        .variable_rw ("var2", &getter2, &setter2)
+        .variable_ro ("var3", &var3)
+        .variable_ro ("var4", &getter4)
 
   The first registration above gives Lua direct access to the `var1` variable.
   The second creates a variable which appears like any other variable to Lua
@@ -197,13 +197,13 @@
   C++ classes can be registered with Lua as follows:
 
       s .class_ <MyClass> ("MyClass")
-       .constructor <void (*) (void)> ()
-       .method ("method1", &MyClass::method1)
-       .method ("method2", &MyClass::method2);
+        .constructor <void (*) (void)> ()
+        .method ("method1", &MyClass::method1)
+        .method ("method2", &MyClass::method2);
 
       s .subclass <MySubclass, MyBaseClass> ("MySubclass")
-       .constructor <...>
-       ...
+        .constructor <...>
+        ...
 
   The `class_` function registers a class; its constructor will be available as
   a global function with name given as argument to `class_`.  The object
@@ -242,11 +242,11 @@
   and written from Lua as if they were variables.  Properties work much like
   variables do, and the syntax for registering them is as follows:
 
-    s .class_ <MyClass> ()
-     .property_rw ("property1", &MyClass::property1)
-     .property_rw ("property2", &MyClass::getter2, &MyClass::setter2)
-     .property_ro ("property3", &MyClass::property3)
-     .property_ro ("property4", &MyClass::getter4)
+      s .class_ <MyClass> ()
+        .property_rw ("property1", &MyClass::property1)
+        .property_rw ("property2", &MyClass::getter2, &MyClass::setter2)
+        .property_ro ("property3", &MyClass::property3)
+        .property_ro ("property4", &MyClass::getter4)
 
   Static properties on classes are also supported, using `static_property_rw`
   and `static_property_ro`, which are simply aliases for `variable_rw` and
