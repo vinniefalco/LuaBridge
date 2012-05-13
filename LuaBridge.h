@@ -288,7 +288,7 @@
   Copyright (C) 2007, Nathan Reed <br>
   
   Portions from The Loki Library: <br>
-  Copyright (c) 2001 by Andrei Alexandrescu
+  Copyright (C) 2001 by Andrei Alexandrescu
 
   License: The [MIT License][2]
 
