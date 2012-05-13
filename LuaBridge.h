@@ -1821,6 +1821,15 @@ public:
   {
   }
 
+  UserdataByReference (UserdataByReference <T> const& other) : m_t (other.m_t)
+  {
+  }
+
+  template <class U>
+  UserdataByReference (UserdataByReference <U> const& other) : m_t (other.m_t)
+  {
+  }
+
   ~UserdataByReference ()
   {
   }
@@ -1848,6 +1857,8 @@ private:
   }
 
 private:
+  UserdataByReference <T>& operator= (UserdataByReference <T> const& other);
+
   T& m_t;
 };
 
@@ -1865,6 +1876,15 @@ public:
   char const* getTypename () const { return typeid (*this).name (); }
 
   explicit UserdataByConstReference (T const& t) : m_t (t)
+  {
+  }
+
+  UserdataByConstReference (UserdataByConstReference <T> const& other) : m_t (other.m_t)
+  {
+  }
+
+  template <class U>
+  UserdataByConstReference (UserdataByConstReference <U> const& other) : m_t (other.m_t)
   {
   }
 
@@ -1890,6 +1910,8 @@ private:
   }
 
 private:
+  UserdataByConstReference <T>& operator= (UserdataByConstReference <T> const& other);
+
   T const& m_t;
 };
 
