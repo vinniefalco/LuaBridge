@@ -284,10 +284,10 @@
 
   ## License
 
-  Copyright (C) 2012, [Vinnie Falco][1] ([e-mail][0])
-  Copyright (C) 2007, Nathan Reed
+  Copyright (C) 2012, [Vinnie Falco][1] ([e-mail][0]) <br>
+  Copyright (C) 2007, Nathan Reed <br>
   
-  Portions from The Loki Library:
+  Portions from The Loki Library: <br>
   Copyright (c) 2001 by Andrei Alexandrescu
 
   License: The [MIT License][2]
