@@ -57,6 +57,11 @@
 # include <ext/hash_map>
 #endif
 
+/** This turns on code that enforces const-correctness for member functions
+    but I can't get it to compile - Vinnie
+*/
+#define LUABRIDGE_STRICT_CONST 0
+
 //==============================================================================
 /**
   @mainpage LuaBridge: Simple C++ to Lua bindings.
@@ -1836,7 +1841,7 @@ public:
 private:
   void* getPointer (lua_State* L)
   {
-#if 0
+#if LUABRIDGE_STRICT_CONST
     luaL_error (L, "illegal non-const use of %s", getName ());
     return 0; // never gets here
 #else
@@ -2765,7 +2770,7 @@ public:
 #pragma warning (disable: 4127) // constant conditional expression
 #endif
     if (fnptr <MemFn>::const_mfp)
-#if 0
+#if LUABRIDGE_STRICT_CONST
       lua_pushcclosure (L, &methodProxy <MemFn>::const_func, 2);
 #else
       lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
