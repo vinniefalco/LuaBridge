@@ -70,8 +70,9 @@
 
   # LuaBridge
 
-  LuaBridge is a lightweight, dependency-free library for binding Lua to C++
-  which works with Lua revisions starting from 5.1.2.
+  [Lua][4] is a powerful, fast, lightweight, embeddable scripting language.
+  LuaBridge is a lightweight, dependency-free library for binding to C++. It
+  works with Lua revisions starting from 5.1.2.
 
   ## Compiling
 
@@ -125,10 +126,10 @@
 
   Basic types for supported variables, and function arguments and returns, are:
   
-  * `bool`
-  * `char`, converted to a string of length one.
-  * Integers, `float`, and `double`, converted to Lua_number.
-  * Strings: `char const*` and `std::string`
+  - `bool`
+  - `char`, converted to a string of length one.
+  - Integers, `float`, and `double`, converted to Lua_number.
+  - Strings: `char const*` and `std::string`
 
   Of course, LuaBridge supports passing objects of class type, in a variety of
   ways including dynamically allocated objects created with `new`. The behavior
@@ -136,10 +137,10 @@
   which the object is passed. Given `class T`, these argument types are
   supported:
 
-  * `T`, `T const` : Pass `T` by value. The lifetime is managed by Lua.
-  * `T*`, `T&, `T const*`, `T const&` : Pass `T` by reference. The lifetime
+  - `T`, `T const` : Pass `T` by value. The lifetime is managed by Lua.
+  - `T*`, `T&, `T const*`, `T const&` : Pass `T` by reference. The lifetime
      is managed by C++.
-  * `SharedPtr <T>`, `SharedPtr <T const>` : Pass `T` by container. The lifetime
+  - `SharedPtr <T>`, `SharedPtr <T const>` : Pass `T` by container. The lifetime
      is managed by the container.
 
   When Lua manages the lifetime of the object, it is subjected to all of the
@@ -262,19 +263,15 @@
   LuaBridge does not support:
 
   - More than 8 parameters on a function or method (although this can be
-   increased by adding more `typelist` specializations).
-
-  - Overloaded functions, methods, or constructors
-
-  - Global variables (variables must be wrapped in a named scope)
-
-  - Automatic conversion between STL container types and Lua tables
-
-  - Inheriting Lua classes from C++ classes
+    increased by adding more `typelist` specializations).
+  - Overloaded functions, methods, or constructors.
+  - Global variables (variables must be wrapped in a named scope).
+  - Automatic conversion between STL container types and Lua tables.
+  - Inheriting Lua classes from C++ classes.
 
   ## Development
 
-  Github is the new official home for LuaBridge. The old SVN repository is
+  [Github][3] is the new official home for LuaBridge. The old SVN repository is
   deprecated since it is no longer used, or maintained. The original author has
   graciously passed the reins to Vinnie Falco for maintaining and improving the
   project. To obtain the older official releases, checkout the tags from 2.1
@@ -286,10 +283,23 @@
 
   ## License
 
-  The current version of LuaBridge is distributed under the terms of the MIT
-  License. Older versions up to and including 0.2 are distributed under the
+  Copyright (C) 2012, [Vinnie Falco][0] ([e-mail][1])
+  Copyright (C) 2007, Nathan Reed
+  
+  Portions from The Loki Library:
+  Copyright (c) 2001 by Andrei Alexandrescu
+
+  License: The [MIT License][2]
+
+  Older versions of LuaBridge up to and including 0.2 are distributed under the
   BSD 3-Clause License. See the corresponding license file in those versions
   for more details.
+
+  [0]: mailto:vinnie.falco@gmail.com "Vinnie Falco (Email)"
+  [1]: http://www.vinniefalco.com "Vinnie Falco"
+  [2]: http://www.opensource.org/licenses/mit-license.html "The MIT License"
+  [3]: https://github.com/vinniefalco/LuaBridge "LuaBridge"
+  [4]: http://lua.org "The Lua Programming Language"
 */
 
 #include <cassert>
