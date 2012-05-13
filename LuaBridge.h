@@ -70,15 +70,16 @@
 
   # LuaBridge
 
-  [Lua][4] is a powerful, fast, lightweight, embeddable scripting language.
-  LuaBridge is a lightweight, dependency-free library for binding to C++. It
-  works with Lua revisions starting from 5.1.2.
+  [LuaBridge][3] is a lightweight, dependency-free library for binding to C++.
+  It works with Lua revisions starting from 5.1.2. [Lua][4] is a powerful, fast,
+  lightweight, embeddable scripting language.
 
   ## Compiling
 
   LuaBridge is distributed as a single header file "LuaBridge.h" that you simply
   include where you want to register your functions, classes, and variables.
-  There are no source files to add, and no compilation settings.
+  There are no additional source files, no compilation settings, and no
+  Makefiles or IDE-specific project files. LuaBridge is easy to integrate.
 
   ## Usage
 
@@ -95,10 +96,10 @@
 
   Functions can then be registered as follows:
 
-      s.function ("foo", &foo)
+      s .function ("foo", &foo)
        .function ("bar", &bar);
 
-  The `function` function returns a reference to s, so you can chain many
+  The `function` function returns a reference to `s`, so you can chain many
   definitions together.  The first argument is the name by which the function
   will be available in Lua, and the second is the function's address. LuaBridge
   will automatically detect the number (up to 8, by default) and type of the
@@ -111,7 +112,7 @@
   Variables can also be registered.  You can expose a 'bare' variable to Lua, or
   wrap it in getter and setter functions:
 
-      s.variable_rw ("var1", &var1)
+      s .variable_rw ("var1", &var1)
        .variable_rw ("var2", &getter2, &setter2)
        .variable_ro ("var3", &var3)
        .variable_ro ("var4", &getter4)
@@ -138,7 +139,7 @@
   supported:
 
   - `T`, `T const` : Pass `T` by value. The lifetime is managed by Lua.
-  - `T*`, `T&, `T const*`, `T const&` : Pass `T` by reference. The lifetime
+  - `T*`, `T&`, `T const*`, `T const&` : Pass `T` by reference. The lifetime
      is managed by C++.
   - `SharedPtr <T>`, `SharedPtr <T const>` : Pass `T` by container. The lifetime
      is managed by the container.
@@ -156,7 +157,7 @@
 
   ### Shared Pointers
 
-  A 'SharedPtr' container template allows for object lifetime management that
+  A `SharedPtr` container template allows for object lifetime management that
   behaves like `std::shared_ptr`. That is, objects are dynamically allocated
   and reference counted. The object is not destroyed until the reference count
   drops to zero. Such objects are safe to store in C++ and Lua code. A
@@ -174,7 +175,7 @@
   get() which returns a pointer to the underlying object. If you need to use
   a container with a different interface, you can specialize the `Container`
   class for your container type and provide an extraction function. Your
-  specialization needs to be in the luabridge namespace. Here's an example
+  specialization needs to be in the `luabridge` namespace. Here's an example
   specialization for a container called `ReferenceCountedObject` which provides
   a member function `getObject` that retrieves the pointer.
 
@@ -195,14 +196,14 @@
 
   C++ classes can be registered with Lua as follows:
 
-      s.class_ <MyClass> ("MyClass")
-        .constructor <void (*) (void)> ()
-        .method ("method1", &MyClass::method1)
-        .method ("method2", &MyClass::method2);
+      s .class_ <MyClass> ("MyClass")
+       .constructor <void (*) (void)> ()
+       .method ("method1", &MyClass::method1)
+       .method ("method2", &MyClass::method2);
 
-      s.subclass <MySubclass, MyBaseClass> ("MySubclass")
-        .constructor<...>
-        ...
+      s .subclass <MySubclass, MyBaseClass> ("MySubclass")
+       .constructor <...>
+       ...
 
   The `class_` function registers a class; its constructor will be available as
   a global function with name given as argument to `class_`.  The object
@@ -217,7 +218,7 @@
   constructor taking two parameters, one `int` and one `char const*`, you would
   write:
 
-      s.class_ <MyClass> ()
+      s .class_ <MyClass> ()
         .constructor <void (*) (int, const char *)> ()
 
   Note that in the example above, the name of the class was ommitted from the
@@ -234,18 +235,18 @@
   Static methods may be registered using the `static_method` function, which is
   simply an alias for the `function` function:
 
-      s.class_...
+      s .class_ <MyClass> ()
         .static_method ("method3", &MyClass::method3)
 
   LuaBridge also supports properties, which allow class data members to be read
   and written from Lua as if they were variables.  Properties work much like
   variables do, and the syntax for registering them is as follows:
 
-    s.class_...
-      .property_rw ("property1", &MyClass::property1)
-      .property_rw ("property2", &MyClass::getter2, &MyClass::setter2)
-      .property_ro ("property3", &MyClass::property3)
-      .property_ro ("property4", &MyClass::getter4)
+    s .class_ <MyClass> ()
+     .property_rw ("property1", &MyClass::property1)
+     .property_rw ("property2", &MyClass::getter2, &MyClass::setter2)
+     .property_ro ("property3", &MyClass::property3)
+     .property_ro ("property4", &MyClass::getter4)
 
   Static properties on classes are also supported, using `static_property_rw`
   and `static_property_ro`, which are simply aliases for `variable_rw` and
