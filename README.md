@@ -214,7 +214,7 @@ changes will be handled by the new maintainer.
 
 ## License
 
-Copyright (C) 2012, [Vinnie Falco][0] ([e-mail][1])
+Copyright (C) 2012, [Vinnie Falco][1] ([e-mail][0])
 Copyright (C) 2007, Nathan Reed
   
 Portions from The Loki Library:
