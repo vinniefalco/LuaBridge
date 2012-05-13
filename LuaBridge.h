@@ -1823,7 +1823,7 @@ private:
 
   @note Container must implement a strict subset of shared_ptr.
 */
-template <class T, template <class> class SharedPtr = shared_ptr>
+template <class T, template <class> class SharedPtr>
 class UserdataByConstSharedPtr : public Userdata
 {
 public:
