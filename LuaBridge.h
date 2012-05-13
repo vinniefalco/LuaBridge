@@ -300,6 +300,24 @@ class class__;
 
 //==============================================================================
 /**
+  Extract the pointer from a container.
+
+  The default template supports extraction from any shared_ptr compatible
+  interface. If you need to use an incompatible container, specialize this
+  template for your type and provide the get() function.
+*/
+template <template <class> class SharedPtr>
+struct Container
+{
+  template <class T>
+  static inline T* get (SharedPtr <T> const& p)
+  {
+    return p.get ();
+  }
+};
+
+//==============================================================================
+/**
   Holds the address of a unique string to identify unregistered classes.
 */
 class classnamebase
@@ -1768,16 +1786,14 @@ public:
   }
 
 private:
-  void* getPointer (lua_State* L)
+  void* getPointer (lua_State*)
   {
-    (void)L;
-    return *m_p;
+    return Container <SharedPtr>::get (m_p);
   }
 
-  void const* getConstPointer (lua_State* L)
+  void const* getConstPointer (lua_State*)
   {
-    (void)L;
-    return *m_p;
+    return Container <SharedPtr>::get (m_p);
   }
 
 private:
@@ -1825,7 +1841,7 @@ private:
     return 0; // never gets here
 #else
     (void)L;
-    void const* p = *m_p;
+    void const* p = Container <SharedPtr>::get (m_p);
     return const_cast <void*> (p);
 #endif
   }
@@ -1833,7 +1849,7 @@ private:
   void const* getConstPointer (lua_State* L)
   {
     (void)L;
-    return *m_p;
+    return Container <SharedPtr>::get (m_p);
   }
 
 private:
@@ -1976,7 +1992,8 @@ struct tdstack <SharedPtr <T> >
 {
   static void push (lua_State* L, SharedPtr <T> p)
   {
-    UserdataBySharedPtr <T, SharedPtr>::push (L, *p);
+    T* const t = Container <SharedPtr>::get (p);
+    UserdataBySharedPtr <T, SharedPtr>::push (L, t);
   }
 
   static SharedPtr <T> get (lua_State* L, int index)
@@ -1994,7 +2011,8 @@ struct tdstack <SharedPtr <T const> >
 {
   static void push (lua_State* L, SharedPtr <T const> p)
   {
-    UserdataByConstSharedPtr <T, SharedPtr>::push (L, *p);
+    T const* const t = Container <SharedPtr>::get (p);
+    UserdataByConstSharedPtr <T, SharedPtr>::push (L, t);
   }
   static SharedPtr <T const> get (lua_State* L, int index)
   {
