@@ -325,7 +325,7 @@ struct Container
 /**
   Holds the address of a unique string to identify unregistered classes.
 */
-class classnamebase
+class classinfobase
 {
 protected:
   static inline char const* unregisteredClassName ()
@@ -347,7 +347,7 @@ protected:
   @tparam T The class for obtaining attributes.
 */
 template <class T>
-class classinfo : private classnamebase
+class classinfo : private classinfobase
 {
 public:
   /** Register a class.
@@ -410,10 +410,10 @@ template <class T>
 std::string classinfo <T>::s_string;
 
 template <class T>
-char const* classinfo <T>::s_constname = classnamebase::unregisteredClassName ();
+char const* classinfo <T>::s_constname = classinfobase::unregisteredClassName ();
 
 template <class T>
-char const* classinfo <T>::s_name = classnamebase::unregisteredClassName ();
+char const* classinfo <T>::s_name = classinfobase::unregisteredClassName ();
 
 //------------------------------------------------------------------------------
 /**
