@@ -2180,7 +2180,7 @@ private:
   {
   }
 public:
-  static lua_State* get (lua_State* L)
+  static lua_State* get (lua_State* L, int)
   {
     return L;
   }
