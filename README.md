@@ -56,7 +56,7 @@ creates a readable and writeable variable, while `variable_ro` creates a
 read-only one. Obviously, there is no setter for the read-only variable.
 
 Basic types for supported variables, and function arguments and returns, are:
-  
+
 - `bool`
 - `char`, converted to a string of length one.
 - Integers, `float`, and `double`, converted to Lua_number.
@@ -70,9 +70,9 @@ supported:
 
 - `T`, `T const` : Pass `T` by value. The lifetime is managed by Lua.
 - `T*`, `T&`, `T const*`, `T const&` : Pass `T` by reference. The lifetime
-    is managed by C++.
+   is managed by C++.
 - `SharedPtr <T>`, `SharedPtr <T const>` : Pass `T` by container. The lifetime
-    is managed by the container.
+   is managed by the container.
 
 When Lua manages the lifetime of the object, it is subjected to all of the
 normal garbage collection rules. C++ functions and member functions can
@@ -119,7 +119,7 @@ a member function `getObject` that retrieves the pointer.
           {
             return p.getObject ();
           }
-        };
+       };
     }
 
 ### Registering classes
@@ -189,6 +189,23 @@ re-declared and will function normally in Lua.  If a class has a base class
 that is *not* registered with Lua, there is no need to declare it as a
 subclass.
 
+### Access to the `lua_State`
+
+Sometimes it is convenient from within a bound function or member function
+to gain access to the `lua_State` normally available to a `lua_CFunction`.
+With LuaBridge, all you need to do is add a `lua_State*` parameter at any
+position in your bound function:
+
+    void useState (lua_State* L);
+
+    s.function ("useState", &useState);
+
+You can still include regular arguments while receiving the state:
+
+    void useStateAndArgs (lua_State* L, int i, std::string s);
+
+    s.function ("useStateAndArgs", &useStateAndArgs);
+
 ## Limitations 
 
 LuaBridge does not support:
@@ -216,7 +233,7 @@ changes will be handled by the new maintainer.
 
 Copyright (C) 2012, [Vinnie Falco][1] ([e-mail][0]) <br>
 Copyright (C) 2007, Nathan Reed <br>
-  
+
 Portions from The Loki Library: <br>
 Copyright (C) 2001 by Andrei Alexandrescu
 
