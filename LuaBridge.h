@@ -1628,15 +1628,13 @@ public:
   }
 
 private:
-  void* getPointer (lua_State* L)
+  void* getPointer (lua_State*)
   {
-    (void)L;
     return &m_t;
   }
 
-  void const* getConstPointer (lua_State* L)
+  void const* getConstPointer (lua_State*)
   {
-    (void)L;
     return &m_t;
   }
 
@@ -1684,15 +1682,13 @@ public:
   }
 
 private:
-  void* getPointer (lua_State* L)
+  void* getPointer (lua_State*)
   {
-    (void)L;
     return &m_t;
   }
 
-  void const* getConstPointer (lua_State* L)
+  void const* getConstPointer (lua_State*)
   {
-    (void)L;
     return &m_t;
   }
 
@@ -1861,9 +1857,8 @@ private:
 #endif
   }
 
-  void const* getConstPointer (lua_State* L)
+  void const* getConstPointer (lua_State*)
   {
-    (void)L;
     return Container <SharedPtr>::get (m_p);
   }
 
@@ -1880,7 +1875,6 @@ private:
 template <class T>
 struct tdstack
 {
-public:
   static void push (lua_State* L, T t)
   {
     UserdataByValue <T>::push (L, t);
@@ -2170,6 +2164,25 @@ struct tdstack <std::string const&>
   static std::string get (lua_State* L, int index)
   {
     return std::string (luaL_checkstring (L, index));
+  }
+};
+
+//------------------------------------------------------------------------------
+
+/*
+  This allows bound functions to gain access to the lua_State.
+*/
+template <>
+struct tdstack <lua_State*>
+{
+private:
+  static void push (lua_State*, lua_State*)
+  {
+  }
+public:
+  static lua_State* get (lua_State* L)
+  {
+    return L;
   }
 };
 
