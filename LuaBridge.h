@@ -259,6 +259,23 @@
   that is *not* registered with Lua, there is no need to declare it as a
   subclass.
 
+  ### Access to the `lua_State`
+
+  Sometimes it is convenient from within a bound function or member function
+  to gain access to the `lua_State` normally available to a `lua_CFunction`.
+  With LuaBridge, all you need to do is add a `lua_State*` parameter at any
+  position in your bound function:
+
+      void useState (lua_State* L);
+
+      s.function ("useState", &useState);
+
+  You can still include regular arguments while receiving the state:
+
+      void useStateAndArgs (lua_State* L, int i, std::string s);
+
+      s.function ("useStateAndArgs", &useStateAndArgs);
+
   ## Limitations 
 
   LuaBridge does not support:
