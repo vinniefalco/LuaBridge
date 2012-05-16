@@ -2313,30 +2313,7 @@ public:
 //==============================================================================
 
 /**
-  Variant that can reference almost any Lua type.
-
-  This can be specified as an argument to a bound function to receive any
-  lua data type (except for userdata and lightuserdata).
-*/
-class object
-{
-public:
-};
-
-//==============================================================================
-
-/**
-  References a Lua table.
-*/
-class table
-{
-public:
-};
-
-//==============================================================================
-
-/**
-  Common operations on function.
+  Common operations on a lua function.
 */
 class function_base
 {
@@ -2389,9 +2366,7 @@ public:
     m_ref = ref (L, narg);
   }
 
-  /** Destroy the function.
-
-      If the referenced function is not none, then it will be garbage collected.
+  /** Release the function.
   */
   ~function ()
   {
@@ -2418,33 +2393,148 @@ class function_arg : public function_base
 {
 private:
   lua_State* L;
-  int m_narg;
+  int m_index;
 
 public:
   /** Function is at the given argument index.
   */
   function_arg (lua_State* L_, int narg)
     : L (L_)
-    , m_narg (narg)
+    , m_index (lua_absindex  (L, narg))
   {
-    luaL_checktype (L, narg, LUA_TFUNCTION);
+    luaL_checktype (L, m_index, LUA_TFUNCTION);
   }
 
   ~function_arg ()
   {
   }
 
-  /** Converst from a function argument to a registry reference.
+  /** Converts from a function on the stack to a reference in the registry.
   */
   operator function () const
   {
-    return function (L, m_narg);
+    return function (L, m_index);
   }
 
 private:
   void push ()
   {
-    lua_pushvalue (L, m_narg);
+    lua_pushvalue (L, m_index);
+  }
+
+  lua_State* getL ()
+  {
+    return L;
+  }
+};
+
+//------------------------------------------------------------------------------
+/**
+  A lua function on the stack.
+*/
+template <>
+class tdstack <function_arg>
+{
+  static void push (lua_State*, function_arg); // disallowed
+public:
+  static function_arg get (lua_State* L, int index)
+  {
+    return function_arg (L, index);
+  }
+};
+
+//==============================================================================
+/**
+  Common operations on a lua table.
+*/
+class table_base
+{
+protected:
+  /** Push the lua table on the stack for access.
+  */
+  virtual void push () = 0;
+  virtual lua_State* getL () = 0;
+};
+
+//------------------------------------------------------------------------------
+
+/**
+  Wraps a Lua table in the registry.
+*/
+class table : public table_base
+{
+private:
+  ref m_ref;
+
+public:
+  /** Create a reference to no table.
+  */
+  table ()
+  {
+  }
+
+  /** Create the table from an argument.
+  */
+  table (lua_State* L, int narg)
+  {
+    luaL_checktype (L, narg, LUA_TTABLE);
+    m_ref = ref (L, narg);
+  }
+
+  /** Release the table.
+  */
+  ~table ()
+  {
+  }
+
+private:
+  void push ()
+  {
+    m_ref.push ();
+  }
+
+  lua_State* getL ()
+  {
+    return m_ref.getL ();
+  }
+};
+
+//------------------------------------------------------------------------------
+
+/**
+  References a Lua table passed as an argument.
+*/
+class table_arg : public table_base
+{
+private:
+  lua_State* L;
+  int m_index;
+
+public:
+  /** Table is at the given argument index.
+  */
+  table_arg (lua_State* L_, int narg)
+    : L (L_)
+    , m_index (lua_absindex (L, narg))
+  {
+    luaL_checktype (L, m_index, LUA_TTABLE);
+  }
+
+  ~table_arg ()
+  {
+  }
+
+  /** Convert from a table argument to a registry reference.
+  */
+  operator table () const
+  {
+    return table (L, m_index);
+  }
+
+private:
+  void push ()
+  {
+    lua_pushvalue (L, m_index);
   }
 
   lua_State* getL ()
@@ -2456,18 +2546,49 @@ private:
 //------------------------------------------------------------------------------
 
 /**
-  A LUA_TFUNCTION.
+  A lua table on the stack.
 */
 template <>
-class tdstack <function_arg>
+class tdstack <table_arg>
 {
-  static void push (lua_State* L, function_arg f); // disallowed
+  static void push (lua_State*, table_arg); // disallowed
 public:
-  static function_arg get (lua_State* L, int index)
+  static table_arg get (lua_State* L, int index)
   {
-    return function_arg (L, index);
+    return table_arg (L, index);
   }
 };
+
+//==============================================================================
+
+/**
+  Variant that can reference almost any Lua type.
+
+  This can be specified as an argument to a bound function to receive any
+  lua data type (except for userdata and lightuserdata).
+*/
+class object
+{
+private:
+  int m_type;
+
+public:
+  object () : m_type (LUA_TNONE)
+  {
+  }
+};
+/*
+#define LUA_TNONE		(-1)
+#define LUA_TNIL		0
+#define LUA_TBOOLEAN		1
+#define LUA_TLIGHTUSERDATA	2
+#define LUA_TNUMBER		3
+#define LUA_TSTRING		4
+#define LUA_TTABLE		5
+#define LUA_TFUNCTION		6
+#define LUA_TUSERDATA		7
+#define LUA_TTHREAD		8
+*/
 
 //==============================================================================
 /**
