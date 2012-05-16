@@ -2036,6 +2036,18 @@ struct tdstack <SharedPtr <T const> >
 };
 
 //------------------------------------------------------------------------------
+/**
+  void return values.
+*/
+template <>
+struct tdstack <void>
+{
+  void get (lua_State*, int)
+  {
+  }
+};
+
+//------------------------------------------------------------------------------
 
 // int
 template <> struct tdstack <
@@ -2200,6 +2212,260 @@ struct arglist <typelist <Head, Tail>, start>
     : typevallist <typelist <Head, Tail> > (tdstack <Head>::get (L, start),
                                             arglist <Tail, start + 1> (L))
   {
+  }
+};
+
+//==============================================================================
+
+/** Utility class to wrap a registry reference.
+
+    The reference is owned by a single object, and cannot be shared.
+    Ownership can be transferred to another ref object.
+    
+    @todo Sharing the reference is possible if we make LuaBridge dependent
+          on atomic reference count support and use the pimpl idiom.
+*/
+class ref
+{
+private:
+  mutable lua_State* L;
+  mutable int m_ref;
+
+public:
+  /** Construct with no reference.
+  */
+  ref () : L (0), m_ref (LUA_NOREF)
+  {
+  }
+
+  /** Construct from a function argument.
+  */
+  ref (lua_State* L_, int narg)
+    : L (L_)
+  {
+    lua_pushvalue (L, narg);
+    m_ref = luaL_ref (L, LUA_REGISTRYINDEX);
+  }
+
+  /** Transfer the reference.
+  */
+  ref (ref const& other)
+    : L (other.L), m_ref (other.m_ref)
+  {
+    other.m_ref = LUA_NOREF;
+  }
+
+  /** Release the reference.
+  */
+  ~ref ()
+  {
+    if (m_ref != LUA_NOREF)
+      luaL_unref (L, LUA_REGISTRYINDEX, m_ref);
+  }
+
+  /** Release the reference.
+  */
+  void release ()
+  {
+    if (m_ref != LUA_NOREF)
+    {
+      luaL_unref (L, LUA_REGISTRYINDEX, m_ref);
+      m_ref = LUA_NOREF;
+    }
+  }
+
+  /** Transfer the reference.
+  */
+  void acquire (ref const& other)
+  {
+    if (m_ref != LUA_NOREF)
+      luaL_unref (L, LUA_REGISTRYINDEX, m_ref);
+
+    L = other.L;
+    m_ref = other.m_ref;
+    other.m_ref = LUA_NOREF;
+  }
+
+  /** Transfer the reference.
+  */
+  inline ref& operator= (ref const& other)
+  {
+    acquire (other);
+    return *this;
+  }
+
+  /** Push a reference to the value onto the stack.
+  */
+  void push ()
+  {
+    lua_rawgeti (L, LUA_REGISTRYINDEX, m_ref);
+  }
+
+  /** Retrieve the lua_State associated with the reference.
+  */
+  lua_State* getL ()
+  {
+    assert (m_ref != LUA_NOREF);
+    return L;
+  }
+};
+
+//==============================================================================
+
+/**
+  Variant that can reference almost any Lua type.
+
+  This can be specified as an argument to a bound function to receive any
+  lua data type (except for userdata and lightuserdata).
+*/
+class object
+{
+public:
+};
+
+//==============================================================================
+
+/**
+  References a Lua table.
+*/
+class table
+{
+public:
+};
+
+//==============================================================================
+
+/**
+  Common operations on function.
+*/
+class function_base
+{
+public:
+  template <class R>
+  R call ()
+  {
+    lua_State*L = getL ();
+    push ();
+    lua_call (L, 0, 1);
+    return tdstack <R>::get (L, -1);
+  }
+
+  void call ()
+  {
+    lua_State*L = getL ();
+    push ();
+    lua_call (L, 0, 1);
+  }
+
+protected:
+  /** Push the lua function on the stack in preparation for call.
+  */
+  virtual void push () = 0;
+  virtual lua_State* getL () = 0;
+};
+
+//------------------------------------------------------------------------------
+
+/**
+  Wraps a Lua function in the registry.
+*/
+class function : public function_base
+{
+private:
+  ref m_ref;
+
+public:
+  /** Create a reference to no function.
+  */
+  function ()
+  {
+  }
+
+  /** Create the function from an argument.
+  */
+  function (lua_State* L, int narg)
+  {
+    luaL_checktype (L, narg, LUA_TFUNCTION);
+    m_ref = ref (L, narg);
+  }
+
+  /** Destroy the function.
+
+      If the referenced function is not none, then it will be garbage collected.
+  */
+  ~function ()
+  {
+  }
+
+private:
+  void push ()
+  {
+    m_ref.push ();
+  }
+
+  lua_State* getL ()
+  {
+    return m_ref.getL ();
+  }
+};
+
+//------------------------------------------------------------------------------
+
+/**
+  References a Lua function passed as an argument.
+*/
+class function_arg : public function_base
+{
+private:
+  lua_State* L;
+  int m_narg;
+
+public:
+  /** Function is at the given argument index.
+  */
+  function_arg (lua_State* L_, int narg)
+    : L (L_)
+    , m_narg (narg)
+  {
+    luaL_checktype (L, narg, LUA_TFUNCTION);
+  }
+
+  ~function_arg ()
+  {
+  }
+
+  /** Converst from a function argument to a registry reference.
+  */
+  operator function () const
+  {
+    return function (L, m_narg);
+  }
+
+private:
+  void push ()
+  {
+    lua_pushvalue (L, m_narg);
+  }
+
+  lua_State* getL ()
+  {
+    return L;
+  }
+};
+
+//------------------------------------------------------------------------------
+
+/**
+  A LUA_TFUNCTION.
+*/
+template <>
+class tdstack <function_arg>
+{
+  static void push (lua_State* L, function_arg f); // disallowed
+public:
+  static function_arg get (lua_State* L, int index)
+  {
+    return function_arg (L, index);
   }
 };
 
