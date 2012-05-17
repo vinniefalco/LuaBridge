@@ -2217,142 +2217,166 @@ struct arglist <typelist <Head, Tail>, start>
 
 //==============================================================================
 
-/** Utility class to wrap a registry reference.
+/** Utility class to wrap a reference stored in the registry.
 
-    The reference is owned by a single object, and cannot be shared.
-    Ownership can be transferred to another ref object.
-    
-    @todo Sharing the reference is possible if we make LuaBridge dependent
-          on atomic reference count support and use the pimpl idiom.
+    These are reference counted, so multiple ref objects may point to the
+    same item in the registry. When the last ref is deleted, the registry
+    reference is unrefed (via luaL_unref).
+
+    @note The implementation of the reference counting is not thread safe,
+          since this would require C++11 or platform-specifics. This should not
+          be a problem, since a lua_State is generally not thread safe either.
 */
-class ref
+class Ref
 {
 private:
-  mutable lua_State* L;
-  mutable int m_ref;
+  /** Holds a reference counted registry reference.
+  */
+  struct Holder
+  {
+    lua_State* const L;
+    int const ref;
+    int const type;
+
+  public:
+    /** Create the holder from a Lua stack index.
+    */
+    Holder (lua_State* L_, int index)
+      : L(L_)
+      , ref ((lua_pushvalue (L, index), luaL_ref (L, LUA_REGISTRYINDEX)))
+      , type (lua_type (L, index))
+      , m_count (1)
+    {
+    }
+
+    /** Destroy the reference in the registry.
+
+        @note The Lua object will be eligible for collection if no other
+              Lua objects, stack variables, or upvalues are referencing it.
+    */
+    ~Holder ()
+    {
+      luaL_unref (L, LUA_REGISTRYINDEX, ref);
+    }
+
+    /** Increment the reference count.
+
+        @note This is not thread safe.
+    */
+    inline void addref ()
+    {
+      ++m_count;
+    }
+
+    /** Decrement the reference count.
+
+        @note This is not thread safe.
+    */
+    inline void release ()
+    {
+      if (--m_count == 0)
+        delete this;
+    }
+
+  private:
+    Holder& operator= (Holder const&);
+
+    int m_count;
+  };
+
+private:
+  Holder* m_holder;
 
 public:
-  /** Construct with no reference.
+  /** Create a reference to nothing.
   */
-  ref () : L (0), m_ref (LUA_NOREF)
+  Ref () : m_holder (0)
   {
   }
 
-  /** Construct from a function argument.
+  /** Construct from a Lua stack element.
   */
-  ref (lua_State* L_, int narg)
-    : L (L_)
+  Ref (lua_State* L, int index) : m_holder (new Holder (L, index))
   {
-    lua_pushvalue (L, narg);
-    m_ref = luaL_ref (L, LUA_REGISTRYINDEX);
   }
 
-  /** Transfer the reference.
+  /** Create an additional reference.
   */
-  ref (ref const& other)
-    : L (other.L), m_ref (other.m_ref)
+  Ref (Ref const& other) : m_holder (other.m_holder)
   {
-    other.m_ref = LUA_NOREF;
+    if (m_holder != 0)
+      m_holder->addref ();
   }
 
   /** Release the reference.
   */
-  ~ref ()
+  ~Ref ()
   {
-    if (m_ref != LUA_NOREF)
-      luaL_unref (L, LUA_REGISTRYINDEX, m_ref);
+    if (m_holder != 0)
+      m_holder->release ();
   }
 
-  /** Release the reference.
+  /** Change this to point to a different reference.
   */
-  void release ()
+  Ref& operator= (Ref const& other)
   {
-    if (m_ref != LUA_NOREF)
+    if (m_holder != other.m_holder)
     {
-      luaL_unref (L, LUA_REGISTRYINDEX, m_ref);
-      m_ref = LUA_NOREF;
+      if (m_holder != 0)
+        m_holder->release ();
+
+      m_holder = other.m_holder;
+
+      if (m_holder != 0)
+        m_holder->addref ();
     }
-  }
 
-  /** Transfer the reference.
-  */
-  void acquire (ref const& other)
-  {
-    if (m_ref != LUA_NOREF)
-      luaL_unref (L, LUA_REGISTRYINDEX, m_ref);
-
-    L = other.L;
-    m_ref = other.m_ref;
-    other.m_ref = LUA_NOREF;
-  }
-
-  /** Transfer the reference.
-  */
-  inline ref& operator= (ref const& other)
-  {
-    acquire (other);
     return *this;
   }
 
-  /** Push a reference to the value onto the stack.
+  /** Compare reference for equality.
   */
-  void push ()
+  inline bool operator== (Ref const& other) const
   {
-    lua_rawgeti (L, LUA_REGISTRYINDEX, m_ref);
+    return m_holder == other.m_holder;
+  }
+
+  /** Retrieve the Lua type of the value.
+  */
+  inline int type () const
+  {
+    return m_holder != 0 ? m_holder->type : LUA_TNONE;
   }
 
   /** Retrieve the lua_State associated with the reference.
   */
-  lua_State* getL ()
+  inline lua_State* L () const
   {
-    assert (m_ref != LUA_NOREF);
-    return L;
+    assert (m_holder != 0);
+    return m_holder->L;
+  }
+
+  /** Push a reference to the value onto the stack.
+  */
+  inline void push () const
+  {
+    assert (m_holder != 0);
+    lua_rawgeti (m_holder->L, LUA_REGISTRYINDEX, m_holder->ref);
   }
 };
 
 //==============================================================================
 
 /**
-  Common operations on a lua function.
-*/
-class function_base
-{
-public:
-  template <class R>
-  R call ()
-  {
-    lua_State*L = getL ();
-    push ();
-    lua_call (L, 0, 1);
-    return tdstack <R>::get (L, -1);
-  }
-
-  void call ()
-  {
-    lua_State*L = getL ();
-    push ();
-    lua_call (L, 0, 1);
-  }
-
-protected:
-  /** Push the lua function on the stack in preparation for call.
-  */
-  virtual void push () = 0;
-  virtual lua_State* getL () = 0;
-};
-
-//------------------------------------------------------------------------------
-
-/**
   Wraps a Lua function in the registry.
 */
-class function : public function_base
+class function
 {
 private:
-  ref m_ref;
+  Ref m_ref;
 
 public:
-  /** Create a reference to no function.
+  /** Create a function with no reference.
   */
   function ()
   {
@@ -2360,235 +2384,415 @@ public:
 
   /** Create the function from an argument.
   */
-  function (lua_State* L, int narg)
+  function (lua_State* L, int index)
+    : m_ref ((luaL_checktype (L, index, LUA_TFUNCTION), Ref (L, index)))
   {
-    luaL_checktype (L, narg, LUA_TFUNCTION);
-    m_ref = ref (L, narg);
   }
 
-  /** Release the function.
+  /** Push a reference to the function onto the stack.
   */
-  ~function ()
-  {
-  }
-
-private:
-  void push ()
+  void push ()  const
   {
     m_ref.push ();
   }
 
-  lua_State* getL ()
+  /** Call the function with up to 8 arguments and a possible return value.
+  */
+
+  template <class R>
+  R call () const
   {
-    return m_ref.getL ();
+    m_ref.push ();
+    lua_call (m_ref.L (), 0, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1>
+  R call (T1 t1) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    lua_call (m_ref.L (), 1, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2>
+  R call (T1 t1, T2 t2) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    lua_call (m_ref.L (), 2, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3>
+  R call (T1 t1, T2 t2, T3 t3) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    lua_call (m_ref.L (), 3, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    lua_call (m_ref.L (), 4, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4, class T5>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);;
+    lua_call (m_ref.L (), 5, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4,
+                     class T5, class T6>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    lua_call (m_ref.L (), 6, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4,
+                     class T5, class T6, class T7>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    tdstack <T7>::push (m_ref.L (), t7);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4,
+                     class T5, class T6, class T7, class T8>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) const
+  {
+    lua_State* m_ref.L () (m_ref.m_ref.L () ());
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    tdstack <T7>::push (m_ref.L (), t7);
+    tdstack <T8>::push (m_ref.L (), t8);
+    lua_call (m_ref.L (), 8, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  // void return
+
+  void call () const
+  {
+    m_ref.push ();
+    lua_call (m_ref.L (), 0, 0);
+  }
+
+  template <class T1>
+  void call (T1 t1) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    lua_call (m_ref.L (), 1, 0);
+  }
+
+  template <class T1, class T2>
+  void call (T1 t1, T2 t2) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    lua_call (m_ref.L (), 2, 0);
+  }
+
+  template <class T1, class T2, class T3>
+  void call (T1 t1, T2 t2, T3 t3) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    lua_call (m_ref.L (), 3, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    lua_call (m_ref.L (), 4, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4, class T5>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    lua_call (m_ref.L (), 5, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4,
+            class T5, class T6>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    lua_call (m_ref.L (), 6, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4,
+            class T5, class T6, class T7>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    tdstack <T7>::push (m_ref.L (), t7);
+    lua_call (m_ref.L (), 7, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4,
+            class T5, class T6, class T7, class T8>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    tdstack <T7>::push (m_ref.L (), t7);
+    tdstack <T8>::push (m_ref.L (), t8);
+    lua_call (m_ref.L (), 8, 0);
   }
 };
 
 //------------------------------------------------------------------------------
-
 /**
-  References a Lua function passed as an argument.
-*/
-class function_arg : public function_base
-{
-private:
-  lua_State* L;
-  int m_index;
+  A Lua function on the stack.
 
-public:
-  /** Function is at the given argument index.
-  */
-  function_arg (lua_State* L_, int narg)
-    : L (L_)
-    , m_index (lua_absindex  (L, narg))
-  {
-    luaL_checktype (L, m_index, LUA_TFUNCTION);
-  }
-
-  ~function_arg ()
-  {
-  }
-
-  /** Converts from a function on the stack to a reference in the registry.
-  */
-  operator function () const
-  {
-    return function (L, m_index);
-  }
-
-private:
-  void push ()
-  {
-    lua_pushvalue (L, m_index);
-  }
-
-  lua_State* getL ()
-  {
-    return L;
-  }
-};
-
-//------------------------------------------------------------------------------
-/**
-  A lua function on the stack.
+  @note To simplify the implementation, the function is immediately stored
+        in the registry as long as it is referenced.
 */
 template <>
-class tdstack <function_arg>
+struct tdstack <function>
 {
-  static void push (lua_State*, function_arg); // disallowed
-public:
-  static function_arg get (lua_State* L, int index)
+  static void push (lua_State*, function f)
   {
-    return function_arg (L, index);
+    f.push ();
+  }
+
+  static function get (lua_State* L, int index)
+  {
+    return function (L, index);
   }
 };
 
 //==============================================================================
-/**
-  Common operations on a lua table.
-*/
-class table_base
-{
-protected:
-  /** Push the lua table on the stack for access.
-  */
-  virtual void push () = 0;
-  virtual lua_State* getL () = 0;
-};
-
-//------------------------------------------------------------------------------
 
 /**
   Wraps a Lua table in the registry.
 */
-class table : public table_base
+class Table
 {
 private:
-  ref m_ref;
+  Ref m_ref;
 
 public:
-  /** Create a reference to no table.
-  */
-  table ()
+  Table ()
   {
   }
 
-  /** Create the table from an argument.
+  /** Create the object from an argument.
   */
-  table (lua_State* L, int narg)
-  {
-    luaL_checktype (L, narg, LUA_TTABLE);
-    m_ref = ref (L, narg);
-  }
-
-  /** Release the table.
-  */
-  ~table ()
+  Table (lua_State* L, int index)
+    : m_ref ((luaL_checktype (L, index, LUA_TTABLE), Ref (L, index)))
   {
   }
 
-private:
+  /** Retrieve the lua_State associated with the reference.
+  */
+  inline lua_State* L () const
+  {
+    return m_ref.L ();
+  }
+
+  /** Retrieve the Lua type of the value.
+  */
+  inline int type () const
+  {
+    return m_ref.type ();
+  }
+
+  /** Retrieve the value associated with a key by string.
+
+      @note This may trigger metamethods.
+  */
+  template <class T>
+  T operator[] (char const* key)
+  {
+    lua_State* const L (m_ref.L ());
+    m_ref.push ();
+    lua_getfield (L, -1, key);
+    lua_remove (L, -2);
+    T t (tdstack <T>::get (L, -1));
+    lua_pop (L, 1);
+    return t;
+  }
+ 
+  /** Retrieve the value associated with a key of arbitrary type.
+
+      @note The type must be recognized by tdstack<>.
+  */
+  template <class T, class U>
+  T operator[] (U key)
+  {
+    lua_State* const L (m_ref.L ());
+    m_ref.push ();
+    tdstack <U>::push (L, key);
+    lua_gettable (L, -2);
+    lua_remove (L, -2);
+    T t (tdstack <T>::get (L, -1));
+    lua_pop (L, 1);
+    return t;
+  }
+
+  /** Push a reference to the table onto the stack.
+  */
   void push ()
   {
     m_ref.push ();
   }
-
-  lua_State* getL ()
-  {
-    return m_ref.getL ();
-  }
 };
 
 //------------------------------------------------------------------------------
 
 /**
-  References a Lua table passed as an argument.
-*/
-class table_arg : public table_base
-{
-private:
-  lua_State* L;
-  int m_index;
-
-public:
-  /** Table is at the given argument index.
-  */
-  table_arg (lua_State* L_, int narg)
-    : L (L_)
-    , m_index (lua_absindex (L, narg))
-  {
-    luaL_checktype (L, m_index, LUA_TTABLE);
-  }
-
-  ~table_arg ()
-  {
-  }
-
-  /** Convert from a table argument to a registry reference.
-  */
-  operator table () const
-  {
-    return table (L, m_index);
-  }
-
-private:
-  void push ()
-  {
-    lua_pushvalue (L, m_index);
-  }
-
-  lua_State* getL ()
-  {
-    return L;
-  }
-};
-
-//------------------------------------------------------------------------------
-
-/**
-  A lua table on the stack.
+  A Lua table on the stack.
 */
 template <>
-class tdstack <table_arg>
+struct tdstack <Table>
 {
-  static void push (lua_State*, table_arg); // disallowed
-public:
-  static table_arg get (lua_State* L, int index)
+  static void push (lua_State*, Table table)
   {
-    return table_arg (L, index);
+    table.push ();
+  }
+
+  static Table get (lua_State* L, int index)
+  {
+    return Table (L, index);
   }
 };
 
 //==============================================================================
 
 /**
-  Variant that can reference almost any Lua type.
-
-  This can be specified as an argument to a bound function to receive any
-  lua data type (except for userdata and lightuserdata).
+  Wraps any Lua type in the registry.
 */
-class object
+class Object
 {
 private:
-  int m_type;
+  Ref m_ref;
 
 public:
-  object () : m_type (LUA_TNONE)
+  Object ()
   {
   }
+
+  /** Create the object from an argument.
+  */
+  Object (lua_State* L, int index)
+    : m_ref (Ref (L, index))
+  {
+  }
+
+  /** Retrieve the lua_State associated with the reference.
+  */
+  inline lua_State* L () const
+  {
+    return m_ref.L ();
+  }
+
+  /** Retrieve the Lua type of the value.
+  */
+  inline int type () const
+  {
+    return m_ref.type ();
+  }
+
+  /** Push a reference to the object onto the stack.
+  */
+  void push ()
+  {
+    m_ref.push ();
+  }
 };
-/*
-#define LUA_TNONE		(-1)
-#define LUA_TNIL		0
-#define LUA_TBOOLEAN		1
-#define LUA_TLIGHTUSERDATA	2
-#define LUA_TNUMBER		3
-#define LUA_TSTRING		4
-#define LUA_TTABLE		5
-#define LUA_TFUNCTION		6
-#define LUA_TUSERDATA		7
-#define LUA_TTHREAD		8
+
+//------------------------------------------------------------------------------
+
+/**
+  Any Lua type on the stack, as a variant.
 */
+template <>
+struct tdstack <Object>
+{
+  static void push (lua_State*, Object object)
+  {
+    object.push ();
+  }
+
+  static Object get (lua_State* L, int index)
+  {
+    return Object (L, index);
+  }
+};
 
 //==============================================================================
 /**
