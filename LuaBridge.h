@@ -449,7 +449,7 @@ char const* classinfo <T>::s_name = classinfobase::unregisteredClassName ();
   The mapped name is the same.
 */
 template <class T>
-struct classinfo <const T> : public classinfo <T>
+struct classinfo <T const> : public classinfo <T>
 {
   static inline bool isConst ()
   {
@@ -972,25 +972,30 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
 * function pointer containers, these are only defined up to 8 parameters.
 */
 
+/** Constructor generators.
+
+    These templates call operator new with the contents of a type/value
+    list passed to the constructor with up to 8 parameters. Two versions
+    of call() are provided. One performs a regular new, the other performs
+    a placement new.
+*/
 template <class T, typename Typelist>
 struct constructor {};
 
 template <class T>
 struct constructor <T, nil>
 {
-  static T* call (const typevallist<nil> &tvl)
+  static T* call (typevallist <nil> const&)
   {
-    (void)tvl;
     return new T;
   }
-  static T* call (void* mem, const typevallist<nil> &tvl)
+  static T* call (void* mem, typevallist <nil> const&)
   {
-    (void)tvl;
     return new (mem) T;
   }
 };
 
-template <class T, typename P1>
+template <class T, class P1>
 struct constructor <T, typelist<P1> >
 {
   static T* call (const typevallist<typelist<P1> > &tvl)
@@ -1003,7 +1008,7 @@ struct constructor <T, typelist<P1> >
   }
 };
 
-template <class T, typename P1, typename P2>
+template <class T, class P1, class P2>
 struct constructor <T, typelist<P1, typelist<P2> > >
 {
   static T* call (const typevallist<typelist<P1, typelist<P2> > > &tvl)
@@ -1016,7 +1021,7 @@ struct constructor <T, typelist<P1, typelist<P2> > >
   }
 };
 
-template <class T, typename P1, typename P2, typename P3>
+template <class T, class P1, class P2, class P3>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3> > > >
 {
   static T* call (const typevallist<typelist<P1, typelist<P2,
@@ -1031,7 +1036,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3> > > >
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4>
+template <class T, class P1, class P2, class P3, class P4>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4> > > > >
 {
@@ -1047,8 +1052,8 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4,
-  typename P5>
+template <class T, class P1, class P2, class P3, class P4,
+  class P5>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5> > > > > >
 {
@@ -1066,8 +1071,8 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4,
-  typename P5, typename P6>
+template <class T, class P1, class P2, class P3, class P4,
+  class P5, class P6>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6> > > > > > >
 {
@@ -1085,8 +1090,8 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4,
-  typename P5, typename P6, typename P7>
+template <class T, class P1, class P2, class P3, class P4,
+  class P5, class P6, class P7>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6, typelist<P7> > > > > > > >
 {
@@ -1108,8 +1113,8 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4,
-  typename P5, typename P6, typename P7, typename P8>
+template <class T, class P1, class P2, class P3, class P4,
+  class P5, class P6, class P7, class P8>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6, typelist<P7, 
   typelist<P8> > > > > > > > >
@@ -1836,7 +1841,7 @@ private:
 
   @note Container must implement a strict subset of shared_ptr.
 */
-template <class T, template <class> class SharedPtr = shared_ptr>
+template <class T, template <class> class SharedPtr>
 class UserdataByConstSharedPtr : public Userdata
 {
 public:
@@ -2047,6 +2052,18 @@ struct tdstack <SharedPtr <T const> >
 };
 
 //------------------------------------------------------------------------------
+/**
+  void return values.
+*/
+template <>
+struct tdstack <void>
+{
+  void get (lua_State*, int)
+  {
+  }
+};
+
+//------------------------------------------------------------------------------
 
 // int
 template <> struct tdstack <
@@ -2234,6 +2251,584 @@ struct arglist <typelist <Head, Tail>, start>
 };
 
 //==============================================================================
+
+/** Utility class to wrap a reference stored in the registry.
+
+    These are reference counted, so multiple ref objects may point to the
+    same item in the registry. When the last ref is deleted, the registry
+    reference is unrefed (via luaL_unref).
+
+    @note The implementation of the reference counting is not thread safe,
+          since this would require C++11 or platform-specifics. This should not
+          be a problem, since a lua_State is generally not thread safe either.
+*/
+class Ref
+{
+private:
+  /** Holds a reference counted registry reference.
+  */
+  struct Holder
+  {
+    lua_State* const L;
+    int const ref;
+    int const type;
+
+  public:
+    /** Create the holder from a Lua stack index.
+    */
+    Holder (lua_State* L_, int index)
+      : L(L_)
+      , ref ((lua_pushvalue (L, index), luaL_ref (L, LUA_REGISTRYINDEX)))
+      , type (lua_type (L, index))
+      , m_count (1)
+    {
+    }
+
+    /** Destroy the reference in the registry.
+
+        @note The Lua object will be eligible for collection if no other
+              Lua objects, stack variables, or upvalues are referencing it.
+    */
+    ~Holder ()
+    {
+      luaL_unref (L, LUA_REGISTRYINDEX, ref);
+    }
+
+    /** Increment the reference count.
+
+        @note This is not thread safe.
+    */
+    inline void addref ()
+    {
+      ++m_count;
+    }
+
+    /** Decrement the reference count.
+
+        @note This is not thread safe.
+    */
+    inline void release ()
+    {
+      if (--m_count == 0)
+        delete this;
+    }
+
+  private:
+    Holder& operator= (Holder const&);
+
+    int m_count;
+  };
+
+private:
+  Holder* m_holder;
+
+public:
+  /** Create a reference to nothing.
+  */
+  Ref () : m_holder (0)
+  {
+  }
+
+  /** Construct from a Lua stack element.
+  */
+  Ref (lua_State* L, int index) : m_holder (new Holder (L, index))
+  {
+  }
+
+  /** Create an additional reference.
+  */
+  Ref (Ref const& other) : m_holder (other.m_holder)
+  {
+    if (m_holder != 0)
+      m_holder->addref ();
+  }
+
+  /** Release the reference.
+  */
+  ~Ref ()
+  {
+    if (m_holder != 0)
+      m_holder->release ();
+  }
+
+  /** Change this to point to a different reference.
+  */
+  Ref& operator= (Ref const& other)
+  {
+    if (m_holder != other.m_holder)
+    {
+      if (m_holder != 0)
+        m_holder->release ();
+
+      m_holder = other.m_holder;
+
+      if (m_holder != 0)
+        m_holder->addref ();
+    }
+
+    return *this;
+  }
+
+  /** Compare reference for equality.
+  */
+  inline bool operator== (Ref const& other) const
+  {
+    return m_holder == other.m_holder;
+  }
+
+  /** Retrieve the Lua type of the value.
+  */
+  inline int type () const
+  {
+    return m_holder != 0 ? m_holder->type : LUA_TNONE;
+  }
+
+  /** Retrieve the lua_State associated with the reference.
+  */
+  inline lua_State* L () const
+  {
+    assert (m_holder != 0);
+    return m_holder->L;
+  }
+
+  /** Push a reference to the value onto the stack.
+  */
+  inline void push () const
+  {
+    assert (m_holder != 0);
+    lua_rawgeti (m_holder->L, LUA_REGISTRYINDEX, m_holder->ref);
+  }
+};
+
+//==============================================================================
+
+/**
+  Wraps a Lua function in the registry.
+*/
+class function
+{
+private:
+  Ref m_ref;
+
+public:
+  /** Create a function with no reference.
+  */
+  function ()
+  {
+  }
+
+  /** Create the function from an argument.
+  */
+  function (lua_State* L, int index)
+    : m_ref ((luaL_checktype (L, index, LUA_TFUNCTION), Ref (L, index)))
+  {
+  }
+
+  /** Push a reference to the function onto the stack.
+  */
+  void push ()  const
+  {
+    m_ref.push ();
+  }
+
+  /** Call the function with up to 8 arguments and a possible return value.
+  */
+
+  template <class R>
+  R call () const
+  {
+    m_ref.push ();
+    lua_call (m_ref.L (), 0, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1>
+  R call (T1 t1) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    lua_call (m_ref.L (), 1, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2>
+  R call (T1 t1, T2 t2) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    lua_call (m_ref.L (), 2, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3>
+  R call (T1 t1, T2 t2, T3 t3) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    lua_call (m_ref.L (), 3, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    lua_call (m_ref.L (), 4, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4, class T5>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);;
+    lua_call (m_ref.L (), 5, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4,
+                     class T5, class T6>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    lua_call (m_ref.L (), 6, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4,
+                     class T5, class T6, class T7>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    tdstack <T7>::push (m_ref.L (), t7);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  template <class R, class T1, class T2, class T3, class T4,
+                     class T5, class T6, class T7, class T8>
+  R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    tdstack <T7>::push (m_ref.L (), t7);
+    tdstack <T8>::push (m_ref.L (), t8);
+    lua_call (m_ref.L (), 8, 1);
+    return tdstack <R>::get (m_ref.L (), -1);
+  }
+
+  // void return
+
+  void call () const
+  {
+    m_ref.push ();
+    lua_call (m_ref.L (), 0, 0);
+  }
+
+  template <class T1>
+  void call (T1 t1) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    lua_call (m_ref.L (), 1, 0);
+  }
+
+  template <class T1, class T2>
+  void call (T1 t1, T2 t2) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    lua_call (m_ref.L (), 2, 0);
+  }
+
+  template <class T1, class T2, class T3>
+  void call (T1 t1, T2 t2, T3 t3) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    lua_call (m_ref.L (), 3, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    lua_call (m_ref.L (), 4, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4, class T5>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    lua_call (m_ref.L (), 5, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4,
+            class T5, class T6>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    lua_call (m_ref.L (), 6, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4,
+            class T5, class T6, class T7>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    tdstack <T7>::push (m_ref.L (), t7);
+    lua_call (m_ref.L (), 7, 0);
+  }
+
+  template <class T1, class T2, class T3, class T4,
+            class T5, class T6, class T7, class T8>
+  void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) const
+  {
+    m_ref.push ();
+    tdstack <T1>::push (m_ref.L (), t1);
+    tdstack <T2>::push (m_ref.L (), t2);
+    tdstack <T3>::push (m_ref.L (), t3);
+    tdstack <T4>::push (m_ref.L (), t4);
+    tdstack <T5>::push (m_ref.L (), t5);
+    tdstack <T6>::push (m_ref.L (), t6);
+    tdstack <T7>::push (m_ref.L (), t7);
+    tdstack <T8>::push (m_ref.L (), t8);
+    lua_call (m_ref.L (), 8, 0);
+  }
+};
+
+//------------------------------------------------------------------------------
+/**
+  A Lua function on the stack.
+
+  @note To simplify the implementation, the function is immediately stored
+        in the registry as long as it is referenced.
+*/
+template <>
+struct tdstack <function>
+{
+  static void push (lua_State*, function f)
+  {
+    f.push ();
+  }
+
+  static function get (lua_State* L, int index)
+  {
+    return function (L, index);
+  }
+};
+
+//==============================================================================
+
+/**
+  Wraps a Lua table in the registry.
+*/
+class Table
+{
+private:
+  Ref m_ref;
+
+public:
+  Table ()
+  {
+  }
+
+  /** Create the object from an argument.
+  */
+  Table (lua_State* L, int index)
+    : m_ref ((luaL_checktype (L, index, LUA_TTABLE), Ref (L, index)))
+  {
+  }
+
+  /** Retrieve the lua_State associated with the reference.
+  */
+  inline lua_State* L () const
+  {
+    return m_ref.L ();
+  }
+
+  /** Retrieve the Lua type of the value.
+  */
+  inline int type () const
+  {
+    return m_ref.type ();
+  }
+
+  /** Retrieve the value associated with a key by string.
+
+      @note This may trigger metamethods.
+  */
+  template <class T>
+  T operator[] (char const* key)
+  {
+    lua_State* const L (m_ref.L ());
+    m_ref.push ();
+    lua_getfield (L, -1, key);
+    lua_remove (L, -2);
+    T t (tdstack <T>::get (L, -1));
+    lua_pop (L, 1);
+    return t;
+  }
+ 
+  /** Retrieve the value associated with a key of arbitrary type.
+
+      @note The type must be recognized by tdstack<>.
+  */
+  template <class T, class U>
+  T operator[] (U key)
+  {
+    lua_State* const L (m_ref.L ());
+    m_ref.push ();
+    tdstack <U>::push (L, key);
+    lua_gettable (L, -2);
+    lua_remove (L, -2);
+    T t (tdstack <T>::get (L, -1));
+    lua_pop (L, 1);
+    return t;
+  }
+
+  /** Push a reference to the table onto the stack.
+  */
+  void push ()
+  {
+    m_ref.push ();
+  }
+};
+
+//------------------------------------------------------------------------------
+
+/**
+  A Lua table on the stack.
+*/
+template <>
+struct tdstack <Table>
+{
+  static void push (lua_State*, Table table)
+  {
+    table.push ();
+  }
+
+  static Table get (lua_State* L, int index)
+  {
+    return Table (L, index);
+  }
+};
+
+//==============================================================================
+
+/**
+  Wraps any Lua type in the registry.
+*/
+class Object
+{
+private:
+  Ref m_ref;
+
+public:
+  Object ()
+  {
+  }
+
+  /** Create the object from an argument.
+  */
+  Object (lua_State* L, int index)
+    : m_ref (Ref (L, index))
+  {
+  }
+
+  /** Retrieve the lua_State associated with the reference.
+  */
+  inline lua_State* L () const
+  {
+    return m_ref.L ();
+  }
+
+  /** Retrieve the Lua type of the value.
+  */
+  inline int type () const
+  {
+    return m_ref.type ();
+  }
+
+  /** Push a reference to the object onto the stack.
+  */
+  void push ()
+  {
+    m_ref.push ();
+  }
+};
+
+//------------------------------------------------------------------------------
+
+/**
+  Any Lua type on the stack, as a variant.
+*/
+template <>
+struct tdstack <Object>
+{
+  static void push (lua_State*, Object object)
+  {
+    object.push ();
+  }
+
+  static Object get (lua_State* L, int index)
+  {
+    return Object (L, index);
+  }
+};
+
+//==============================================================================
 /**
   lua_CFunction to call a function with a return value.
 */
@@ -2319,7 +2914,7 @@ int ctorProxy (lua_State* L)
 
 //------------------------------------------------------------------------------
 /**
-  lua_CFunction to garbage collect a class object.
+  lua_CFunction to destroy a class object.
 
   This is used for the __gc metamethod.
 
@@ -2327,7 +2922,7 @@ int ctorProxy (lua_State* L)
         ensure that we are destroying the right kind of object.
 */
 template <class T>
-int gcProxy (lua_State* L)
+int dtorProxy (lua_State* L)
 {
   void* const p = detail::checkClass (
     L, 1, lua_tostring (L, lua_upvalueindex (1)), true);
@@ -2478,7 +3073,7 @@ void createMetaTable (lua_State* L)
   lua_pushcfunction (L, &detail::object_newindexer);
   rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
   lua_pushstring (L, name);
-  lua_pushcclosure (L, &gcProxy <T>, 1);
+  lua_pushcclosure (L, &dtorProxy <T>, 1);
   rawsetfield (L, -2, "__gc");                        // Use our __gc
   lua_pushstring (L, name);
   rawsetfield (L, -2, "__type");                      // Set __type to class name.
@@ -2503,7 +3098,7 @@ void createConstMetaTable (lua_State* L)
   lua_pushcfunction (L, &detail::object_newindexer);
   rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
   lua_pushstring (L, name);
-  lua_pushcclosure (L, &gcProxy <T>, 1);
+  lua_pushcclosure (L, &dtorProxy <T>, 1);
   rawsetfield (L, -2, "__gc");                        // Use our __gc.
   lua_pushstring (L, name);
   rawsetfield (L, -2, "__type");                      // Store the class type.
@@ -2766,15 +3361,10 @@ public:
   template <typename MemFn, template <class> class SharedPtr>
   class__ <T>& constructor ()
   {
-    // Get a reference to the class's static table
     findStaticTable (L, name.c_str());
-
-    // Push the constructor proxy, with the class's metatable as an upvalue
     luaL_getmetatable(L, name.c_str());
     lua_pushcclosure (L,
       &ctorProxy <T, SharedPtr, typename fnptr <MemFn>::params>, 1);
-
-    // Set the constructor proxy as the __call metamethod of the static table
     rawsetfield(L, -2, "__call");
     lua_pop (L, 1);
     return *this;
@@ -2787,39 +3377,42 @@ public:
   * indexer function we've installed as __index metamethod.
   */
   template <typename MemFn>
-  class__ <T>& method (char const *name, MemFn fp)
+  class__ <T>& method (char const* name, MemFn fp)
   {
     assert (fnptr <MemFn>::mfp);
     std::string metatable_name = this->name;
 
-#ifdef _MSC_VER
-#pragma warning (push)
-#pragma warning (disable: 4127) // constant conditional expression
-#endif
+    #ifdef _MSC_VER
+    #pragma warning (push)
+    #pragma warning (disable: 4127) // constant conditional expression
+    #endif
     if (fnptr <MemFn>::const_mfp)
       metatable_name.insert (0, "const ");
-#ifdef _MSC_VER
-#pragma warning (pop)
-#endif
+    #ifdef _MSC_VER
+    #pragma warning (pop)
+    #endif
+
     luaL_getmetatable (L, metatable_name.c_str ());
     lua_pushstring (L, metatable_name.c_str ());
     void* const v = lua_newuserdata (L, sizeof (MemFn));
     memcpy (v, &fp, sizeof (MemFn));
-#ifdef _MSC_VER
-#pragma warning (push)
-#pragma warning (disable: 4127) // constant conditional expression
-#endif
+
+    #ifdef _MSC_VER
+    #pragma warning (push)
+    #pragma warning (disable: 4127) // constant conditional expression
+    #endif
     if (fnptr <MemFn>::const_mfp)
-#if LUABRIDGE_STRICT_CONST
+    #if LUABRIDGE_STRICT_CONST
       lua_pushcclosure (L, &methodProxy <MemFn>::const_func, 2);
-#else
+    #else
       lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
-#endif
+    #endif
     else
       lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
-#ifdef _MSC_VER
-#pragma warning (pop)
-#endif
+    #ifdef _MSC_VER
+    #pragma warning (pop)
+    #endif
+
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
     return *this;
@@ -2837,74 +3430,87 @@ public:
   template <typename U>
   class__ <T>& property_ro (char const* name, const U T::* mp)
   {
-    luaL_getmetatable(L, this->name.c_str());
+    luaL_getmetatable (L, this->name.c_str());
     std::string cname = "const " + this->name;
-    luaL_getmetatable(L, cname.c_str());
-    rawgetfield(L, -2, "__propget");
-    rawgetfield(L, -2, "__propget");
-    lua_pushstring(L, cname.c_str());
-    void *v = lua_newuserdata(L, sizeof(U T::*));
-    memcpy(v, &mp, sizeof(U T::*));
-    lua_pushcclosure(L, &propgetProxy<T, U>, 2);
-    lua_pushvalue(L, -1);
-    rawsetfield(L, -3, name);
-    rawsetfield(L, -3, name);
-    lua_pop(L, 4);
+    luaL_getmetatable (L, cname.c_str());
+    rawgetfield (L, -2, "__propget");
+    rawgetfield (L, -2, "__propget");
+    lua_pushstring (L, cname.c_str ());
+    void* const v = lua_newuserdata(L, sizeof (U T::*));
+    memcpy (v, &mp, sizeof (U T::*));
+    lua_pushcclosure (L, &propgetProxy <T, U>, 2);
+    lua_pushvalue (L, -1);
+    rawsetfield (L, -3, name);
+    rawsetfield (L, -3, name);
+    lua_pop (L, 4);
     return *this;
   }
 
   //----------------------------------------------------------------------------
+  /**
+    Register a read-only property using a get function.
+  */
   template <typename U>
-  class__ <T>& property_ro (char const *name, U (T::*get) () const)
+  class__ <T>& property_ro (char const* name, U (T::* get) () const)
   {
-    luaL_getmetatable(L, this->name.c_str());
+    luaL_getmetatable (L, this->name.c_str ());
+    /** @todo Why not use classinfo <T>::const_name () ? */
     std::string cname = "const " + this->name;
-    luaL_getmetatable(L, cname.c_str());
-    rawgetfield(L, -2, "__propget");
-    rawgetfield(L, -2, "__propget");
-    lua_pushstring(L, cname.c_str());
+    luaL_getmetatable (L, cname.c_str ());
+    rawgetfield (L, -2, "__propget");
+    rawgetfield (L, -2, "__propget");
+    lua_pushstring (L, cname.c_str ());
     typedef U (T::*MemFn) () const;
-    void *v = lua_newuserdata(L, sizeof(MemFn));
-    memcpy(v, &get, sizeof(MemFn));
+    void* const v = lua_newuserdata (L, sizeof (MemFn));
+    memcpy (v, &get, sizeof (MemFn));
     lua_pushcclosure (L, &methodProxy <MemFn>::const_func, 2);
-    lua_pushvalue(L, -1);
-    rawsetfield(L, -3, name);
-    rawsetfield(L, -3, name);
-    lua_pop(L, 4);
+    lua_pushvalue (L, -1);
+    rawsetfield (L, -3, name);
+    rawsetfield (L, -3, name);
+    lua_pop (L, 4);
     return *this;
   }
 
   //----------------------------------------------------------------------------
-  template <typename U>
+  /**
+    Register a read/write data member.
+  */
+  template <class U>
   class__ <T>& property_rw (char const *name, U T::* mp)
   {
-    property_ro<U>(name, mp);
-    luaL_getmetatable(L, this->name.c_str());
-    rawgetfield(L, -1, "__propset");
-    lua_pushstring(L, this->name.c_str());
-    void *v = lua_newuserdata(L, sizeof(U T::*));
-    memcpy(v, &mp, sizeof(U T::*));
-    lua_pushcclosure(L, &propsetProxy <T, U>, 2);
-    rawsetfield(L, -2, name);
-    lua_pop(L, 2);
+    property_ro <U> (name, mp);
+    luaL_getmetatable (L, this->name.c_str ());
+    rawgetfield (L, -1, "__propset");
+    lua_pushstring (L, this->name.c_str());
+    void* v = lua_newuserdata (L, sizeof (U T::*));
+    memcpy (v, &mp, sizeof (U T::*));
+    lua_pushcclosure (L, &propsetProxy <T, U>, 2);
+    rawsetfield (L, -2, name);
+    lua_pop (L, 2);
     return *this;
   }
 
-  template <typename U>
-  class__ <T>& property_rw (char const *name, U (T::*get) () const, void (T::*set) (U))
+  //----------------------------------------------------------------------------
+  /**
+    Register a read/write property using get/set functions.
+  */
+  template <class U>
+  class__ <T>& property_rw (char const* name, U (T::* get) () const, void (T::* set) (U))
   {
-    property_ro<U>(name, get);
-    luaL_getmetatable(L, this->name.c_str());
-    rawgetfield(L, -1, "__propset");
-    lua_pushstring(L, this->name.c_str());
-    typedef void (T::*MemFn) (U);
-    void *v = lua_newuserdata(L, sizeof(MemFn));
-    memcpy(v, &set, sizeof(MemFn));
-    lua_pushcclosure(L, &methodProxy <MemFn>::func, 2);
-    rawsetfield(L, -2, name);
-    lua_pop(L, 2);
+    property_ro <U> (name, get);
+    luaL_getmetatable (L, this->name.c_str ());
+    rawgetfield (L, -1, "__propset");
+    lua_pushstring (L, this->name.c_str ());
+    typedef void (T::* MemFn) (U);
+    void* const v = lua_newuserdata (L, sizeof (MemFn));
+    memcpy (v, &set, sizeof (MemFn));
+    lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
+    rawsetfield (L, -2, name);
+    lua_pop (L, 2);
     return *this;
   }
+
+  //----------------------------------------------------------------------------
 
   // Static method registration
   template <typename MemFn>
