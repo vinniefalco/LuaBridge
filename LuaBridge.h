@@ -2496,7 +2496,6 @@ public:
                      class T5, class T6, class T7, class T8>
   R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) const
   {
-    lua_State* m_ref.L () (m_ref.m_ref.L () ());
     m_ref.push ();
     tdstack <T1>::push (m_ref.L (), t1);
     tdstack <T2>::push (m_ref.L (), t2);
