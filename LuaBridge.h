@@ -432,7 +432,7 @@ char const* classinfo <T>::s_name = classinfobase::unregisteredClassName ();
   The mapped name is the same.
 */
 template <class T>
-struct classinfo <const T> : public classinfo <T>
+struct classinfo <T const> : public classinfo <T>
 {
   static inline bool isConst ()
   {
@@ -955,25 +955,30 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
 * function pointer containers, these are only defined up to 8 parameters.
 */
 
+/** Constructor generators.
+
+    These templates call operator new with the contents of a type/value
+    list passed to the constructor with up to 8 parameters. Two versions
+    of call() are provided. One performs a regular new, the other performs
+    a placement new.
+*/
 template <class T, typename Typelist>
 struct constructor {};
 
 template <class T>
 struct constructor <T, nil>
 {
-  static T* call (const typevallist<nil> &tvl)
+  static T* call (typevallist <nil> const&)
   {
-    (void)tvl;
     return new T;
   }
-  static T* call (void* mem, const typevallist<nil> &tvl)
+  static T* call (void* mem, typevallist <nil> const&)
   {
-    (void)tvl;
     return new (mem) T;
   }
 };
 
-template <class T, typename P1>
+template <class T, class P1>
 struct constructor <T, typelist<P1> >
 {
   static T* call (const typevallist<typelist<P1> > &tvl)
@@ -986,7 +991,7 @@ struct constructor <T, typelist<P1> >
   }
 };
 
-template <class T, typename P1, typename P2>
+template <class T, class P1, class P2>
 struct constructor <T, typelist<P1, typelist<P2> > >
 {
   static T* call (const typevallist<typelist<P1, typelist<P2> > > &tvl)
@@ -999,7 +1004,7 @@ struct constructor <T, typelist<P1, typelist<P2> > >
   }
 };
 
-template <class T, typename P1, typename P2, typename P3>
+template <class T, class P1, class P2, class P3>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3> > > >
 {
   static T* call (const typevallist<typelist<P1, typelist<P2,
@@ -1014,7 +1019,7 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3> > > >
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4>
+template <class T, class P1, class P2, class P3, class P4>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4> > > > >
 {
@@ -1030,8 +1035,8 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4,
-  typename P5>
+template <class T, class P1, class P2, class P3, class P4,
+  class P5>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5> > > > > >
 {
@@ -1049,8 +1054,8 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4,
-  typename P5, typename P6>
+template <class T, class P1, class P2, class P3, class P4,
+  class P5, class P6>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6> > > > > > >
 {
@@ -1068,8 +1073,8 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4,
-  typename P5, typename P6, typename P7>
+template <class T, class P1, class P2, class P3, class P4,
+  class P5, class P6, class P7>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6, typelist<P7> > > > > > > >
 {
@@ -1091,8 +1096,8 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   }
 };
 
-template <class T, typename P1, typename P2, typename P3, typename P4,
-  typename P5, typename P6, typename P7, typename P8>
+template <class T, class P1, class P2, class P3, class P4,
+  class P5, class P6, class P7, class P8>
 struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
   typelist<P4, typelist<P5, typelist<P6, typelist<P7, 
   typelist<P8> > > > > > > > >
@@ -2879,7 +2884,7 @@ int ctorProxy (lua_State* L)
 
 //------------------------------------------------------------------------------
 /**
-  lua_CFunction to garbage collect a class object.
+  lua_CFunction to destroy a class object.
 
   This is used for the __gc metamethod.
 
@@ -2887,7 +2892,7 @@ int ctorProxy (lua_State* L)
         ensure that we are destroying the right kind of object.
 */
 template <class T>
-int gcProxy (lua_State* L)
+int dtorProxy (lua_State* L)
 {
   void* const p = detail::checkClass (
     L, 1, lua_tostring (L, lua_upvalueindex (1)), true);
@@ -3038,7 +3043,7 @@ void createMetaTable (lua_State* L)
   lua_pushcfunction (L, &detail::object_newindexer);
   rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
   lua_pushstring (L, name);
-  lua_pushcclosure (L, &gcProxy <T>, 1);
+  lua_pushcclosure (L, &dtorProxy <T>, 1);
   rawsetfield (L, -2, "__gc");                        // Use our __gc
   lua_pushstring (L, name);
   rawsetfield (L, -2, "__type");                      // Set __type to class name.
@@ -3063,7 +3068,7 @@ void createConstMetaTable (lua_State* L)
   lua_pushcfunction (L, &detail::object_newindexer);
   rawsetfield (L, -2, "__newindex");                  // Use our __newindex.
   lua_pushstring (L, name);
-  lua_pushcclosure (L, &gcProxy <T>, 1);
+  lua_pushcclosure (L, &dtorProxy <T>, 1);
   rawsetfield (L, -2, "__gc");                        // Use our __gc.
   lua_pushstring (L, name);
   rawsetfield (L, -2, "__type");                      // Store the class type.
@@ -3326,15 +3331,10 @@ public:
   template <typename MemFn, template <class> class SharedPtr>
   class__ <T>& constructor ()
   {
-    // Get a reference to the class's static table
     findStaticTable (L, name.c_str());
-
-    // Push the constructor proxy, with the class's metatable as an upvalue
     luaL_getmetatable(L, name.c_str());
     lua_pushcclosure (L,
       &ctorProxy <T, SharedPtr, typename fnptr <MemFn>::params>, 1);
-
-    // Set the constructor proxy as the __call metamethod of the static table
     rawsetfield(L, -2, "__call");
     lua_pop (L, 1);
     return *this;
@@ -3347,39 +3347,42 @@ public:
   * indexer function we've installed as __index metamethod.
   */
   template <typename MemFn>
-  class__ <T>& method (char const *name, MemFn fp)
+  class__ <T>& method (char const* name, MemFn fp)
   {
     assert (fnptr <MemFn>::mfp);
     std::string metatable_name = this->name;
 
-#ifdef _MSC_VER
-#pragma warning (push)
-#pragma warning (disable: 4127) // constant conditional expression
-#endif
+    #ifdef _MSC_VER
+    #pragma warning (push)
+    #pragma warning (disable: 4127) // constant conditional expression
+    #endif
     if (fnptr <MemFn>::const_mfp)
       metatable_name.insert (0, "const ");
-#ifdef _MSC_VER
-#pragma warning (pop)
-#endif
+    #ifdef _MSC_VER
+    #pragma warning (pop)
+    #endif
+
     luaL_getmetatable (L, metatable_name.c_str ());
     lua_pushstring (L, metatable_name.c_str ());
     void* const v = lua_newuserdata (L, sizeof (MemFn));
     memcpy (v, &fp, sizeof (MemFn));
-#ifdef _MSC_VER
-#pragma warning (push)
-#pragma warning (disable: 4127) // constant conditional expression
-#endif
+
+    #ifdef _MSC_VER
+    #pragma warning (push)
+    #pragma warning (disable: 4127) // constant conditional expression
+    #endif
     if (fnptr <MemFn>::const_mfp)
-#if LUABRIDGE_STRICT_CONST
+    #if LUABRIDGE_STRICT_CONST
       lua_pushcclosure (L, &methodProxy <MemFn>::const_func, 2);
-#else
+    #else
       lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
-#endif
+    #endif
     else
       lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
-#ifdef _MSC_VER
-#pragma warning (pop)
-#endif
+    #ifdef _MSC_VER
+    #pragma warning (pop)
+    #endif
+
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
     return *this;
@@ -3397,74 +3400,87 @@ public:
   template <typename U>
   class__ <T>& property_ro (char const* name, const U T::* mp)
   {
-    luaL_getmetatable(L, this->name.c_str());
+    luaL_getmetatable (L, this->name.c_str());
     std::string cname = "const " + this->name;
-    luaL_getmetatable(L, cname.c_str());
-    rawgetfield(L, -2, "__propget");
-    rawgetfield(L, -2, "__propget");
-    lua_pushstring(L, cname.c_str());
-    void *v = lua_newuserdata(L, sizeof(U T::*));
-    memcpy(v, &mp, sizeof(U T::*));
-    lua_pushcclosure(L, &propgetProxy<T, U>, 2);
-    lua_pushvalue(L, -1);
-    rawsetfield(L, -3, name);
-    rawsetfield(L, -3, name);
-    lua_pop(L, 4);
+    luaL_getmetatable (L, cname.c_str());
+    rawgetfield (L, -2, "__propget");
+    rawgetfield (L, -2, "__propget");
+    lua_pushstring (L, cname.c_str ());
+    void* const v = lua_newuserdata(L, sizeof (U T::*));
+    memcpy (v, &mp, sizeof (U T::*));
+    lua_pushcclosure (L, &propgetProxy <T, U>, 2);
+    lua_pushvalue (L, -1);
+    rawsetfield (L, -3, name);
+    rawsetfield (L, -3, name);
+    lua_pop (L, 4);
     return *this;
   }
 
   //----------------------------------------------------------------------------
+  /**
+    Register a read-only property using a get function.
+  */
   template <typename U>
-  class__ <T>& property_ro (char const *name, U (T::*get) () const)
+  class__ <T>& property_ro (char const* name, U (T::* get) () const)
   {
-    luaL_getmetatable(L, this->name.c_str());
+    luaL_getmetatable (L, this->name.c_str ());
+    /** @todo Why not use classinfo <T>::const_name () ? */
     std::string cname = "const " + this->name;
-    luaL_getmetatable(L, cname.c_str());
-    rawgetfield(L, -2, "__propget");
-    rawgetfield(L, -2, "__propget");
-    lua_pushstring(L, cname.c_str());
+    luaL_getmetatable (L, cname.c_str ());
+    rawgetfield (L, -2, "__propget");
+    rawgetfield (L, -2, "__propget");
+    lua_pushstring (L, cname.c_str ());
     typedef U (T::*MemFn) () const;
-    void *v = lua_newuserdata(L, sizeof(MemFn));
-    memcpy(v, &get, sizeof(MemFn));
+    void* const v = lua_newuserdata (L, sizeof (MemFn));
+    memcpy (v, &get, sizeof (MemFn));
     lua_pushcclosure (L, &methodProxy <MemFn>::const_func, 2);
-    lua_pushvalue(L, -1);
-    rawsetfield(L, -3, name);
-    rawsetfield(L, -3, name);
-    lua_pop(L, 4);
+    lua_pushvalue (L, -1);
+    rawsetfield (L, -3, name);
+    rawsetfield (L, -3, name);
+    lua_pop (L, 4);
     return *this;
   }
 
   //----------------------------------------------------------------------------
-  template <typename U>
+  /**
+    Register a read/write data member.
+  */
+  template <class U>
   class__ <T>& property_rw (char const *name, U T::* mp)
   {
-    property_ro<U>(name, mp);
-    luaL_getmetatable(L, this->name.c_str());
-    rawgetfield(L, -1, "__propset");
-    lua_pushstring(L, this->name.c_str());
-    void *v = lua_newuserdata(L, sizeof(U T::*));
-    memcpy(v, &mp, sizeof(U T::*));
-    lua_pushcclosure(L, &propsetProxy <T, U>, 2);
-    rawsetfield(L, -2, name);
-    lua_pop(L, 2);
+    property_ro <U> (name, mp);
+    luaL_getmetatable (L, this->name.c_str ());
+    rawgetfield (L, -1, "__propset");
+    lua_pushstring (L, this->name.c_str());
+    void* v = lua_newuserdata (L, sizeof (U T::*));
+    memcpy (v, &mp, sizeof (U T::*));
+    lua_pushcclosure (L, &propsetProxy <T, U>, 2);
+    rawsetfield (L, -2, name);
+    lua_pop (L, 2);
     return *this;
   }
 
-  template <typename U>
-  class__ <T>& property_rw (char const *name, U (T::*get) () const, void (T::*set) (U))
+  //----------------------------------------------------------------------------
+  /**
+    Register a read/write property using get/set functions.
+  */
+  template <class U>
+  class__ <T>& property_rw (char const* name, U (T::* get) () const, void (T::* set) (U))
   {
-    property_ro<U>(name, get);
-    luaL_getmetatable(L, this->name.c_str());
-    rawgetfield(L, -1, "__propset");
-    lua_pushstring(L, this->name.c_str());
-    typedef void (T::*MemFn) (U);
-    void *v = lua_newuserdata(L, sizeof(MemFn));
-    memcpy(v, &set, sizeof(MemFn));
-    lua_pushcclosure(L, &methodProxy <MemFn>::func, 2);
-    rawsetfield(L, -2, name);
-    lua_pop(L, 2);
+    property_ro <U> (name, get);
+    luaL_getmetatable (L, this->name.c_str ());
+    rawgetfield (L, -1, "__propset");
+    lua_pushstring (L, this->name.c_str ());
+    typedef void (T::* MemFn) (U);
+    void* const v = lua_newuserdata (L, sizeof (MemFn));
+    memcpy (v, &set, sizeof (MemFn));
+    lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
+    rawsetfield (L, -2, name);
+    lua_pop (L, 2);
     return *this;
   }
+
+  //----------------------------------------------------------------------------
 
   // Static method registration
   template <typename MemFn>
