@@ -3616,6 +3616,10 @@ private:
     class DataMember : public Symbol
     {
     private:
+      const U T::* m_mp;
+      bool const m_isWritable;
+
+    private:
       //------------------------------------------------------------------------
       /**
         lua_CFunction to get a class data member.
@@ -3655,7 +3659,7 @@ private:
       }
 
     public:
-      //------------------------------------------------------------------------
+      //========================================================================
       /**
         Create a class data member.
       */
@@ -3674,7 +3678,7 @@ private:
       {
         std::string s = std::string (typeid (U).name ()) + " " + m_name;
 
-        if (m_isReadOnly)
+        if (!m_isWritable)
           s = s + " (read-only)";
 
         return s;
@@ -3701,7 +3705,7 @@ private:
         lua_pushvalue (L, -1);
         rawsetfield (L, -3, name);
         rawsetfield (L, -3, name);
-        lua_pop (L, 3);
+        lua_pop (L, 2);
 
         if (m_isWritable)
         {
@@ -3717,10 +3721,6 @@ private:
           lua_pop (L, 1);
         }
       }
-
-    private:
-      const U T::* m_mp;
-      bool const m_isReadOnly;
     };
 
   private:
@@ -4007,8 +4007,11 @@ private:
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
 
+      // -1 = metatable, -2 = const metatable, -3 = parent
       lua_pushvalue (L, -2);
+      // -2 = metatable, -3 = const metatable, -4 = parent
       rawsetfield (L, -2, "__const");
+      // -1 = metatable, -2 = const metatable, -3 = parent
 
       // Create static table
 
@@ -4033,10 +4036,16 @@ private:
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
 
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -5, name);
+      // -1 = static, -2 = metatable, -3 = const metatable, -4 = parent
+      lua_pushvalue (L, -2);
+      // -2 = static, -3 = metatable, -4 = const metatable, -5 = parent
+      rawsetfield (L, -2, "__meta");
+      // -1 = static, -2 = metatable, -3 = const metatable, -4 = parent
 
-      // -1 = static, -2 = meta, -3 = const, -4 = parent
+      lua_pushvalue (L, -1);
+      // -2 = static, -3 = metatable, -4 = const metatable, -5 = parent
+      rawsetfield (L, -5, name);
+      // -1 = static, -2 = metatable, -3 = const metatable, -4 = parent
 
       for (Symbol* s = m_symbols.head (); s; s = s->next ())
         s->addToState (L);
