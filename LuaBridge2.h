@@ -311,7 +311,209 @@
 namespace luabridge2
 {
 
-// forward declaration
+//==============================================================================
+/**
+  Provides a scope of implementation specific operations.
+*/
+class Detail
+{
+//protected:
+public:
+  //----------------------------------------------------------------------------
+  /**
+    Get a table value, bypassing metamethods.
+  */  
+  static inline void rawgetfield (lua_State* const L, int const index, char const* const key)
+  {
+    lua_pushstring (L, key);
+    if (index < 0)
+      lua_rawget (L, index-1);
+    else
+      lua_rawget (L, index);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    Set a table value, bypassing metamethods.
+  */  
+  static inline void rawsetfield (lua_State* const L, int const index, char const* const key)
+  {
+    lua_pushstring (L, key);
+    lua_insert (L, -2);
+    if (index < 0)
+      lua_rawset (L, index-1);
+    else
+      lua_rawset (L, index);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    Report an invalid type message.
+
+    This is our version of luaL_typerror, which was removed in Lua 5.2.
+  */
+  static int typeError (lua_State* L, int narg, const char *tname)
+  {
+    const char *msg = lua_pushfstring (L, "%s expected, got %s",
+      tname, luaL_typename (L, narg));
+
+    return luaL_argerror (L, narg, msg);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    lua_CFunction to report a write error.
+
+    The name of the variable is in the first upvalue.
+  */
+  static int writeError (lua_State* L)
+  {
+    if (!lua_isstring (L, lua_upvalueindex (1)))
+      throw std::logic_error ("bad upvalue");
+
+    std::string s;
+
+    lua_Debug ar;
+    int result = lua_getstack (L, 2, &ar);
+    if (result != 0)
+    {
+      lua_getinfo (L, "Sl", &ar);
+      s = ar.short_src;
+      if (ar.currentline != -1)
+      {
+        // poor mans int to string to avoid stringstream.
+        lua_pushnumber (L, ar.currentline);
+        s = s + ":" + lua_tostring (L, -1) + ": ";
+        lua_pop (L, 1);
+      }
+    }
+
+    s = s + lua_tostring (L, lua_upvalueindex (1));
+    s = s + " is read-only";
+
+    return luaL_error (L, s.c_str ());
+  }
+  
+  //----------------------------------------------------------------------------
+  /**
+    Associates classes with unique registry keys.
+  */
+  template <class T>
+  class ClassInfo
+  {
+  public:
+    /**
+      Return the registry key associated with the class metatable.
+    */
+    static void* getMetatableKey ()
+    {
+      static char value;
+      return &value;
+    }
+
+    /**
+      Return the registry key associated with the class const metatable.
+    */
+    static void* getConstMetatableKey ()
+    {
+      static char value;
+      return &value;
+    }
+  };
+
+  //----------------------------------------------------------------------------
+  /*
+  * Class type checker.  Given the index of a userdata on the stack, makes
+  * sure that it's an object of the given classinfo or a subclass thereof.
+  * If yes, returns the address of the data; otherwise, throws an error.
+  * Works like the luaL_checkudata function.
+  */
+
+  static void* checkClass (lua_State* L, int index, const char *tname, bool exact)
+  {
+    void* p = 0;
+
+    // If index is relative to the top of the stack, convert it into an index
+    // relative to the bottom of the stack, so we can push our own stuff
+    if (index < 0)
+      index += lua_gettop(L) + 1;
+
+    // Check that the thing on the stack is indeed a userdata
+    if (!lua_isuserdata(L, index))
+      Detail::typeError (L, index, tname);
+
+    // Lookup the given name in the registry
+    luaL_getmetatable(L, tname);
+
+    // Lookup the metatable of the given userdata
+    lua_getmetatable(L, index);
+
+    // If exact match required, simply test for identity.
+    if (exact)
+    {
+      // Ignore "const" for exact tests (which are used for destructors).
+      if (!strncmp (tname, "const ", 6))
+        tname += 6;
+
+      if (lua_rawequal(L, -1, -2))
+      {
+        p = lua_touserdata(L, index);
+      }
+      else
+      {
+        // Generate an informative error message
+        rawgetfield (L, -1, "__type");
+        luaL_argerror (L, index, lua_pushfstring (L,
+          "%s expected, got %s", tname , lua_typename (L, lua_type (L, index))));
+        // doesn't get here
+      }
+    }
+
+    if (!p)
+    {
+      // Navigate up the chain of parents if necessary
+      while (!lua_rawequal (L, -1, -2))
+      {
+        // Check for equality to the const metatable
+        rawgetfield(L, -1, "__const");
+        if (!lua_isnil(L, -1))
+        {
+          if (lua_rawequal(L, -1, -3))
+            break;
+        }
+        lua_pop(L, 1);
+
+        // Look for the metatable's parent field
+        rawgetfield(L, -1, "__parent");
+
+        // No parent field?  We've failed; generate appropriate error
+        if (lua_isnil(L, -1))
+        {
+          // Lookup the __type field of the original metatable, so we can
+          // generate an informative error message
+          lua_getmetatable(L, index);
+          rawgetfield(L, -1, "__type");
+          luaL_argerror (L, index, lua_pushfstring (L,
+            "%s expected, got %s", tname , lua_tostring (L, -1)));
+          break; // doesn't get here
+        }
+
+        // Remove the old metatable from the stack
+        lua_remove(L, -2);
+      }
+
+      // Found a matching metatable; return the userdata
+      p = lua_touserdata(L, index);
+    }
+
+    return p;
+  }
+
+  //----------------------------------------------------------------------------
+};
+
+//==============================================================================
+ // forward declaration
 template <class T>
 class class__;
 
@@ -337,7 +539,7 @@ struct Container
 /**
   Holds the address of a unique string to identify unregistered classes.
 */
-class classinfobase
+class classinfoBase
 {
 protected:
   static inline char const* unregisteredClassName ()
@@ -359,7 +561,7 @@ protected:
   @tparam T The class for obtaining attributes.
 */
 template <class T>
-class classinfo : private classinfobase
+class classinfo : private classinfoBase
 {
 public:
   /** Register a class.
@@ -422,10 +624,10 @@ template <class T>
 std::string classinfo <T>::s_string;
 
 template <class T>
-char const* classinfo <T>::s_constname = classinfobase::unregisteredClassName ();
+char const* classinfo <T>::s_constname = classinfoBase::unregisteredClassName ();
 
 template <class T>
-char const* classinfo <T>::s_name = classinfobase::unregisteredClassName ();
+char const* classinfo <T>::s_name = classinfoBase::unregisteredClassName ();
 
 //------------------------------------------------------------------------------
 /**
@@ -568,12 +770,12 @@ struct typevallist <typelist <Head const&, Tail> >
 */
 
 template <typename MemFn>
-struct fnptr {};
+struct FunctionPointer {};
 
 /* Ordinary function pointers. */
 
 template <typename Ret>
-struct fnptr <Ret (*) ()>
+struct FunctionPointer <Ret (*) ()>
 {
   static const bool mfp = false;
   typedef Ret resulttype;
@@ -586,7 +788,7 @@ struct fnptr <Ret (*) ()>
 };
 
 template <typename Ret, typename P1>
-struct fnptr <Ret (*) (P1)>
+struct FunctionPointer <Ret (*) (P1)>
 {
   static const bool mfp = false;
   typedef Ret resulttype;
@@ -598,7 +800,7 @@ struct fnptr <Ret (*) (P1)>
 };
 
 template <typename Ret, typename P1, typename P2>
-struct fnptr <Ret (*) (P1, P2)>
+struct FunctionPointer <Ret (*) (P1, P2)>
 {
   static const bool mfp = false;
   typedef Ret resulttype;
@@ -610,7 +812,7 @@ struct fnptr <Ret (*) (P1, P2)>
 };
 
 template <typename Ret, typename P1, typename P2, typename P3>
-struct fnptr <Ret (*) (P1, P2, P3)>
+struct FunctionPointer <Ret (*) (P1, P2, P3)>
 {
   static const bool mfp = false;
   typedef Ret resulttype;
@@ -622,7 +824,7 @@ struct fnptr <Ret (*) (P1, P2, P3)>
 };
 
 template <typename Ret, typename P1, typename P2, typename P3, typename P4>
-struct fnptr <Ret (*) (P1, P2, P3, P4)>
+struct FunctionPointer <Ret (*) (P1, P2, P3, P4)>
 {
   static const bool mfp = false;
   typedef Ret resulttype;
@@ -636,7 +838,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4)>
 
 template <typename Ret, typename P1, typename P2, typename P3, typename P4,
   typename P5>
-struct fnptr <Ret (*) (P1, P2, P3, P4, P5)>
+struct FunctionPointer <Ret (*) (P1, P2, P3, P4, P5)>
 {
   static const bool mfp = false;
   typedef Ret resulttype;
@@ -652,7 +854,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5)>
 
 template <typename Ret, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6>
-struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6)>
+struct FunctionPointer <Ret (*) (P1, P2, P3, P4, P5, P6)>
 {
   static const bool mfp = false;
   typedef Ret resulttype;
@@ -668,7 +870,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6)>
 
 template <typename Ret, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7>
-struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6, P7)>
+struct FunctionPointer <Ret (*) (P1, P2, P3, P4, P5, P6, P7)>
 {
   static const bool mfp = false;
   typedef Ret resulttype;
@@ -685,7 +887,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6, P7)>
 
 template <typename Ret, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7, typename P8>
-struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
+struct FunctionPointer <Ret (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 {
   static const bool mfp = false;
   typedef Ret resulttype;
@@ -703,7 +905,7 @@ struct fnptr <Ret (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 /* Non-const member function pointers. */
 
 template <class T, typename Ret>
-struct fnptr <Ret (T::*) ()>
+struct FunctionPointer <Ret (T::*) ()>
 {
   static const bool mfp = true;
   static const bool const_mfp = false;
@@ -718,7 +920,7 @@ struct fnptr <Ret (T::*) ()>
 };
 
 template <class T, typename Ret, typename P1>
-struct fnptr <Ret (T::*) (P1)>
+struct FunctionPointer <Ret (T::*) (P1)>
 {
   static const bool mfp = true;
   static const bool const_mfp = false;
@@ -733,7 +935,7 @@ struct fnptr <Ret (T::*) (P1)>
 };
 
 template <class T, typename Ret, typename P1, typename P2>
-struct fnptr <Ret (T::*) (P1, P2)>
+struct FunctionPointer <Ret (T::*) (P1, P2)>
 {
   static const bool mfp = true;
   static const bool const_mfp = false;
@@ -748,7 +950,7 @@ struct fnptr <Ret (T::*) (P1, P2)>
 };
 
 template <class T, typename Ret, typename P1, typename P2, typename P3>
-struct fnptr <Ret (T::*) (P1, P2, P3)>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3)>
 {
   static const bool mfp = true;
   static const bool const_mfp = false;
@@ -764,7 +966,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3)>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4)>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4)>
 {
   static const bool mfp = true;
   static const bool const_mfp = false;
@@ -780,7 +982,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4)>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4, P5)>
 {
   static const bool mfp = true;
   static const bool const_mfp = false;
@@ -798,7 +1000,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5)>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6)>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4, P5, P6)>
 {
   static const bool mfp = true;
   static const bool const_mfp = false;
@@ -816,7 +1018,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6)>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7)>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7)>
 {
   static const bool mfp = true;
   static const bool const_mfp = false;
@@ -835,7 +1037,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7)>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 {
   static const bool mfp = true;
   static const bool const_mfp = false;
@@ -855,7 +1057,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 /* Const member function pointers. */
 
 template <class T, typename Ret>
-struct fnptr <Ret (T::*) () const>
+struct FunctionPointer <Ret (T::*) () const>
 {
   static const bool mfp = true;
   static const bool const_mfp = true;
@@ -871,7 +1073,7 @@ struct fnptr <Ret (T::*) () const>
 };
 
 template <class T, typename Ret, typename P1>
-struct fnptr <Ret (T::*) (P1) const>
+struct FunctionPointer <Ret (T::*) (P1) const>
 {
   static const bool mfp = true;
   static const bool const_mfp = true;
@@ -886,7 +1088,7 @@ struct fnptr <Ret (T::*) (P1) const>
 };
 
 template <class T, typename Ret, typename P1, typename P2>
-struct fnptr <Ret (T::*) (P1, P2) const>
+struct FunctionPointer <Ret (T::*) (P1, P2) const>
 {
   static const bool mfp = true;
   static const bool const_mfp = true;
@@ -901,7 +1103,7 @@ struct fnptr <Ret (T::*) (P1, P2) const>
 };
 
 template <class T, typename Ret, typename P1, typename P2, typename P3>
-struct fnptr <Ret (T::*) (P1, P2, P3) const>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3) const>
 {
   static const bool mfp = true;
   static const bool const_mfp = true;
@@ -917,7 +1119,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3) const>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4) const>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4) const>
 {
   static const bool mfp = true;
   static const bool const_mfp = true;
@@ -933,7 +1135,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4) const>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5) const>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4, P5) const>
 {
   static const bool mfp = true;
   static const bool const_mfp = true;
@@ -951,7 +1153,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5) const>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6) const>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4, P5, P6) const>
 {
   static const bool mfp = true;
   static const bool const_mfp = true;
@@ -970,7 +1172,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6) const>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
 {
   static const bool mfp = true;
   static const bool const_mfp = true;
@@ -990,7 +1192,7 @@ struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
 
 template <class T, typename Ret, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
-struct fnptr <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
+struct FunctionPointer <Ret (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
 {
   static const bool mfp = true;
   static const bool const_mfp = true;
@@ -1180,58 +1382,9 @@ struct constructor <T, typelist<P1, typelist<P2, typelist<P3,
 };
 
 //==============================================================================
-/*
-  Utilities.
 
-  Some are provided as static class members so the definitions may be placed
-  in the header rather than a source file. Only one instance of the definition
-  will be linked in even though the header is included in multiple translation
-  units.
-*/
-
-//------------------------------------------------------------------------------
-/**
-  Get a value, bypassing metamethods.
-*/  
-inline void rawgetfield (lua_State* const L, int const index, char const* const key)
+struct detail : Detail
 {
-  lua_pushstring (L, key);
-  if (index < 0)
-    lua_rawget (L, index-1);
-  else
-    lua_rawget (L, index);
-}
-
-//------------------------------------------------------------------------------
-/**
-  Set a value, bypassing metamethods.
-*/  
-inline void rawsetfield (lua_State* const L, int const index, char const* const key)
-{
-  lua_pushstring (L, key);
-  lua_insert (L, -2);
-  if (index < 0)
-    lua_rawset (L, index-1);
-  else
-    lua_rawset (L, index);
-}
-
-struct detail // namespace detail
-{
-
-//------------------------------------------------------------------------------
-/**
-  Produce an error message.
-
-  This is our version of luaL_typerror, which was removed in Lua 5.2.
-*/
-static int typeError (lua_State* L, int narg, const char *tname)
-{
-  const char *msg = lua_pushfstring (L, "%s expected, got %s",
-    tname, luaL_typename (L, narg));
-
-  return luaL_argerror (L, narg, msg);
-}
 
 //------------------------------------------------------------------------------
 /**
@@ -1406,184 +1559,6 @@ static int object_newindexer (lua_State* L)
   return result;
 }
 
-//------------------------------------------------------------------------------
-/**
-  Create a static table.
-
-  The resulting table is placed on the stack.
-*/
-static void createStaticTable (lua_State* L)
-{
-  lua_newtable (L);                         // Create the table.
-  lua_pushvalue (L, -1);
-  lua_setmetatable (L, -2);                 // Set it as its own metatable.
-  lua_pushcfunction (L, &indexMetaMethod);
-  rawsetfield (L, -2, "__index");           // Use our __index.
-  lua_pushcfunction (L, &newindexMetaMethod);
-  rawsetfield (L, -2, "__newindex");        // Use our __newindex.
-  lua_newtable (L);
-  rawsetfield (L, -2, "__propget");         // Create empty __propget.
-  lua_newtable (L);
-  rawsetfield (L, -2, "__propset");         // Create empty __propset.
-}
-
-//------------------------------------------------------------------------------
-/**
-  Create static tables from a dot-separated identifier.
-
-  "x.y.z" produces _G["x"] = x[], x["y"] = y[], and y["z"] = z[].
-    
-  The last table (z[] in the example) is left on the stack.
-*/
-static void createStaticTables (lua_State* L, std::string name)
-{
-  assert (name.length () > 0);
-
-  lua_getglobal (L, "_G");
-
-  // Process each dot-separated namespace identifier.
-  size_t start = 0;
-  size_t pos = 0;
-  while ((pos = name.find ('.', start)) != std::string::npos)
-  {
-    std::string const id = name.substr (start, pos - start);
-    lua_getfield (L, -1, id.c_str ()); //! @todo Do we need rawgetfield() here?
-    if (lua_isnil (L, -1))
-    {
-      lua_pop (L, 1);
-      createStaticTable (L);
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -3, id.c_str ());
-    }
-    lua_remove(L, -2);
-    start = pos + 1;
-  }
-
-  // Create a new table with the remaining portion of the name.
-  createStaticTable (L);
-  rawsetfield (L, -2, name.c_str() + start);
-  lua_pop (L, 1);
-}
-
-//------------------------------------------------------------------------------
-/**
-  Look up a static table.
-
-  The table is identified by its fully qualified dot-separated name. The
-  resulting table is returned on the stack.
-
-  @note The table must exist.
-*/
-static void findStaticTable (lua_State* const L, char const* const name)
-{
-  lua_getglobal (L, "_G");
-
-  if (name && name [0] != '\0')
-  {
-    std::string namestr (name);
-    size_t start = 0;
-    size_t pos = 0;
-    while ((pos = namestr.find ('.', start)) != std::string::npos)
-    {
-      lua_getfield (L, -1, namestr.substr(start, pos - start).c_str());
-      assert (!lua_isnil(L, -1));
-      lua_remove (L, -2);
-      start = pos + 1;
-    }
-    lua_getfield (L, -1, namestr.substr(start).c_str());
-    assert (!lua_isnil(L, -1));
-    lua_remove (L, -2);
-  }
-}
-
-//------------------------------------------------------------------------------
-/*
-* Class type checker.  Given the index of a userdata on the stack, makes
-* sure that it's an object of the given classinfo or a subclass thereof.
-* If yes, returns the address of the data; otherwise, throws an error.
-* Works like the luaL_checkudata function.
-*/
-
-static void* checkClass (lua_State* L, int index, const char *tname, bool exact)
-{
-  void* p = 0;
-
-  // If index is relative to the top of the stack, convert it into an index
-  // relative to the bottom of the stack, so we can push our own stuff
-  if (index < 0)
-    index += lua_gettop(L) + 1;
-
-  // Check that the thing on the stack is indeed a userdata
-  if (!lua_isuserdata(L, index))
-    typeError (L, index, tname);
-
-  // Lookup the given name in the registry
-  luaL_getmetatable(L, tname);
-
-  // Lookup the metatable of the given userdata
-  lua_getmetatable(L, index);
-
-  // If exact match required, simply test for identity.
-  if (exact)
-  {
-    // Ignore "const" for exact tests (which are used for destructors).
-    if (!strncmp (tname, "const ", 6))
-      tname += 6;
-
-    if (lua_rawequal(L, -1, -2))
-    {
-      p = lua_touserdata(L, index);
-    }
-    else
-    {
-      // Generate an informative error message
-      rawgetfield (L, -1, "__type");
-      luaL_argerror (L, index, lua_pushfstring (L,
-        "%s expected, got %s", tname , lua_typename (L, lua_type (L, index))));
-      // doesn't get here
-    }
-  }
-
-  if (!p)
-  {
-    // Navigate up the chain of parents if necessary
-    while (!lua_rawequal (L, -1, -2))
-    {
-      // Check for equality to the const metatable
-      rawgetfield(L, -1, "__const");
-      if (!lua_isnil(L, -1))
-      {
-        if (lua_rawequal(L, -1, -3))
-          break;
-      }
-      lua_pop(L, 1);
-
-      // Look for the metatable's parent field
-      rawgetfield(L, -1, "__parent");
-
-      // No parent field?  We've failed; generate appropriate error
-      if (lua_isnil(L, -1))
-      {
-        // Lookup the __type field of the original metatable, so we can
-        // generate an informative error message
-        lua_getmetatable(L, index);
-        rawgetfield(L, -1, "__type");
-        luaL_argerror (L, index, lua_pushfstring (L,
-          "%s expected, got %s", tname , lua_tostring (L, -1)));
-        break; // doesn't get here
-      }
-
-      // Remove the old metatable from the stack
-      lua_remove(L, -2);
-    }
-
-    // Found a matching metatable; return the userdata
-    p = lua_touserdata(L, index);
-  }
-
-  return p;
-}
-
 };
 
 //==============================================================================
@@ -1678,16 +1653,17 @@ public:
   char const* getName () const { return classinfo <T>::name (); }
   char const* getTypename () const { return typeid (*this).name (); }
 
-  explicit UserdataByValue (T t) : m_t (t)
+  explicit UserdataByValue (T const& t) : m_t (t)
   {
   }
 
-  static void push (lua_State* L, T t)
+  static void push (lua_State* L, T const& t)
   {
-    assert (classinfo <T>::isRegistered ());
     void* const p = lua_newuserdata (L, sizeof (UserdataByValue <T>));
     new (p) UserdataByValue <T> (t);
-    luaL_getmetatable (L, classinfo <T>::name ());
+    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getMetatableKey ());
+    if (!lua_istable (L, -1))
+      luaL_error (L, "missing metatable for %s", typeid (T).name ());
     lua_setmetatable (L, -2);
   }
 
@@ -1942,7 +1918,7 @@ private:
   @note T must be copy-constructible.
 */
 template <class T>
-struct tdstack
+struct Stack
 {
 public:
   static void push (lua_State* L, T t)
@@ -1961,7 +1937,7 @@ public:
   Lua stack objects with pointer semantics.
 */
 template <class T>
-struct tdstack <T*>
+struct Stack <T*>
 {
   static void push (lua_State* L, T* t)
   {
@@ -1979,7 +1955,7 @@ struct tdstack <T*>
   Lua stack objects with pointer semantics.
 */
 template <class T>
-struct tdstack <T* const>
+struct Stack <T* const>
 {
   static void push (lua_State* L, T* const t)
   {
@@ -1997,7 +1973,7 @@ struct tdstack <T* const>
   Lua stack objects with const pointer semantics.
 */
 template <class T>
-struct tdstack <T const*>
+struct Stack <T const*>
 {
   static void push (lua_State* L, T const* t)
   {
@@ -2014,7 +1990,7 @@ struct tdstack <T const*>
   Lua stack objects with const pointer semantics.
 */
 template <class T>
-struct tdstack <T const* const>
+struct Stack <T const* const>
 {
   static void push (lua_State* L, T const* const t)
   {
@@ -2031,7 +2007,7 @@ struct tdstack <T const* const>
   Lua stack objects with reference semantics.
 */
 template <class T>
-struct tdstack <T&>
+struct Stack <T&>
 {
   static void push (lua_State* L, T& t)
   {
@@ -2049,7 +2025,7 @@ struct tdstack <T&>
   Lua stack objects with const reference semantics.
 */
 template <class T>
-struct tdstack <T const&>
+struct Stack <T const&>
 {
   static void push (lua_State* L, T const& t)
   {
@@ -2067,7 +2043,7 @@ struct tdstack <T const&>
   Lua stack objects with shared_ptr-like container semantics.
 */
 template <class T, template <class> class SharedPtr>
-struct tdstack <SharedPtr <T> >
+struct Stack <SharedPtr <T> >
 {
   static void push (lua_State* L, SharedPtr <T> p)
   {
@@ -2086,7 +2062,7 @@ struct tdstack <SharedPtr <T> >
   Lua stack objects with const shared_ptr-like semantics.
 */
 template <class T, template <class> class SharedPtr>
-struct tdstack <SharedPtr <T const> >
+struct Stack <SharedPtr <T const> >
 {
   static void push (lua_State* L, SharedPtr <T const> p)
   {
@@ -2104,7 +2080,7 @@ struct tdstack <SharedPtr <T const> >
   void return values.
 */
 template <>
-struct tdstack <void>
+struct Stack <void>
 {
   void get (lua_State*, int)
   {
@@ -2114,63 +2090,63 @@ struct tdstack <void>
 //------------------------------------------------------------------------------
 
 // int
-template <> struct tdstack <
+template <> struct Stack <
   int > { static void push (lua_State* L,
   int value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   int get (lua_State* L, int index) { return static_cast <
   int > (luaL_checknumber (L, index)); } };
 
 // unsigned int
-template <> struct tdstack <
+template <> struct Stack <
   unsigned int > { static void push (lua_State* L,
   unsigned int value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   unsigned int get (lua_State* L, int index) { return static_cast <
   unsigned int > (luaL_checknumber (L, index)); } };
 
 // unsigned char
-template <> struct tdstack <
+template <> struct Stack <
   unsigned char > { static void push (lua_State* L,
   unsigned char value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   unsigned char get (lua_State* L, int index) { return static_cast <
   unsigned char > (luaL_checknumber (L, index)); } };
 
 // short
-template <> struct tdstack <
+template <> struct Stack <
   short > { static void push (lua_State* L,
   short value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   short get (lua_State* L, int index) { return static_cast <
   short > (luaL_checknumber (L, index)); } };
 
 // unsigned short
-template <> struct tdstack <
+template <> struct Stack <
   unsigned short > { static void push (lua_State* L,
   unsigned short value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   unsigned short get (lua_State* L, int index) { return static_cast <
   unsigned short > (luaL_checknumber (L, index)); } };
 
 // long
-template <> struct tdstack <
+template <> struct Stack <
   long > { static void push (lua_State* L,
   long value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   long get (lua_State* L, int index) { return static_cast <
   long > (luaL_checknumber (L, index)); } };
 
 // unsigned long
-template <> struct tdstack <
+template <> struct Stack <
   unsigned long > { static void push (lua_State* L,
   unsigned long value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   unsigned long get (lua_State* L, int index) { return static_cast <
   unsigned long > (luaL_checknumber (L, index)); } };
 
 // float
-template <> struct tdstack <
+template <> struct Stack <
   float > { static void push (lua_State* L,
   float value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   float get (lua_State* L, int index) { return static_cast <
   float > (luaL_checknumber (L, index)); } };
 
 // double
-template <> struct tdstack <
+template <> struct Stack <
   double > { static void push (lua_State* L,
   double value) { lua_pushnumber (L, static_cast <lua_Number> (value)); } static
   double get (lua_State* L, int index) { return static_cast <
@@ -2178,7 +2154,7 @@ template <> struct tdstack <
 
 // bool
 template <>
-struct tdstack <bool>
+struct Stack <bool>
 {
   static void push (lua_State* L, bool value)
   {
@@ -2194,7 +2170,7 @@ struct tdstack <bool>
 
 // char
 template <>
-struct tdstack <char>
+struct Stack <char>
 {
   static void push (lua_State* L, char value)
   {
@@ -2209,7 +2185,7 @@ struct tdstack <char>
 
 // null terminated string
 template <>
-struct tdstack <char const*>
+struct Stack <char const*>
 {
   static void push (lua_State* L, char const* str)
   {
@@ -2223,7 +2199,7 @@ struct tdstack <char const*>
 
 // std::string
 template <>
-struct tdstack <std::string>
+struct Stack <std::string>
 {
   static void push (lua_State* L, std::string const& str)
   {
@@ -2237,7 +2213,7 @@ struct tdstack <std::string>
 
 // std::string const&
 template <>
-struct tdstack <std::string const&>
+struct Stack <std::string const&>
 {
   static void push (lua_State* L, std::string const& str)
   {
@@ -2273,7 +2249,7 @@ struct arglist <typelist <Head, Tail>, start>
   : public typevallist <typelist <Head, Tail> >
 {
   arglist (lua_State* L)
-    : typevallist <typelist <Head, Tail> > (tdstack <Head>::get (L, start),
+    : typevallist <typelist <Head, Tail> > (Stack <Head>::get (L, start),
                                             arglist <Tail, start + 1> (L))
   {
   }
@@ -2325,11 +2301,11 @@ int dtorProxy (lua_State* L)
         pointer is in upvalue 2.
 */
 template <typename MemFn,
-          typename RetVal = typename fnptr <MemFn>::resulttype>
+          typename RetVal = typename FunctionPointer <MemFn>::resulttype>
 struct methodProxy
 {
-  typedef typename fnptr <MemFn>::classtype T;
-  typedef typename fnptr <MemFn>::params params;
+  typedef typename FunctionPointer <MemFn>::classtype T;
+  typedef typename FunctionPointer <MemFn>::params params;
 
   static int func (lua_State* L)
   {
@@ -2340,7 +2316,7 @@ struct methodProxy
     MemFn fp = *static_cast <MemFn*> (
       lua_touserdata (L, lua_upvalueindex (2)));
     arglist <params, 2> args(L);
-    tdstack <RetVal>::push (L, fnptr <MemFn>::call (t, fp, args));
+    Stack <RetVal>::push (L, FunctionPointer <MemFn>::call (t, fp, args));
     return 1;
   }
 
@@ -2354,7 +2330,7 @@ struct methodProxy
     MemFn fp = *static_cast <MemFn*> (
       lua_touserdata (L, lua_upvalueindex (2)));
     arglist <params, 2> args(L);
-    tdstack <RetVal>::push (L, fnptr <MemFn>::call (t, fp, args));
+    Stack <RetVal>::push (L, FunctionPointer <MemFn>::call (t, fp, args));
     return 1;
   }
 };
@@ -2372,8 +2348,8 @@ struct methodProxy
 template <typename MemFn>
 struct methodProxy <MemFn, void>
 {
-  typedef typename fnptr <MemFn>::classtype T;
-  typedef typename fnptr <MemFn>::params params;
+  typedef typename FunctionPointer <MemFn>::classtype T;
+  typedef typename FunctionPointer <MemFn>::params params;
 
   static int func (lua_State* L)
   {
@@ -2384,7 +2360,7 @@ struct methodProxy <MemFn, void>
     MemFn fp = *static_cast <MemFn*> (
       lua_touserdata (L, lua_upvalueindex (2)));
     arglist <params, 2> args (L);
-    fnptr <MemFn>::call (t, fp, args);
+    FunctionPointer <MemFn>::call (t, fp, args);
     return 0;
   }
 
@@ -2398,7 +2374,7 @@ struct methodProxy <MemFn, void>
     MemFn fp = *static_cast <MemFn*> (
       lua_touserdata (L, lua_upvalueindex (2)));
     arglist <params, 2> args (L);
-    fnptr <MemFn>::call (t, fp, args);
+    FunctionPointer <MemFn>::call (t, fp, args);
     return 0;
   }
 };
@@ -2423,160 +2399,6 @@ public:
     /** @todo Set up global metatable? */
   }
 
-  //----------------------------------------------------------------------------
-  /**
-    Construct a scope with the specified dot-separated name.
-  */
-  scope (lua_State *L_, char const *name_) : L (L_), name (name_)
-  {
-    createStaticTables (L, name);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Register a function in this scope.
-  */
-  template <typename Function>
-  scope& function (char const* const name, Function fp)
-  {
-    findStaticTable (L, this->name.c_str());
-    lua_pushlightuserdata (L, reinterpret_cast <void*> (fp));
-    lua_pushcclosure (L, &functionProxy <Function>::f, 1);
-    rawsetfield (L, -2, name);
-    lua_pop (L, 1);
-    return *this;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Register a read-only variable.
-
-    The variable is retrieved through the provided pointer.
-
-    @note The proxy function is stored in the __propget table.
-  */
-  template <class T>
-  scope& variable_ro (char const* name, T const* data)
-  {
-    // Currently can't register properties at global scope.
-    assert (this->name.length() > 0);
-
-    findStaticTable (L, this->name.c_str ());
-    rawgetfield (L, -1, "__propget");
-    lua_pushlightuserdata (L, const_cast <void*> (static_cast <void const*> (data)));
-    lua_pushcclosure (L, &propgetProxy <T>, 1);
-    rawsetfield (L, -2, name);
-    lua_pop (L, 2);
-    return *this;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Register a read-only variable.
-
-    The variable is retrieved through the provided function.
-
-    @note The proxy function is stored in the __propget table.
-  */
-  template <class T>
-  scope& variable_ro (char const* name, T (*getFunction) ())
-  {
-    // Currently can't register properties at global scope.
-    assert (this->name.length() > 0);
-
-    findStaticTable (L, this->name.c_str ());
-    rawgetfield(L, -1, "__propget");
-    lua_pushlightuserdata (L, reinterpret_cast <void*> (getFunction));
-    lua_pushcclosure (L, &functionProxy<T (*) ()>::f, 1);
-    rawsetfield (L, -2, name);
-    lua_pop (L, 2);
-    return *this;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Register a read-write variable.
-
-    The variable is retrieved and stored through the provided pointer.
-
-    @note The proxy function is stored in the __propset table.
-  */
-  template <class T>
-  scope& variable_rw (char const* name, T* data)
-  {
-    // Currently can't register properties at global scope.
-    assert (this->name.length() > 0);
-
-    variable_ro <T> (name, data);
-    findStaticTable (L, this->name.c_str ());
-    rawgetfield (L, -1, "__propset");
-    lua_pushlightuserdata (L, static_cast <void*> (data));
-    lua_pushcclosure (L, &propsetProxy <T>, 1);
-    rawsetfield (L, -2, name);
-    lua_pop (L, 2);
-    return *this;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Register a read-write variable.
-
-    The variable is retrieved and stored through the provided functions.
-
-    @note The proxy function is stored in the __propset table.
-  */
-  template <class T>
-  scope& variable_rw (char const* name, T (*getFunction) (), void (*setFunction) (T))
-  {
-    // Currently can't register properties at global scope.
-    assert (this->name.length() > 0);
-
-    variable_ro <T> (name, getFunction);
-    findStaticTable (L, this->name.c_str ());
-    rawgetfield (L, -1, "__propset");
-    lua_pushlightuserdata (L, reinterpret_cast <void*> (setFunction));
-    lua_pushcclosure (L, &functionProxy <void (*) (T)>::f, 1);
-    rawsetfield(L, -2, name);
-    lua_pop(L, 2);
-    return *this;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Register a new class.
-  */
-  template <class T>
-  class__ <T> class_ (char const* name)
-  {
-    return class__ <T> (L, name);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Add registrations to a class.
-
-    The class must already be registered.
-  */
-
-  template <class T>
-  class__ <T> class_ ()
-  {
-    return class__ <T> (L);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Register a subclass.
-
-    @note The base class must be registered.
-  */
-
-  template <class T, class Base>
-  class__ <T> subclass (char const *name)
-  {
-    assert (classinfo <Base>::isRegistered ());
-    return class__ <T> (L, name, classinfo <Base>::name ());
-  }
 
 protected:
   lua_State* L;
@@ -2661,7 +2483,7 @@ public:
     findStaticTable (L, name.c_str());
     luaL_getmetatable(L, name.c_str());
     lua_pushcclosure (L,
-      &ctorProxy <T, SharedPtr, typename fnptr <MemFn>::params>, 1);
+      &ctorProxy <T, SharedPtr, typename FunctionPointer <MemFn>::params>, 1);
     rawsetfield(L, -2, "__call");
     lua_pop (L, 1);
     return *this;
@@ -2676,14 +2498,14 @@ public:
   template <typename MemFn>
   class__ <T>& method (char const* name, MemFn fp)
   {
-    assert (fnptr <MemFn>::mfp);
+    assert (FunctionPointer <MemFn>::mfp);
     std::string metatable_name = this->name;
 
     #ifdef _MSC_VER
     #pragma warning (push)
     #pragma warning (disable: 4127) // constant conditional expression
     #endif
-    if (fnptr <MemFn>::const_mfp)
+    if (FunctionPointer <MemFn>::const_mfp)
       metatable_name.insert (0, "const ");
     #ifdef _MSC_VER
     #pragma warning (pop)
@@ -2698,7 +2520,7 @@ public:
     #pragma warning (push)
     #pragma warning (disable: 4127) // constant conditional expression
     #endif
-    if (fnptr <MemFn>::const_mfp)
+    if (FunctionPointer <MemFn>::const_mfp)
     #if LUABRIDGE_STRICT_CONST
       lua_pushcclosure (L, &methodProxy <MemFn>::const_func, 2);
     #else
@@ -2976,7 +2798,7 @@ protected:
 /**
   A namespace registerable to Lua.
 */
-class Namespace : public Symbol
+class Namespace : public Symbol, protected Detail
 {
 private:
   Namespace (Namespace const&);
@@ -2985,69 +2807,6 @@ private:
   List <Symbol> m_symbols;
 
 private:
-  //----------------------------------------------------------------------------
-  /**
-    Get a table value, bypassing metamethods.
-  */  
-  static inline void rawgetfield (lua_State* const L, int const index, char const* const key)
-  {
-    lua_pushstring (L, key);
-    if (index < 0)
-      lua_rawget (L, index-1);
-    else
-      lua_rawget (L, index);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Set a table value, bypassing metamethods.
-  */  
-  static inline void rawsetfield (lua_State* const L, int const index, char const* const key)
-  {
-    lua_pushstring (L, key);
-    lua_insert (L, -2);
-    if (index < 0)
-      lua_rawset (L, index-1);
-    else
-      lua_rawset (L, index);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to report a write error.
-
-    The name of the variable is in the first upvalue.
-
-    @todo Make this show the Lua source and line. Till then we can't use it.
-  */
-  static int writeError (lua_State* L)
-  {
-    if (!lua_isstring (L, lua_upvalueindex (1)))
-      throw std::logic_error ("bad upvalue");
-
-    std::string s;
-
-    lua_Debug ar;
-    int result = lua_getstack (L, 2, &ar);
-    if (result != 0)
-    {
-      lua_getinfo (L, "Sl", &ar);
-      s = ar.short_src;
-      if (ar.currentline != -1)
-      {
-        // poor mans int to string to avoid stringstream.
-        lua_pushnumber (L, ar.currentline);
-        s = s + ":" + lua_tostring (L, -1) + ": ";
-        lua_pop (L, 1);
-      }
-    }
-
-    s = s + lua_tostring (L, lua_upvalueindex (1));
-    s = s + " is read-only";
-
-    return luaL_error (L, s.c_str ());
-  }
-
   //----------------------------------------------------------------------------
   /**
     lua_CFunction to get a variable.
@@ -3063,7 +2822,7 @@ private:
     #endif
 
     T* const data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
-    tdstack <T>::push (L, *data);
+    Stack <T>::push (L, *data);
     return 1;
   }
 
@@ -3083,7 +2842,7 @@ private:
     #endif
 
     T* const data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
-    *data = tdstack <T>::get (L, 1);
+    *data = Stack <T>::get (L, 1);
     return 0;
   }
 
@@ -3094,10 +2853,10 @@ private:
     This is also used for property get functions.
   */
   template <typename Function,
-            typename Retval = typename fnptr <Function>::resulttype>
+            typename Retval = typename FunctionPointer <Function>::resulttype>
   struct functionProxy
   {
-    typedef typename fnptr <Function>::params params;
+    typedef typename FunctionPointer <Function>::params params;
     static int f (lua_State* L)
     {
       #if LUABRIDGE_USE_APICHECK
@@ -3107,7 +2866,7 @@ private:
 
       Function fp = reinterpret_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
       arglist <params> args (L);
-      tdstack <Retval>::push (L, fnptr <Function>::call (fp, args));
+      Stack <Retval>::push (L, FunctionPointer <Function>::call (fp, args));
       return 1;
     }
   };
@@ -3121,7 +2880,7 @@ private:
   template <typename Function>
   struct functionProxy <Function, void>
   {
-    typedef typename fnptr <Function>::params params;
+    typedef typename FunctionPointer <Function>::params params;
     static int f (lua_State* L)
     {
       #if LUABRIDGE_USE_APICHECK
@@ -3131,7 +2890,7 @@ private:
 
       Function fp = reinterpret_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
       arglist <params> args (L);
-      fnptr <Function>::call (fp, args);
+      FunctionPointer <Function>::call (fp, args);
       return 0;
     }
   };
@@ -3307,6 +3066,16 @@ private:
   template <class FP>
   class Function : public Symbol
   {
+  private:
+    Function (Function const&);
+    Function& operator= (Function const&);
+
+    typedef typename FunctionPointer <FP>::resulttype ReturnType;
+    typedef typename FunctionPointer <FP>::params Params;
+    typedef typevallist <Params> TypeList;
+
+    FP const m_fp;
+
   public:
     //--------------------------------------------------------------------------
     /**
@@ -3346,15 +3115,6 @@ private:
       rawsetfield (L, -2, m_name.c_str ());
     }
 
-  private:
-    Function (Function const&);
-    Function& operator= (Function const&);
-
-    typedef typename fnptr <FP>::resulttype ReturnType;
-    typedef typename fnptr <FP>::params Params;
-    typedef typevallist <Params> TypeList;
-
-    FP const m_fp;
   };
 
   //============================================================================
@@ -3602,7 +3362,7 @@ private:
       */
       std::string const tostring (bool includeChildren) const
       {
-        std::string s = "static " + Function <T>::tostring (includeChildren);
+        std::string s = "static " + Function <FP>::tostring (includeChildren);
 
         return s;
       }
@@ -3635,7 +3395,7 @@ private:
         Userdata* const ud = static_cast <Userdata*> (p);
         T const* const t = ud->getConst <T> (L);
         U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
-        tdstack <U>::push (L, t->*mp);
+        Stack <U>::push (L, t->*mp);
         return 1;
       }
 
@@ -3654,7 +3414,7 @@ private:
         Userdata* const ud = static_cast <Userdata*> (p);
         T* const t = ud->get <T> (L);
         U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (2)));
-        t->*mp = tdstack <U>::get (L, 2);
+        t->*mp = Stack <U>::get (L, 2);
         return 0;
       }
 
@@ -3719,6 +3479,239 @@ private:
           lua_pushcclosure (L, &propsetProxy <T, U>, 2);
           rawsetfield (L, -2, name);
           lua_pop (L, 1);
+        }
+      }
+    };
+
+    //==========================================================================
+    /**
+      A class property member.
+    */
+    template <class U>
+    class PropertyMember : public Symbol
+    {
+    private:
+      U (T::* m_get) () const;
+      void (T::* m_set) (U);
+
+    private:
+
+    public:
+      //------------------------------------------------------------------------
+      /**
+        Create a class property member.
+      */
+      PropertyMember (char const* name,
+        U (T::* get) () const, void (T::* set) (U), Symbol* parent)
+        : Symbol (name, parent)
+        , m_get (get)
+        , m_set (set)
+      {
+      }
+
+      //------------------------------------------------------------------------
+      /**
+        Return the declaration string.
+      */
+      std::string const tostring (bool) const
+      {
+        std::string s = std::string (typeid (U).name ()) + " " + m_name;
+
+        if (m_set == 0)
+          s = s + " (read-only)";
+
+        return s;
+      }
+
+      void addToState (lua_State*)
+      {
+#if 0
+        luaL_getmetatable (L, this->name.c_str ());
+        /** @todo Why not use classinfo <T>::const_name () ? */
+        std::string cname = "const " + this->name;
+        luaL_getmetatable (L, cname.c_str ());
+        rawgetfield (L, -2, "__propget");
+        rawgetfield (L, -2, "__propget");
+        lua_pushstring (L, cname.c_str ());
+        typedef U (T::*MemFn) () const;
+        void* const v = lua_newuserdata (L, sizeof (MemFn));
+        memcpy (v, &get, sizeof (MemFn));
+        lua_pushcclosure (L, &methodProxy <MemFn>::const_func, 2);
+        lua_pushvalue (L, -1);
+        rawsetfield (L, -3, name);
+        rawsetfield (L, -3, name);
+        lua_pop (L, 4);
+        return *this;
+
+        property_ro <U> (name, get);
+        luaL_getmetatable (L, this->name.c_str ());
+        rawgetfield (L, -1, "__propset");
+        lua_pushstring (L, this->name.c_str ());
+        typedef void (T::* MemFn) (U);
+        void* const v = lua_newuserdata (L, sizeof (MemFn));
+        memcpy (v, &set, sizeof (MemFn));
+        lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
+        rawsetfield (L, -2, name);
+        lua_pop (L, 2);
+        return *this;
+#endif
+      }
+    };
+
+    //==========================================================================
+    /**
+      lua_CFunction to call a class member function with a return value.
+
+      The argument list contains the 'this' pointer followed by the method
+      arguments.
+
+      @note The expected class name is in upvalue 1, and the member function
+            pointer is in upvalue 2.
+    */
+    template <class MemFn,
+              typename RetVal = typename FunctionPointer <MemFn>::resulttype>
+    struct methodProxy
+    {
+      typedef typename FunctionPointer <MemFn>::classtype T;
+      typedef typename FunctionPointer <MemFn>::params params;
+
+      static int func (lua_State* L)
+      {
+        void* const p = detail::checkClass (
+          L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+        Userdata* const ud = static_cast <Userdata*> (p);
+        T* const t = ud->get <T> (L);
+        MemFn fp = *static_cast <MemFn*> (
+          lua_touserdata (L, lua_upvalueindex (2)));
+        arglist <params, 2> args(L);
+        Stack <RetVal>::push (L, FunctionPointer <MemFn>::call (t, fp, args));
+        return 1;
+      }
+
+      // const class member functions
+      static int const_func (lua_State* L)
+      {
+        void* const p = detail::checkClass (
+          L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+        Userdata* const ud = static_cast <Userdata*> (p);
+        T const* const t = ud->getConst <T> (L);
+        MemFn fp = *static_cast <MemFn*> (
+          lua_touserdata (L, lua_upvalueindex (2)));
+        arglist <params, 2> args(L);
+        Stack <RetVal>::push (L, FunctionPointer <MemFn>::call (t, fp, args));
+        return 1;
+      }
+    };
+
+    //--------------------------------------------------------------------------
+    /**
+      lua_CFunction to call a class member function with no return value.
+
+      The argument list contains the 'this' pointer followed by the method
+      arguments.
+
+      @note The expected class name is in upvalue 1, and the member function
+            pointer is in upvalue 2.
+    */
+    template <typename MemFn>
+    struct methodProxy <MemFn, void>
+    {
+      typedef typename FunctionPointer <MemFn>::classtype T;
+      typedef typename FunctionPointer <MemFn>::params params;
+
+      static int func (lua_State* L)
+      {
+        void* const p = detail::checkClass (
+          L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+        Userdata* const ud = static_cast <Userdata*> (p);
+        T* const t = ud->get <T> (L);
+        MemFn fp = *static_cast <MemFn*> (
+          lua_touserdata (L, lua_upvalueindex (2)));
+        arglist <params, 2> args (L);
+        FunctionPointer <MemFn>::call (t, fp, args);
+        return 0;
+      }
+
+      // const class member functions
+      static int const_func (lua_State* L)
+      {
+        void* const p = detail::checkClass (
+          L, 1, lua_tostring (L, lua_upvalueindex (1)), false);
+        Userdata* const ud = static_cast <Userdata*> (p);
+        T const* const t = ud->getConst <T> (L);
+        MemFn fp = *static_cast <MemFn*> (
+          lua_touserdata (L, lua_upvalueindex (2)));
+        arglist <params, 2> args (L);
+        FunctionPointer <MemFn>::call (t, fp, args);
+        return 0;
+      }
+    };
+
+    //==========================================================================
+    /**
+      A class member function.
+    */
+    template <class MemFn>
+    class Method : public Symbol
+    {
+    private:
+      typedef typename FunctionPointer <MemFn>::resulttype ReturnType;
+      typedef typename FunctionPointer <MemFn>::params Params;
+      typedef typevallist <Params> TypeList;
+
+      MemFn const m_mfp;
+      bool const m_isConst;
+
+    public:
+      Method (char const* name, MemFn mfp, Symbol* parent)
+        : Symbol (name, parent)
+        , m_mfp (mfp)
+        , m_isConst (FunctionPointer <MemFn>::const_mfp)
+      {
+        assert (FunctionPointer <MemFn>::mfp);
+      }
+
+      //------------------------------------------------------------------------
+      /**
+        Return the declaration string.
+      */
+      std::string const tostring (bool) const
+      {
+        std::string s = typeid (ReturnType).name ();
+
+        s = s + " " + m_name + " (" + TypeList::tostring (false) + ")";
+
+        if (m_isConst)
+          s = s + " const";
+
+        return s;
+      }
+
+      //------------------------------------------------------------------------
+      /**
+        Add this class to the lua_State.
+
+        The stack holds the static, meta, and const metatables for the class.
+      */
+      void addToState (lua_State* L)
+      {
+        if (m_isConst)
+        {
+          // add to const metatable
+          lua_pushstring (L, (std::string ("const ") + m_name).c_str ());
+          void* const v = lua_newuserdata (L, sizeof (MemFn));
+          memcpy (v, &m_mfp, sizeof (MemFn));
+          lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
+          rawsetfield (L, -4, m_name.c_str ());
+        }
+        else
+        {
+          // add to metatable
+          lua_pushstring (L, m_name.c_str ());
+          void* const v = lua_newuserdata (L, sizeof (MemFn));
+          memcpy (v, &m_mfp, sizeof (MemFn));
+          lua_pushcclosure (L, &methodProxy <MemFn>::func, 2);
+          rawsetfield (L, -3, m_name.c_str ());
         }
       }
     };
@@ -3907,13 +3900,48 @@ private:
       Add a data member.
     */
     template <class U>
-    Class <T>& addDataMember (char const* name, const U T::* mp, bool isWritable = true)
+    Class <T>& addData (char const* name, const U T::* mp, bool isWritable = true)
     {
       Symbol* symbol = findSymbol (name);
       if (symbol != 0)
         throw std::logic_error ("duplicate symbol");
 
       symbol = new DataMember <U> (name, mp, isWritable, this);
+      m_symbols.append (symbol);
+
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add a property member.
+    */
+    template <class U>
+    Class <T>& addProperty (char const* name,
+      U (T::* get) () const, void (T::* set) (U) = 0)
+    {
+      Symbol* symbol = findSymbol (name);
+      if (symbol != 0)
+        throw std::logic_error ("duplicate symbol");
+
+      symbol = new PropertyMember <U> (name, get, set, this);
+      m_symbols.append (symbol);
+
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add a member function.
+    */
+    template <class MemFn>
+    Class <T>& addMethod (char const* name, MemFn mf)
+    {
+      Symbol* symbol = findSymbol (name);
+      if (symbol != 0)
+        throw std::logic_error ("duplicate symbol");
+
+      symbol = new Method <MemFn> (name, mf, this);
       m_symbols.append (symbol);
 
       return *this;
@@ -4007,11 +4035,8 @@ private:
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
 
-      // -1 = metatable, -2 = const metatable, -3 = parent
       lua_pushvalue (L, -2);
-      // -2 = metatable, -3 = const metatable, -4 = parent
       rawsetfield (L, -2, "__const");
-      // -1 = metatable, -2 = const metatable, -3 = parent
 
       // Create static table
 
@@ -4036,28 +4061,24 @@ private:
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
 
-      // -1 = static, -2 = metatable, -3 = const metatable, -4 = parent
       lua_pushvalue (L, -2);
-      // -2 = static, -3 = metatable, -4 = const metatable, -5 = parent
-      rawsetfield (L, -2, "__meta");
-      // -1 = static, -2 = metatable, -3 = const metatable, -4 = parent
+      rawsetfield (L, -2, "__class");
 
       lua_pushvalue (L, -1);
-      // -2 = static, -3 = metatable, -4 = const metatable, -5 = parent
       rawsetfield (L, -5, name);
-      // -1 = static, -2 = metatable, -3 = const metatable, -4 = parent
+
+      // Add symbols
 
       for (Symbol* s = m_symbols.head (); s; s = s->next ())
         s->addToState (L);
  
-      // Map T back to this in L.
-      /*
-      lua_pushlightuserdata (L, getRegistryKey ());
-      lua_pushlightuserdata (L, this);
-      lua_rawset (L, LUA_REGISTRYINDEX);
-      */
+      lua_pop (L, 1); // pop static table
 
-      lua_pop (L, 3);
+      // Map T to metatable
+      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getMetatableKey ());
+
+      // Map T to const metatable
+      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstMetatableKey ());
     }
 
     //--------------------------------------------------------------------------
