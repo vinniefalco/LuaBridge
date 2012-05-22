@@ -4221,6 +4221,8 @@ struct arglist <typelist <Head, Tail>, start>
 class Namespace
 {
 private:
+  Namespace& operator= (Namespace const& other);
+
   lua_State* const L;
   int mutable m_stackSize;
 
@@ -4463,12 +4465,9 @@ private:
     typedef typename FunctionPointer <Function>::params params;
     static int f (lua_State* L)
     {
-      #if LUABRIDGE_USE_APICHECK
-      if (!lua_islightuserdata (L, lua_upvalueindex (1)))
-        throw std::logic_error ("bad upvalue");
-      #endif
-
+      assert (lua_islightuserdata (L, lua_upvalueindex (1)));
       Function fp = reinterpret_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
+      assert (fp != 0);
       arglist <params> args (L);
       FunctionPointer <Function>::call (fp, args);
       return 0;
@@ -4493,8 +4492,227 @@ private:
   }
 
 private:
-  Namespace& operator= (Namespace const& other);
+  //============================================================================
 
+  class ClassBase
+  {
+  private:
+    ClassBase& operator= (ClassBase const& other);
+
+  protected:
+    friend class Namespace;
+
+    lua_State* const L;
+    int mutable m_stackSize;
+
+  protected:
+    //--------------------------------------------------------------------------
+    /**
+      Pop the Lua stack.
+    */
+    void pop (int n) const
+    {
+      if (m_stackSize >= n && lua_gettop (L) >= n)
+      {
+        lua_pop (L, n);
+        m_stackSize -= n;
+      }
+      else
+      {
+        throw std::logic_error ("invalid stack");
+      }
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Create the const table.
+    */
+    void createConstTable (char const* name)
+    {
+      lua_newtable (L);
+      lua_pushvalue (L, -1);
+      lua_setmetatable (L, -2);
+      lua_pushstring (L, (std::string ("const ") + name).c_str ());
+      rawsetfield (L, -2, "__type");
+      lua_pushcfunction (L, &indexMetaMethod);
+      rawsetfield (L, -2, "__index");
+      lua_pushcfunction (L, &newindexMetaMethod);
+      rawsetfield (L, -2, "__newindex");
+      lua_newtable (L);
+      rawsetfield (L, -2, "__propget");
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Create the class table.
+
+      The Lua stack should have the const table on top.
+    */
+    void createClassTable (char const* name)
+    {
+      lua_newtable (L);
+      lua_pushvalue (L, -1);
+      lua_setmetatable (L, -2);
+      lua_pushcfunction (L, &indexMetaMethod);
+      rawsetfield (L, -2, "__index");
+      lua_pushcfunction (L, &newindexMetaMethod);
+      rawsetfield (L, -2, "__newindex");
+      lua_pushstring (L, name);
+      rawsetfield (L, -2, "__type");
+      lua_newtable (L);
+      rawsetfield (L, -2, "__propget");
+      lua_newtable (L);
+      rawsetfield (L, -2, "__propset");
+      lua_pushvalue (L, -2);
+      rawsetfield (L, -2, "__const"); // point to const table
+
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -3, "__class"); // point const table to class table
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Create the static table.
+
+      The Lua stack should have:
+        -1 class table
+        -2 const table
+        -3 enclosing namespace
+    */
+    void createStaticTable (char const* name)
+    {
+      lua_newtable (L);
+      lua_pushvalue (L, -1);
+      lua_setmetatable (L, -2);
+#if 0
+      lua_pushlightuserdata (L, this);
+      lua_pushcclosure (L, &tostringMetaMethod, 1);
+      rawsetfield (L, -2, "__tostring");
+#endif
+      lua_pushcfunction (L, &Namespace::indexMetaMethod);
+      rawsetfield (L, -2, "__index");
+      lua_pushcfunction (L, &Namespace::newindexMetaMethod);
+      rawsetfield (L, -2, "__newindex");
+      lua_newtable (L);
+      rawsetfield (L, -2, "__propget");
+      lua_newtable (L);
+      rawsetfield (L, -2, "__propset");
+      lua_pushvalue (L, -2);
+      rawsetfield (L, -2, "__class"); // point to class table
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -5, name);
+    }
+
+  public:
+    //--------------------------------------------------------------------------
+    explicit ClassBase (lua_State* L_)
+      : L (L_)
+      , m_stackSize (0)
+    {
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Copy constructor.
+    */
+    ClassBase (ClassBase const& other)
+      : L (other.L)
+      , m_stackSize (0)
+    {
+      m_stackSize = other.m_stackSize;
+      other.m_stackSize = 0;
+    }
+
+    ~ClassBase ()
+    {
+      pop (m_stackSize);
+    }
+
+  };
+
+  //----------------------------------------------------------------------------
+  /**
+    Provides a class registration in a lua_State.
+
+    The Lua stack holds these objects:
+      -1 static table
+      -2 class table
+      -3 const table
+      -4 (enclosing namespace)
+  */
+  template <class T>
+  class Class : public ClassBase
+  {
+  public:
+    Class (char const* name, Namespace const* parent) : ClassBase (parent->L)
+    {
+      m_stackSize = parent->m_stackSize + 3;
+      parent->m_stackSize = 0;
+
+      assert (lua_istable (L, -1));
+      rawgetfield (L, -1, name);
+      
+      if (lua_isnil (L, -1))
+      {
+        lua_pop (L, 1);
+
+        createConstTable (name);
+#if 0
+        lua_pushcfunction (L, &dtorProxy <T>);
+        rawsetfield (L, -2, "__gc");
+        if (m_baseConstKey != 0)
+        {
+          lua_rawgetp (L, LUA_REGISTRYINDEX, m_baseConstKey);
+          rawsetfield (L, -2, "__parent");
+        }
+#endif
+
+        createClassTable (name);
+#if 0
+        lua_pushcfunction (L, &dtorProxy <T>);
+        rawsetfield (L, -2, "__gc");
+        if (m_baseClassKey != 0)
+        {
+          lua_rawgetp (L, LUA_REGISTRYINDEX, m_baseClassKey);
+          rawsetfield (L, -2, "__parent");
+        }
+#endif
+
+        createStaticTable (name);
+#if 0
+        if (m_baseStaticKey != 0)
+        {
+          lua_rawgetp (L, LUA_REGISTRYINDEX, m_baseStaticKey);
+          rawsetfield (L, -2, "__parent");
+        }
+#endif
+
+#if 0
+        // Map T to static table
+        lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getStaticKey ());
+
+        // Map T to metatable
+        lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
+
+        // Map T to const metatable
+        lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
+#endif
+      }
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Continue registration in the enclosing namespace.
+    */
+    Namespace endClass ()
+    {
+      return Namespace (this);
+    }
+
+    //--------------------------------------------------------------------------
+  };
+
+private:
   //----------------------------------------------------------------------------
   /**
     Opens the global namespace.
@@ -4509,15 +4727,28 @@ private:
 
   //----------------------------------------------------------------------------
   /**
-    Creates a continued registration.
+    Creates a continued registration from a child namespace.
   */
-  Namespace (Namespace const* other)
-    : L (other->L)
+  explicit Namespace (Namespace const* child)
+    : L (child->L)
     , m_stackSize (0)
   {
-    m_stackSize = other->m_stackSize - 1;
-    other->m_stackSize = 1;
-    other->pop (1);
+    m_stackSize = child->m_stackSize - 1;
+    child->m_stackSize = 1;
+    child->pop (1);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    Creates a continued registration from a child class.
+  */
+  explicit Namespace (ClassBase const* child)
+    : L (child->L)
+    , m_stackSize (0)
+  {
+    m_stackSize = child->m_stackSize - 3;
+    child->m_stackSize = 3;
+    child->pop (3);
   }
 
   //----------------------------------------------------------------------------
@@ -4531,11 +4762,11 @@ private:
     : L (parent->L)
     , m_stackSize (0)
   {
-    if (!lua_istable (L, -1))
-      throw std::logic_error ("expected table");
+    m_stackSize = parent->m_stackSize + 1;
+    parent->m_stackSize = 0;
 
-    rawgetfield (L, -1, "name");
-
+    assert (lua_istable (L, -1));
+    rawgetfield (L, -1, name);
     if (lua_isnil (L, -1))
     {
       lua_pop (L, 1);
@@ -4565,9 +4796,6 @@ private:
       lua_pushvalue (L, -1);
       rawsetfield (L, -3, name);
     }
-
-    m_stackSize = parent->m_stackSize + 1;
-    parent->m_stackSize = 0;
   }
 
 public:
@@ -4605,7 +4833,7 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Open a new or existing namespace.
+    Open a new or existing namespace for registrations.
   */
   Namespace beginNamespace (char const* name)
   {
@@ -4625,7 +4853,7 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Add a variable.
+    Add or replace a variable.
   */
   template <class T>
   Namespace& addVariable (char const* const name, T* const pt, bool const isWritable = true)
@@ -4659,7 +4887,9 @@ public:
   
   //----------------------------------------------------------------------------
   /**
-    Add a property.
+    Add or replace a property.
+
+    If the set function is omitted or null, the property is read-only.
   */
   template <class T>
   Namespace& addProperty (char const* name, T (*get) (), void (*set)(T) = 0)
@@ -4693,7 +4923,7 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Add a function.
+    Add or replace a function.
   */
   template <class FP>
   Namespace& addFunction (char const* name, FP const fp)
@@ -4704,6 +4934,16 @@ public:
     rawsetfield (L, -2, name);
 
     return *this;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    Open a new or existing class for registrations.
+  */
+  template <class T>
+  Class <T> beginClass (char const* name)
+  {
+    return Class <T> (name, this);
   }
 };
 
