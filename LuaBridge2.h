@@ -44,8 +44,8 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_LUABRIDGE_HEADER
-#define LUABRIDGE_LUABRIDGE_HEADER
+#ifndef LUABRIDGE_LUABRIDGE2_HEADER
+#define LUABRIDGE_LUABRIDGE2_HEADER
 
 #include <typeinfo>
 #include <stdint.h>
