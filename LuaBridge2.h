@@ -405,9 +405,18 @@ public:
   {
   public:
     /**
+      Return the registry key associated with the class static table.
+    */
+    static void* getStaticKey ()
+    {
+      static char value;
+      return &value;
+    }
+
+    /**
       Return the registry key associated with the class metatable.
     */
-    static void* getMetatableKey ()
+    static void* getClassKey ()
     {
       static char value;
       return &value;
@@ -416,7 +425,7 @@ public:
     /**
       Return the registry key associated with the class const metatable.
     */
-    static void* getConstMetatableKey ()
+    static void* getConstKey ()
     {
       static char value;
       return &value;
@@ -1582,7 +1591,7 @@ public:
   static T* get (lua_State* L, int index)
   {
     void* const p = detail::checkClass (L, index,
-      Detail::ClassInfo <T>::getMetatableKey (), false);
+      Detail::ClassInfo <T>::getClassKey (), false);
     Userdata* const ud = static_cast <Userdata*> (p);
     return ud->get <T> (L);
   }
@@ -1595,7 +1604,7 @@ public:
   static T const* getConst (lua_State* L, int index)
   {
     void* const p = detail::checkClass (L, index,
-      Detail::ClassInfo <T>::getConstMetatableKey (), false);
+      Detail::ClassInfo <T>::getConstKey (), false);
     Userdata* const ud = static_cast <Userdata*> (p);
     return ud->getConst <T> (L);
   }
@@ -1668,7 +1677,7 @@ public:
   static void push (lua_State* L, T const& t)
   {
     void* const p = lua_newuserdata (L, sizeof (UserdataByValue <T>));
-    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getMetatableKey ());
+    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getClassKey ());
     if (!lua_istable (L, -1))
       luaL_error (L, "missing metatable for '%s'", typeid (T).name ());
     new (p) UserdataByValue <T> (t);
@@ -1723,7 +1732,7 @@ public:
   static void push (lua_State* L, T& t)
   {
     void* const p = lua_newuserdata (L, sizeof (UserdataByReference <T>));
-    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getMetatableKey ());
+    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getClassKey ());
     if (!lua_istable (L, -1))
       luaL_error (L, "missing metatable for '%s'", typeid (T).name ());
     new (p) UserdataByReference <T> (t);
@@ -1776,7 +1785,7 @@ public:
   static void push (lua_State* L, T const& t)
   {
     void* const p = lua_newuserdata (L, sizeof (UserdataByConstReference <T>));
-    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getConstMetatableKey ());
+    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getConstKey ());
     if (!lua_istable (L, -1))
       luaL_error (L, "missing const metatable for '%s'", typeid (T).name ());
     new (p) UserdataByConstReference <T> (t);
@@ -1828,7 +1837,7 @@ public:
   static void push (lua_State* L, T* const t)
   {
     void* const p = lua_newuserdata (L, sizeof (UserdataBySharedPtr <T, SharedPtr>));
-    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getMetatableKey ());
+    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getClassKey ());
     if (!lua_istable (L, -1))
       luaL_error (L, "missing metatable for '%s'", typeid (T).name ());
     new (p) UserdataBySharedPtr <T, SharedPtr> (t);
@@ -1837,7 +1846,7 @@ public:
 
   static SharedPtr <T> get (lua_State* L, int index)
   {
-    void* const p = detail::checkClass (L, index, classinfo <T>::name (), false);
+    void* const p = detail::checkClass (L, index, Detail::ClassInfo <T>::getClassKey (), false);
     Userdata* const pb = static_cast <Userdata*> (p);
     UserdataBySharedPtr <T, SharedPtr>* ud =
       reinterpret_cast <UserdataBySharedPtr <T, SharedPtr>*> (pb);
@@ -1889,7 +1898,7 @@ public:
   static void push (lua_State* L, T const* const t)
   {
     void* const p = lua_newuserdata (L, sizeof (UserdataByConstSharedPtr <T, SharedPtr>));
-    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getConstMetatableKey ());
+    lua_rawgetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getConstKey ());
     if (!lua_istable (L, -1))
       luaL_error (L, "missing const metatable for '%s'", typeid (T).name ());
     new (p) UserdataByConstSharedPtr <T, SharedPtr> (t);
@@ -2916,7 +2925,7 @@ private:
 
   //----------------------------------------------------------------------------
   /**
-    __index metamethod for a Namespace.
+    __index metamethod for a Namespace or static Class table.
 
     This implements functions, variables, and properties. Functions go into the
     metatable, while variables and properties are located in the __propget table.
@@ -2926,47 +2935,79 @@ private:
     int result = 0;
 
     lua_getmetatable (L, 1);                  // push metatable of arg1
-    lua_pushvalue (L, 2);                     // push key arg2
-    lua_rawget (L, -2);                       // lookup key in metatable
-    if (lua_isnil (L, -1))                    // not found
+
+    for (;;)
     {
-      lua_pop (L, 1);                         // discard nil
-      rawgetfield (L, -1, "__propget");       // lookup __propget in metatable
-      lua_remove (L, -2);                     // discard metatable
-      if (lua_istable (L, -1))                // ensure __propget is a table
+      lua_pushvalue (L, 2);                   // push key arg2
+      lua_rawget (L, -2);                     // lookup key in metatable
+      if (lua_isnil (L, -1))                  // not found
       {
-        lua_pushvalue (L, 2);                 // push key arg2
-        lua_rawget (L, -2);                   // lookup key in __propget
-        lua_remove (L, -2);                   // discard __propget
-        if (lua_iscfunction (L, -1))          // ensure value is a C function
+        lua_pop (L, 1);                       // discard nil
+        rawgetfield (L, -1, "__propget");     // lookup __propget in metatable
+        if (lua_istable (L, -1))              // ensure __propget is a table
         {
-          lua_pushvalue (L, 1);               // push arg1
-          lua_call (L, 1, 1);                 // call cfunction
-          result = 1;
-        }
-        else if (lua_isnil (L, -1))           // not found
-        {
-          lua_pop (L, 1);
+          lua_pushvalue (L, 2);               // push key arg2
+          lua_rawget (L, -2);                 // lookup key in __propget
+          lua_remove (L, -2);                 // discard __propget
+          if (lua_iscfunction (L, -1))        // ensure value is a C function
+          {
+            lua_remove (L, -2);               // discard metatable
+            lua_pushvalue (L, 1);             // push arg1
+            lua_call (L, 1, 1);               // call cfunction
+            result = 1;
+            break;
+          }
+          else if (lua_isnil (L, -1))         // not found
+          {
+            lua_pop (L, 1);                   // discard nil and fall through
+          }
+          else
+          {
+            lua_pop (L, 2);                   // discard unknown and metatable
+
+            throw std::logic_error ("expected cfunction");
+          }
         }
         else
         {
-          lua_pop (L, 1);
+          lua_pop (L, 2);
 
-          // We only put cfunctions into __propget.
-          throw std::logic_error ("not a cfunction");
+          throw std::logic_error ("expected table '__propget'");
         }
+      }
+      else if (lua_istable (L, -1) || lua_iscfunction (L, -1))
+      {
+        // found
+        lua_remove (L, -2);
+        result = 1;
+        break;
       }
       else
       {
-        lua_pop (L, 1);
+        lua_pop (L, 2);
 
-        // __propget is missing, or not a table.
-        throw std::logic_error ("missing __propget table");
+        throw std::logic_error ("expected table or function");
       }
-    }
-    else
-    {
-      result = 1;
+
+      // Repeat the lookup in the __parent metafield,
+      // or return nil if the field doesn't exist.
+      rawgetfield (L, -1, "__parent");
+      if (lua_istable (L, -1))
+      {
+        // Remove metatable and repeat the search in __parent.
+        lua_remove (L, -2);
+      }
+      else if (lua_isnil (L, -1))
+      {
+        result = 1;
+        break;
+      }
+      else
+      {
+        lua_pop (L, 2);
+
+        throw std::logic_error ("expected table '__parent'");
+      }
     }
 
     return result;
@@ -3280,7 +3321,9 @@ private:
   class Class : public Symbol
   {
   private:
+    void* const m_baseStaticKey;
     void* const m_baseClassKey;
+    void* const m_baseConstKey;
     List <Symbol> m_symbols;
 
   private:
@@ -3378,7 +3421,7 @@ private:
       static int propgetProxy (lua_State* L)
       {
         void* const p = detail::checkClass (
-          L, 1, ClassInfo <T>::getMetatableKey (), false);
+          L, 1, ClassInfo <T>::getClassKey (), false);
         Userdata* const ud = static_cast <Userdata*> (p);
         T const* const t = ud->getConst <T> (L);
         U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3397,7 +3440,7 @@ private:
       static int propsetProxy (lua_State* L)
       {
         void* const p = detail::checkClass (
-          L, 1, ClassInfo <T>::getMetatableKey (), false);
+          L, 1, ClassInfo <T>::getClassKey (), false);
         Userdata* const ud = static_cast <Userdata*> (p);
         T* const t = ud->get <T> (L);
         U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3488,7 +3531,7 @@ private:
       static int func (lua_State* L)
       {
         void* const p = detail::checkClass (
-          L, 1, ClassInfo <T>::getMetatableKey (), false);
+          L, 1, ClassInfo <T>::getClassKey (), false);
         Userdata* const ud = static_cast <Userdata*> (p);
         T* const t = ud->get <T> (L);
         MemFn fp = *static_cast <MemFn*> (
@@ -3502,7 +3545,7 @@ private:
       static int const_func (lua_State* L)
       {
         void* const p = detail::checkClass (
-          L, 1, ClassInfo <T>::getMetatableKey (), false);
+          L, 1, ClassInfo <T>::getClassKey (), false);
         Userdata* const ud = static_cast <Userdata*> (p);
         T const* const t = ud->getConst <T> (L);
         MemFn fp = *static_cast <MemFn*> (
@@ -3532,7 +3575,7 @@ private:
       static int func (lua_State* L)
       {
         void* const p = detail::checkClass (
-          L, 1, ClassInfo <T>::getMetatableKey (), false);
+          L, 1, ClassInfo <T>::getClassKey (), false);
         Userdata* const ud = static_cast <Userdata*> (p);
         T* const t = ud->get <T> (L);
         MemFn fp = *static_cast <MemFn*> (
@@ -3546,7 +3589,7 @@ private:
       static int const_func (lua_State* L)
       {
         void* const p = detail::checkClass (
-          L, 1, ClassInfo <T>::getMetatableKey (), false);
+          L, 1, ClassInfo <T>::getClassKey (), false);
         Userdata* const ud = static_cast <Userdata*> (p);
         T const* const t = ud->getConst <T> (L);
         MemFn fp = *static_cast <MemFn*> (
@@ -3758,10 +3801,10 @@ private:
         {
           lua_pushvalue (L, 2);                     // push key arg2
           lua_rawget (L, -2);                       // lookup key in __propget
+          lua_remove (L, -2);                       // remove __propget
           if (lua_iscfunction (L, -1))              // ensure its a cfunction
           {
-            lua_remove (L, -3);                     // remove metatable
-            lua_remove (L, -2);                     // remove __propget
+            lua_remove (L, -2);                     // remove metatable
             lua_pushvalue (L, 1);                   // push class arg1
             lua_call (L, 1, 1);
             result = 1;
@@ -3769,11 +3812,11 @@ private:
           }
           else if (lua_isnil (L, -1))
           {
-            lua_pop (L, 2);
+            lua_pop (L, 1);
           }
           else
           {
-            lua_pop (L, 3);
+            lua_pop (L, 2);
 
             // We only put cfunctions into __propget.
             throw std::logic_error ("not a cfunction");
@@ -3869,7 +3912,7 @@ private:
     template <class T>
     static int dtorProxy (lua_State* L)
     {
-      void* const p = detail::checkClass (L, 1, ClassInfo <T>::getMetatableKey (), true);
+      void* const p = detail::checkClass (L, 1, ClassInfo <T>::getClassKey (), true);
       Userdata* const ud = static_cast <Userdata*> (p);
       ud->~Userdata ();
       return 0;
@@ -3900,9 +3943,14 @@ private:
     /**
       Create a class.
     */
-    Class (char const* name, Namespace* parent, void* baseClassKey)
+    Class (char const* name, Namespace* parent,
+           void* baseStaticKey,
+           void* baseClassKey,
+           void* baseConstKey)
       : Symbol (name, parent)
+      , m_baseStaticKey (baseStaticKey)
       , m_baseClassKey (baseClassKey)
+      , m_baseConstKey (baseConstKey)
     {
     }
 
@@ -4044,32 +4092,6 @@ private:
         throw std::logic_error ("duplicate symbol");
       lua_pop (L, 1);
 
-      if (m_baseClassKey != 0)
-      {
-        lua_rawgetp (L, LUA_REGISTRYINDEX, m_baseClassKey);
-        if (lua_istable (L, -1))
-        {
-          rawgetfield (L, -1, "__const");
-
-          if (lua_isnil (L, -1))
-          {
-            throw std::logic_error ("missing __const metatable");
-          }
-          else if (!lua_istable (L, -1))
-          {
-            throw std::logic_error ("expected table");
-          }
-        }
-        else if (lua_isnil (L, -1))
-        {
-          throw std::logic_error ("missing base class");
-        }
-        else
-        {
-          throw std::logic_error ("expected table");
-        }
-      }
-
       // Create const metatable
 
       lua_newtable (L);
@@ -4092,11 +4114,10 @@ private:
       lua_newtable (L);
       rawsetfield (L, -2, "__propget");
 
-      if (m_baseClassKey != 0)
+      if (m_baseConstKey != 0)
       {
-        lua_pushvalue (L, -2);
+        lua_rawgetp (L, LUA_REGISTRYINDEX, m_baseConstKey);
         rawsetfield (L, -2, "__parent");
-        lua_remove (L, -2);
       }
 
       // Create metatable
@@ -4132,9 +4153,8 @@ private:
 
       if (m_baseClassKey != 0)
       {
-        lua_pushvalue (L, -3);
+        lua_rawgetp (L, LUA_REGISTRYINDEX, m_baseClassKey);
         rawsetfield (L, -2, "__parent");
-        lua_remove (L, -3);
       }
 
       // Create static table
@@ -4166,18 +4186,25 @@ private:
       lua_pushvalue (L, -1);
       rawsetfield (L, -5, name);
 
+      if (m_baseStaticKey != 0)
+      {
+        lua_rawgetp (L, LUA_REGISTRYINDEX, m_baseStaticKey);
+        rawsetfield (L, -2, "__parent");
+      }
+
       // Add symbols
 
       for (Symbol* s = m_symbols.head (); s; s = s->next ())
         s->addToState (L);
  
-      lua_pop (L, 1); // pop static table
+      // Map T to static table
+      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getStaticKey ());
 
       // Map T to metatable
-      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getMetatableKey ());
+      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
 
       // Map T to const metatable
-      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstMetatableKey ());
+      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
     }
 
     //--------------------------------------------------------------------------
@@ -4349,7 +4376,7 @@ public:
 
     if (symbol == 0)
     {
-      c = new Class <T> (name, this, 0);
+      c = new Class <T> (name, this, 0, 0, 0);
       m_symbols.append (c);
     }
     else
@@ -4376,7 +4403,11 @@ public:
     if (symbol != 0)
       throw std::logic_error ("duplicate symbol");
 
-    Class <T>* c = new Class <T> (name, this, ClassInfo <B>::getMetatableKey ());
+    Class <T>* c = new Class <T> (name, this,
+      ClassInfo <B>::getStaticKey (),
+      ClassInfo <B>::getClassKey (),
+      ClassInfo <B>::getConstKey ()
+      );
     m_symbols.append (c);
 
     return *c;
