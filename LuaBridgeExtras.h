@@ -231,6 +231,11 @@ public:
     m_ref.push ();
   }
 
+  lua_State* L ()
+  {
+    return m_ref.L ();
+  }
+
   /** Call the function with up to 8 arguments and a possible return value.
   */
 
