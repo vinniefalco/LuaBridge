@@ -245,6 +245,84 @@ private:
   T* m_p;
 };
 
+//==============================================================================
+
+template <class T>
+struct ContainerInfo <luabridge::shared_ptr <T> >
+{
+  typedef typename T Type;
+
+  template <class U>
+  static inline void* get (luabridge::shared_ptr <U>& u)
+  {
+    T* p = u.get ();
+    return p;
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <class T>
+struct ContainerInfo <luabridge::shared_ptr <T const> >
+{
+  typedef typename T Type;
+
+  template <class U>
+  static inline void* get (luabridge::shared_ptr <U const>& u)
+  {
+    T const* p = u.get ();
+    return const_cast <T*> (p);
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <class T>
+struct Stack <luabridge::shared_ptr <T> > : Detail
+{
+  static inline void push (lua_State* L, luabridge::shared_ptr <T> const& p)
+  {
+    new (UserdataType <luabridge::shared_ptr <T> >::push (L, false))
+      UserdataType <luabridge::shared_ptr <T> > (p);
+  }
+
+  template <class U>
+  static inline void push (lua_State* L, luabridge::shared_ptr <U> const& p)
+  {
+    new (UserdataType <luabridge::shared_ptr <T> >::push (L, false))
+      UserdataType <luabridge::shared_ptr <T> > (p);
+  }
+
+  static inline luabridge::shared_ptr <T> get (lua_State* L, int index)
+  {
+    return Userdata::get <T> (L, index, false);
+  }
+};
+
+//------------------------------------------------------------------------------
+
+template <class T>
+struct Stack <luabridge::shared_ptr <T const> > : Detail
+{
+  static inline void push (lua_State* L, luabridge::shared_ptr <T const> const& p)
+  {
+    new (UserdataType <luabridge::shared_ptr <T const> >::push (L, true))
+      UserdataType <luabridge::shared_ptr <T const> > (p);
+  }
+
+  template <class U>
+  static inline void push (lua_State* L, luabridge::shared_ptr <U const> const& p)
+  {
+    new (UserdataType <luabridge::shared_ptr <T const> >::push (L, true))
+      UserdataType <luabridge::shared_ptr <T const> > (p);
+  }
+
+  static inline luabridge::shared_ptr <T const> get (lua_State* L, int index)
+  {
+    return Userdata::get <T> (L, index, true);
+  }
+};
+
 }
 
 #endif
