@@ -51,19 +51,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#ifndef LUABRIDGE_USE_APICHECK
-#ifdef LUA_USE_APICHECK
-#define LUABRIDGE_USE_APICHECK 1
-#else
-#define LUABRIDGE_USE_APICHECK 0
-#endif
-#endif
-
-/** This turns on code that enforces const-correctness for member functions
-    but I can't get it to compile - Vinnie
-*/
-#define LUABRIDGE_STRICT_CONST 0
-
 //==============================================================================
 /**
   @mainpage LuaBridge: Simple C++ to Lua bindings.
@@ -325,8 +312,14 @@ namespace luabridge3
 template <class T>
 struct ContainerInfo
 {
+  /** Type of object this container holds.
+  */
   typedef T Type;
 
+  /** Given a reference to the container, retrieve a pointer to the object.
+
+      The pointer is void and non-const as a consequence of Lua's weak typing.
+  */
   static inline void* get (T& t)
   {
     return &t;
@@ -801,6 +794,7 @@ protected:
 };
 
 //==============================================================================
+
 /**
   Lua stack objects with value semantics.
 
@@ -2360,7 +2354,7 @@ private:
         {
           // Either the property or __parent must exist.
           result = luaL_error (L,
-            "attempt to set '%s', which isn't a property", lua_tostring (L, 2));
+            "no member named '%s'", lua_tostring (L, 2));
         }
         lua_remove (L, -2);
       }
@@ -2387,6 +2381,8 @@ private:
       rawsetfield (L, -2, "__newindex");
       lua_newtable (L);
       rawsetfield (L, -2, "__propget");
+      lua_pushboolean (L, 0);
+      rawsetfield (L, -2, "__metatable");
     }
 
     //--------------------------------------------------------------------------
@@ -2412,6 +2408,8 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
+      lua_pushboolean (L, 0);
+      rawsetfield (L, -2, "__metatable");
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__const"); // point to const table
 
@@ -2431,8 +2429,12 @@ private:
     void createStaticTable (char const* name)
     {
       lua_newtable (L);
+      lua_newtable (L);
       lua_pushvalue (L, -1);
-      lua_setmetatable (L, -2);
+      lua_setmetatable (L, -3);
+      lua_insert (L, -2);
+      rawsetfield (L, -5, name);
+
 #if 0
       lua_pushlightuserdata (L, this);
       lua_pushcclosure (L, &tostringMetaMethod, 1);
@@ -2446,10 +2448,10 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
+      lua_pushboolean (L, 0);
+      rawsetfield (L, -2, "__metatable");
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__class"); // point to class table
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -5, name);
     }
 
     //--------------------------------------------------------------------------
@@ -2500,7 +2502,7 @@ private:
   /**
     Provides a class registration in a lua_State.
 
-    The Lua stack holds these objects:
+    After contstruction the Lua stack holds these objects:
       -1 static table
       -2 class table
       -3 const table
