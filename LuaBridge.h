@@ -2928,7 +2928,7 @@ private:
     template <class U>
     inline Class <T>& property_ro (char const* name, U (T::* get) () const)
     {
-      return addProperty (name, get, 0);
+      return addProperty (name, get);
     }
 
     template <class MemFn>

@@ -1,4 +1,56 @@
 //==============================================================================
+/*
+  https://github.com/vinniefalco/LuaBridge
+  https://github.com/vinniefalco/LuaBridgeDemo
+  
+  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright (C) 2007, Nathan Reed
+
+  License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+  This file incorporates work covered by the following copyright and
+  permission notice:  
+
+    The Loki Library
+    Copyright (c) 2001 by Andrei Alexandrescu
+    This code accompanies the book:
+    Alexandrescu, Andrei. "Modern C++ Design: Generic Programming and Design 
+        Patterns Applied". Copyright (c) 2001. Addison-Wesley.
+    Permission to use, copy, modify, distribute and sell this software for any 
+        purpose is hereby granted without fee, provided that the above copyright 
+        notice appear in all copies and that both that copyright notice and this 
+        permission notice appear in supporting documentation.
+    The author or Addison-Welsey Longman make no representations about the 
+        suitability of this software for any purpose. It is provided "as is" 
+        without express or implied warranty.
+*/
+//==============================================================================
+
+#ifndef LUABRIDGE_LUABRIDGEEXTRAS_HEADER
+#define LUABRIDGE_LUABRIDGEEXTRAS_HEADER
+
+namespace luabridge
+{
+
+//==============================================================================
 
 /** Utility class to wrap a reference stored in the registry.
 
@@ -187,62 +239,62 @@ public:
   {
     m_ref.push ();
     lua_call (m_ref.L (), 0, 1);
-    return tdstack <R>::get (m_ref.L (), -1);
+    return Stack <R>::get (m_ref.L (), -1);
   }
 
   template <class R, class T1>
   R call (T1 t1) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
+    Stack <T1>::push (m_ref.L (), t1);
     lua_call (m_ref.L (), 1, 1);
-    return tdstack <R>::get (m_ref.L (), -1);
+    return Stack <R>::get (m_ref.L (), -1);
   }
 
   template <class R, class T1, class T2>
   R call (T1 t1, T2 t2) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
     lua_call (m_ref.L (), 2, 1);
-    return tdstack <R>::get (m_ref.L (), -1);
+    return Stack <R>::get (m_ref.L (), -1);
   }
 
   template <class R, class T1, class T2, class T3>
   R call (T1 t1, T2 t2, T3 t3) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
     lua_call (m_ref.L (), 3, 1);
-    return tdstack <R>::get (m_ref.L (), -1);
+    return Stack <R>::get (m_ref.L (), -1);
   }
 
   template <class R, class T1, class T2, class T3, class T4>
   R call (T1 t1, T2 t2, T3 t3, T4 t4) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
     lua_call (m_ref.L (), 4, 1);
-    return tdstack <R>::get (m_ref.L (), -1);
+    return Stack <R>::get (m_ref.L (), -1);
   }
 
   template <class R, class T1, class T2, class T3, class T4, class T5>
   R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
-    tdstack <T5>::push (m_ref.L (), t5);;
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
+    Stack <T5>::push (m_ref.L (), t5);;
     lua_call (m_ref.L (), 5, 1);
-    return tdstack <R>::get (m_ref.L (), -1);
+    return Stack <R>::get (m_ref.L (), -1);
   }
 
   template <class R, class T1, class T2, class T3, class T4,
@@ -250,14 +302,14 @@ public:
   R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
-    tdstack <T5>::push (m_ref.L (), t5);
-    tdstack <T6>::push (m_ref.L (), t6);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
+    Stack <T5>::push (m_ref.L (), t5);
+    Stack <T6>::push (m_ref.L (), t6);
     lua_call (m_ref.L (), 6, 1);
-    return tdstack <R>::get (m_ref.L (), -1);
+    return Stack <R>::get (m_ref.L (), -1);
   }
 
   template <class R, class T1, class T2, class T3, class T4,
@@ -265,14 +317,14 @@ public:
   R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
-    tdstack <T5>::push (m_ref.L (), t5);
-    tdstack <T6>::push (m_ref.L (), t6);
-    tdstack <T7>::push (m_ref.L (), t7);
-    return tdstack <R>::get (m_ref.L (), -1);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
+    Stack <T5>::push (m_ref.L (), t5);
+    Stack <T6>::push (m_ref.L (), t6);
+    Stack <T7>::push (m_ref.L (), t7);
+    return Stack <R>::get (m_ref.L (), -1);
   }
 
   template <class R, class T1, class T2, class T3, class T4,
@@ -280,16 +332,16 @@ public:
   R call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
-    tdstack <T5>::push (m_ref.L (), t5);
-    tdstack <T6>::push (m_ref.L (), t6);
-    tdstack <T7>::push (m_ref.L (), t7);
-    tdstack <T8>::push (m_ref.L (), t8);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
+    Stack <T5>::push (m_ref.L (), t5);
+    Stack <T6>::push (m_ref.L (), t6);
+    Stack <T7>::push (m_ref.L (), t7);
+    Stack <T8>::push (m_ref.L (), t8);
     lua_call (m_ref.L (), 8, 1);
-    return tdstack <R>::get (m_ref.L (), -1);
+    return Stack <R>::get (m_ref.L (), -1);
   }
 
   // void return
@@ -304,7 +356,7 @@ public:
   void call (T1 t1) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
+    Stack <T1>::push (m_ref.L (), t1);
     lua_call (m_ref.L (), 1, 0);
   }
 
@@ -312,8 +364,8 @@ public:
   void call (T1 t1, T2 t2) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
     lua_call (m_ref.L (), 2, 0);
   }
 
@@ -321,9 +373,9 @@ public:
   void call (T1 t1, T2 t2, T3 t3) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
     lua_call (m_ref.L (), 3, 0);
   }
 
@@ -331,10 +383,10 @@ public:
   void call (T1 t1, T2 t2, T3 t3, T4 t4) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
     lua_call (m_ref.L (), 4, 0);
   }
 
@@ -342,11 +394,11 @@ public:
   void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
-    tdstack <T5>::push (m_ref.L (), t5);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
+    Stack <T5>::push (m_ref.L (), t5);
     lua_call (m_ref.L (), 5, 0);
   }
 
@@ -355,12 +407,12 @@ public:
   void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
-    tdstack <T5>::push (m_ref.L (), t5);
-    tdstack <T6>::push (m_ref.L (), t6);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
+    Stack <T5>::push (m_ref.L (), t5);
+    Stack <T6>::push (m_ref.L (), t6);
     lua_call (m_ref.L (), 6, 0);
   }
 
@@ -369,13 +421,13 @@ public:
   void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
-    tdstack <T5>::push (m_ref.L (), t5);
-    tdstack <T6>::push (m_ref.L (), t6);
-    tdstack <T7>::push (m_ref.L (), t7);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
+    Stack <T5>::push (m_ref.L (), t5);
+    Stack <T6>::push (m_ref.L (), t6);
+    Stack <T7>::push (m_ref.L (), t7);
     lua_call (m_ref.L (), 7, 0);
   }
 
@@ -384,14 +436,14 @@ public:
   void call (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) const
   {
     m_ref.push ();
-    tdstack <T1>::push (m_ref.L (), t1);
-    tdstack <T2>::push (m_ref.L (), t2);
-    tdstack <T3>::push (m_ref.L (), t3);
-    tdstack <T4>::push (m_ref.L (), t4);
-    tdstack <T5>::push (m_ref.L (), t5);
-    tdstack <T6>::push (m_ref.L (), t6);
-    tdstack <T7>::push (m_ref.L (), t7);
-    tdstack <T8>::push (m_ref.L (), t8);
+    Stack <T1>::push (m_ref.L (), t1);
+    Stack <T2>::push (m_ref.L (), t2);
+    Stack <T3>::push (m_ref.L (), t3);
+    Stack <T4>::push (m_ref.L (), t4);
+    Stack <T5>::push (m_ref.L (), t5);
+    Stack <T6>::push (m_ref.L (), t6);
+    Stack <T7>::push (m_ref.L (), t7);
+    Stack <T8>::push (m_ref.L (), t8);
     lua_call (m_ref.L (), 8, 0);
   }
 };
@@ -404,7 +456,7 @@ public:
         in the registry as long as it is referenced.
 */
 template <>
-struct tdstack <function>
+struct Stack <function>
 {
   static void push (lua_State*, function f)
   {
@@ -464,24 +516,24 @@ public:
     m_ref.push ();
     lua_getfield (L, -1, key);
     lua_remove (L, -2);
-    T t (tdstack <T>::get (L, -1));
+    T t (Stack <T>::get (L, -1));
     lua_pop (L, 1);
     return t;
   }
  
   /** Retrieve the value associated with a key of arbitrary type.
 
-      @note The type must be recognized by tdstack<>.
+      @note The type must be recognized by Stack<>.
   */
   template <class T, class U>
   T operator[] (U key)
   {
     lua_State* const L (m_ref.L ());
     m_ref.push ();
-    tdstack <U>::push (L, key);
+    Stack <U>::push (L, key);
     lua_gettable (L, -2);
     lua_remove (L, -2);
-    T t (tdstack <T>::get (L, -1));
+    T t (Stack <T>::get (L, -1));
     lua_pop (L, 1);
     return t;
   }
@@ -500,7 +552,7 @@ public:
   A Lua table on the stack.
 */
 template <>
-struct tdstack <Table>
+struct Stack <Table>
 {
   static void push (lua_State*, Table table)
   {
@@ -563,7 +615,7 @@ public:
   Any Lua type on the stack, as a variant.
 */
 template <>
-struct tdstack <Object>
+struct Stack <Object>
 {
   static void push (lua_State*, Object object)
   {
@@ -577,3 +629,7 @@ struct tdstack <Object>
 };
 
 //==============================================================================
+
+}
+
+#endif
