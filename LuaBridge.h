@@ -1217,12 +1217,12 @@ struct TypeListValues <TypeList <Head const&, Tail> >
 */
 
 template <typename MemFn>
-struct FunctionPointer {};
+struct FuncTraits {};
 
 /* Ordinary function pointers. */
 
 template <typename R>
-struct FunctionPointer <R (*) ()>
+struct FuncTraits <R (*) ()>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1235,7 +1235,7 @@ struct FunctionPointer <R (*) ()>
 };
 
 template <typename R, typename P1>
-struct FunctionPointer <R (*) (P1)>
+struct FuncTraits <R (*) (P1)>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1247,7 +1247,7 @@ struct FunctionPointer <R (*) (P1)>
 };
 
 template <typename R, typename P1, typename P2>
-struct FunctionPointer <R (*) (P1, P2)>
+struct FuncTraits <R (*) (P1, P2)>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1259,7 +1259,7 @@ struct FunctionPointer <R (*) (P1, P2)>
 };
 
 template <typename R, typename P1, typename P2, typename P3>
-struct FunctionPointer <R (*) (P1, P2, P3)>
+struct FuncTraits <R (*) (P1, P2, P3)>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1271,7 +1271,7 @@ struct FunctionPointer <R (*) (P1, P2, P3)>
 };
 
 template <typename R, typename P1, typename P2, typename P3, typename P4>
-struct FunctionPointer <R (*) (P1, P2, P3, P4)>
+struct FuncTraits <R (*) (P1, P2, P3, P4)>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1285,7 +1285,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4)>
 
 template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5>
-struct FunctionPointer <R (*) (P1, P2, P3, P4, P5)>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5)>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1301,7 +1301,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4, P5)>
 
 template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6>
-struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6)>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6)>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1317,7 +1317,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6)>
 
 template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7>
-struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6, P7)>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7)>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1334,7 +1334,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6, P7)>
 
 template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7, typename P8>
-struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1352,7 +1352,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 /* Non-const member function pointers. */
 
 template <class T, typename R>
-struct FunctionPointer <R (T::*) ()>
+struct FuncTraits <R (T::*) ()>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1367,7 +1367,7 @@ struct FunctionPointer <R (T::*) ()>
 };
 
 template <class T, typename R, typename P1>
-struct FunctionPointer <R (T::*) (P1)>
+struct FuncTraits <R (T::*) (P1)>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1382,7 +1382,7 @@ struct FunctionPointer <R (T::*) (P1)>
 };
 
 template <class T, typename R, typename P1, typename P2>
-struct FunctionPointer <R (T::*) (P1, P2)>
+struct FuncTraits <R (T::*) (P1, P2)>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1397,7 +1397,7 @@ struct FunctionPointer <R (T::*) (P1, P2)>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3>
-struct FunctionPointer <R (T::*) (P1, P2, P3)>
+struct FuncTraits <R (T::*) (P1, P2, P3)>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1413,7 +1413,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3)>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4)>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4)>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1429,7 +1429,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4)>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5)>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5)>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1447,7 +1447,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5)>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6)>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6)>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1465,7 +1465,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6)>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7)>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7)>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1484,7 +1484,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7)>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1504,7 +1504,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 /* Const member function pointers. */
 
 template <class T, typename R>
-struct FunctionPointer <R (T::*) () const>
+struct FuncTraits <R (T::*) () const>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1520,7 +1520,7 @@ struct FunctionPointer <R (T::*) () const>
 };
 
 template <class T, typename R, typename P1>
-struct FunctionPointer <R (T::*) (P1) const>
+struct FuncTraits <R (T::*) (P1) const>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1535,7 +1535,7 @@ struct FunctionPointer <R (T::*) (P1) const>
 };
 
 template <class T, typename R, typename P1, typename P2>
-struct FunctionPointer <R (T::*) (P1, P2) const>
+struct FuncTraits <R (T::*) (P1, P2) const>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1550,7 +1550,7 @@ struct FunctionPointer <R (T::*) (P1, P2) const>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3>
-struct FunctionPointer <R (T::*) (P1, P2, P3) const>
+struct FuncTraits <R (T::*) (P1, P2, P3) const>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1566,7 +1566,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3) const>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4) const>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4) const>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1582,7 +1582,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4) const>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5) const>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1600,7 +1600,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5) const>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6) const>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1619,7 +1619,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6) const>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1639,7 +1639,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1662,7 +1662,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
 /* Ordinary function pointers. */
 
 template <typename R>
-struct FunctionPointer <R (*) () THROWSPEC>
+struct FuncTraits <R (*) () THROWSPEC>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1675,7 +1675,7 @@ struct FunctionPointer <R (*) () THROWSPEC>
 };
 
 template <typename R, typename P1>
-struct FunctionPointer <R (*) (P1) THROWSPEC>
+struct FuncTraits <R (*) (P1) THROWSPEC>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1687,7 +1687,7 @@ struct FunctionPointer <R (*) (P1) THROWSPEC>
 };
 
 template <typename R, typename P1, typename P2>
-struct FunctionPointer <R (*) (P1, P2) THROWSPEC>
+struct FuncTraits <R (*) (P1, P2) THROWSPEC>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1699,7 +1699,7 @@ struct FunctionPointer <R (*) (P1, P2) THROWSPEC>
 };
 
 template <typename R, typename P1, typename P2, typename P3>
-struct FunctionPointer <R (*) (P1, P2, P3) THROWSPEC>
+struct FuncTraits <R (*) (P1, P2, P3) THROWSPEC>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1711,7 +1711,7 @@ struct FunctionPointer <R (*) (P1, P2, P3) THROWSPEC>
 };
 
 template <typename R, typename P1, typename P2, typename P3, typename P4>
-struct FunctionPointer <R (*) (P1, P2, P3, P4) THROWSPEC>
+struct FuncTraits <R (*) (P1, P2, P3, P4) THROWSPEC>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1725,7 +1725,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4) THROWSPEC>
 
 template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5>
-struct FunctionPointer <R (*) (P1, P2, P3, P4, P5) THROWSPEC>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5) THROWSPEC>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1741,7 +1741,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4, P5) THROWSPEC>
 
 template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6>
-struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6) THROWSPEC>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6) THROWSPEC>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1757,7 +1757,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6) THROWSPEC>
 
 template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7>
-struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1774,7 +1774,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC>
 
 template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7, typename P8>
-struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
 {
   static const bool isMemberFunction = false;
   typedef R ReturnType;
@@ -1792,7 +1792,7 @@ struct FunctionPointer <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
 /* Non-const member function pointers. */
 
 template <class T, typename R>
-struct FunctionPointer <R (T::*) () THROWSPEC>
+struct FuncTraits <R (T::*) () THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1807,7 +1807,7 @@ struct FunctionPointer <R (T::*) () THROWSPEC>
 };
 
 template <class T, typename R, typename P1>
-struct FunctionPointer <R (T::*) (P1) THROWSPEC>
+struct FuncTraits <R (T::*) (P1) THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1822,7 +1822,7 @@ struct FunctionPointer <R (T::*) (P1) THROWSPEC>
 };
 
 template <class T, typename R, typename P1, typename P2>
-struct FunctionPointer <R (T::*) (P1, P2) THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2) THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1837,7 +1837,7 @@ struct FunctionPointer <R (T::*) (P1, P2) THROWSPEC>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3>
-struct FunctionPointer <R (T::*) (P1, P2, P3) THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3) THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1853,7 +1853,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3) THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4) THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4) THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1869,7 +1869,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4) THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5) THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1887,7 +1887,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5) THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6) THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1905,7 +1905,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6) THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1924,7 +1924,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = false;
@@ -1944,7 +1944,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
 /* Const member function pointers. */
 
 template <class T, typename R>
-struct FunctionPointer <R (T::*) () const THROWSPEC>
+struct FuncTraits <R (T::*) () const THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1960,7 +1960,7 @@ struct FunctionPointer <R (T::*) () const THROWSPEC>
 };
 
 template <class T, typename R, typename P1>
-struct FunctionPointer <R (T::*) (P1) const THROWSPEC>
+struct FuncTraits <R (T::*) (P1) const THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1975,7 +1975,7 @@ struct FunctionPointer <R (T::*) (P1) const THROWSPEC>
 };
 
 template <class T, typename R, typename P1, typename P2>
-struct FunctionPointer <R (T::*) (P1, P2) const THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2) const THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -1990,7 +1990,7 @@ struct FunctionPointer <R (T::*) (P1, P2) const THROWSPEC>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3>
-struct FunctionPointer <R (T::*) (P1, P2, P3) const THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3) const THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -2006,7 +2006,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3) const THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4) const THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4) const THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -2022,7 +2022,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4) const THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5) const THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -2040,7 +2040,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5) const THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6) const THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -2058,7 +2058,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6) const THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -2078,7 +2078,7 @@ struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const THROWSPEC>
 
 template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
-struct FunctionPointer <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const THROWSPEC>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const THROWSPEC>
 {
   static const bool isMemberFunction = true;
   static const bool isConstMemberFunction = true;
@@ -2502,17 +2502,17 @@ private:
     and class static properties.
   */
   template <class Function,
-            class ReturnType = typename FunctionPointer <Function>::ReturnType>
+            class ReturnType = typename FuncTraits <Function>::ReturnType>
   struct functionProxy
   {
-    typedef typename FunctionPointer <Function>::Params Params;
+    typedef typename FuncTraits <Function>::Params Params;
     static int f (lua_State* L)
     {
       assert (lua_islightuserdata (L, lua_upvalueindex (1)));
       Function fp = reinterpret_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fp != 0);
       arglist <Params> args (L);
-      Stack <ReturnType>::push (L, FunctionPointer <Function>::call (fp, args));
+      Stack <ReturnType>::push (L, FuncTraits <Function>::call (fp, args));
       return 1;
     }
   };
@@ -2527,14 +2527,14 @@ private:
   template <class Function>
   struct functionProxy <Function, void>
   {
-    typedef typename FunctionPointer <Function>::Params Params;
+    typedef typename FuncTraits <Function>::Params Params;
     static int f (lua_State* L)
     {
       assert (lua_islightuserdata (L, lua_upvalueindex (1)));
       Function fp = reinterpret_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fp != 0);
       arglist <Params> args (L);
-      FunctionPointer <Function>::call (fp, args);
+      FuncTraits <Function>::call (fp, args);
       return 0;
     }
   };
@@ -2550,18 +2550,18 @@ private:
           pointer is in upvalue 2.
   */
   template <class MemFn,
-            class ReturnType = typename FunctionPointer <MemFn>::ReturnType>
+            class ReturnType = typename FuncTraits <MemFn>::ReturnType>
   struct methodProxy
   {
-    typedef typename ContainerInfo <typename FunctionPointer <MemFn>::ClassType>::Type T;
-    typedef typename FunctionPointer <MemFn>::Params Params;
+    typedef typename ContainerInfo <typename FuncTraits <MemFn>::ClassType>::Type T;
+    typedef typename FuncTraits <MemFn>::Params Params;
 
     static int callMethod (lua_State* L)
     {
       T* const t = Userdata::get <T> (L, 1, false);
       MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       arglist <Params, 2> args (L);
-      Stack <ReturnType>::push (L, FunctionPointer <MemFn>::call (t, fp, args));
+      Stack <ReturnType>::push (L, FuncTraits <MemFn>::call (t, fp, args));
       return 1;
     }
 
@@ -2570,7 +2570,7 @@ private:
       T const* const t = Userdata::get <T> (L, 1, true);
       MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       arglist <Params, 2> args(L);
-      Stack <ReturnType>::push (L, FunctionPointer <MemFn>::call (t, fp, args));
+      Stack <ReturnType>::push (L, FuncTraits <MemFn>::call (t, fp, args));
       return 1;
     }
   };
@@ -2588,15 +2588,15 @@ private:
   template <class MemFn>
   struct methodProxy <MemFn, void>
   {
-    typedef typename ContainerInfo <typename FunctionPointer <MemFn>::ClassType>::Type T;
-    typedef typename FunctionPointer <MemFn>::Params Params;
+    typedef typename ContainerInfo <typename FuncTraits <MemFn>::ClassType>::Type T;
+    typedef typename FuncTraits <MemFn>::Params Params;
 
     static int callMethod (lua_State* L)
     {
       T* const t = Userdata::get <T> (L, 1, false);
       MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       arglist <Params, 2> args (L);
-      FunctionPointer <MemFn>::call (t, fp, args);
+      FuncTraits <MemFn>::call (t, fp, args);
       return 0;
     }
 
@@ -2605,7 +2605,7 @@ private:
       T const* const t = Userdata::get <T> (L, 1, true);
       MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       arglist <Params, 2> args (L);
-      FunctionPointer <MemFn>::call (t, fp, args);
+      FuncTraits <MemFn>::call (t, fp, args);
       return 0;
     }
   };
@@ -3286,7 +3286,7 @@ private:
     template <class MemFn>
     Class <T>& addMethod (char const* name, MemFn mf)
     {
-      methodHelper <MemFn, FunctionPointer <MemFn>::isConstMemberFunction>::add (L, name, mf);
+      methodHelper <MemFn, FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
       return *this;
     }
 
@@ -3304,7 +3304,7 @@ private:
     template <class MemFn, class C>
     Class <T>& addConstructor ()
     {
-      lua_pushcclosure (L, &ctorProxy <typename FunctionPointer <MemFn>::Params, C>, 0);
+      lua_pushcclosure (L, &ctorProxy <typename FuncTraits <MemFn>::Params, C>, 0);
       rawsetfield(L, -2, "__call");
 
       return *this;
