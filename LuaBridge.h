@@ -3309,79 +3309,6 @@ private:
 
       return *this;
     }
-
-    //--------------------------------------------------------------------------
-    /**
-      Backward compatibility.
-    */
-    template <typename U>
-    inline Class <T>& static_property_rw (char const *name, U *data)
-    {
-      return addStaticData (name, data, true);
-    }
-
-    template <typename U>
-    inline Class <T>& static_property_rw (char const *name, U (*get) (), void (*set) (U))
-    {
-      return addStaticProperty (name, get, set);
-    }
-
-    template <typename U>
-    inline Class <T>& static_property_ro (char const *name, U const* data)
-    {
-      return addStaticData (name, data, false);
-    }
-
-    template <typename U>
-    inline Class <T>& static_property_ro (char const *name, U (*get) ())
-    {
-      return addStaticProperty (name, get, 0);
-    }
-
-    template <typename MemFn>
-    inline Class <T>& static_method (char const *name, MemFn fp)
-    {
-      return addStaticMethod (name, fp);
-    }
- 
-    template <class MemFn, class C>
-    inline Class <T>& constructor ()
-    {
-      lua_pushcclosure (L, &ctorProxy <typename FunctionPointer <MemFn>::params, C>, 0);
-      rawsetfield(L, -2, "__call");
-
-      return *this;
-    }
-
-    template <class U>
-    inline Class <T>& property_rw (char const *name, U T::* mp)
-    {
-      return addData (name, mp, true);
-    }
-
-    template <class U>
-    inline Class <T>& property_rw (char const* name, U (T::* get) () const, void (T::* set) (U))
-    {
-      return addProperty (name, get, set);
-    }
-
-    template <class U>
-    inline Class <T>& property_ro (char const *name, U const T::* mp)
-    {
-      return addData (name, mp, false);
-    }
-
-    template <class U>
-    inline Class <T>& property_ro (char const* name, U (T::* get) () const)
-    {
-      return addProperty (name, get);
-    }
-
-    template <class MemFn>
-    inline Class <T>& method (char const* name, MemFn mf)
-    {
-      return addMethod (name, mf);
-    }
   };
 
 protected:
@@ -3630,65 +3557,7 @@ public:
   {
     return Class <T> (name, this, ClassInfo <U>::getStaticKey ());
   }
-
-  //============================================================================
-  /**
-    Backward compatibility.
-
-    These are here for backward compatibility with the original names.
-  */
-  template <class FP>
-  inline Namespace& function (char const* name, FP const fp)
-  {
-    return addFunction (name, fp);
-  }
-
-  template <class T>
-  inline Namespace& variable_rw (char const* const name, T* const pt)
-  {
-    return addVariable (name, pt, true);
-  }
-
-  template <class T>
-  inline Namespace& variable_rw (char const* name, T (*get) (), void (*set)(T))
-  {
-    return addProperty (name, get, set);
-  }
-
-  template <class T>
-  inline Namespace& variable_ro (char const* const name, T const* const pt)
-  {
-    return addVariable (name, pt, false);
-  }
-
-  template <class T>
-  inline Namespace& variable_ro (char const* name, T (*get) ())
-  {
-    return addProperty (name, get, 0);
-  }
-
-  template <class T>
-  inline Class <T> class_ (char const* name)
-  {
-    return Class <T> (name, this);
-  }
-
-  template <class T, class U>
-  Class <T> subclass (char const* name)
-  {
-    return deriveClass <T, U> (name);
-  }
 };
-
-/** Backward compatibility */
-class scope : public Namespace
-{
-public:
-  explicit scope (lua_State* L) : Namespace (L)
-  {
-  }
-};
-
 
 //==============================================================================
 /**
