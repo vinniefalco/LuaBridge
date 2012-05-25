@@ -1,3 +1,12 @@
+2012-05-25 Vinnie Falco <vinnie.falco@gmail.com>
+  * Separate the master from the develop branch
+  * Move the experimental features into the develop branch
+  * Split LuaBridge into a few headers.
+  * Rewrite all registration routines.
+  * Added a security system to protect userdata
+  * Refactored the userdata to use fewer subclasses.
+  * Refactoring of container support.
+
 2012-05-11 Vinnie Falco <vinnie.falco@gmail.com>
 
   * Initial implementation of object lifetime management policies.
