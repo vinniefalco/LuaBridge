@@ -63,6 +63,8 @@
   It works with Lua revisions starting from 5.1.2. [Lua][4] is a powerful, fast,
   lightweight, embeddable scripting language.
 
+  LuaBridge offers the following features:
+
   ## Compiling
 
   LuaBridge is distributed as a single header file "LuaBridge.h" that you simply
