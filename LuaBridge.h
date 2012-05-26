@@ -105,13 +105,14 @@
   weakly typed, the resulting structure is not rigid.
 
   The API is based on C++ template metaprogramming.  It contains template code
-  to automatically generate at compile-time the various Lua API calls necessary
-  to export your program's classes and functions to the Lua environment.
+  to automatically generate at compile-time the various Lua C API calls
+  necessary to export your program's classes and functions to the Lua
+  environment.
 
   There are four types of objects that LuaBridge can register:
 
-  - Namespaces: A namespace is simply a table created by LuaBridge, containing
-    registrations of functions, data, properties, and other namespaces.
+  - Namespaces: A namespace is simply a table containing registrations of
+    functions, data, properties, and other namespaces.
 
   - Functions: Regular functions, static class members, and class member
     functions
@@ -127,13 +128,19 @@
   be modified on the C++ side, but Lua scripts cannot change them.
 
   For brevity of exposition, in the examples that follow the C++ code samples
-  assume that a `using namespace luabridge` declaration is in effect.
+  assume that a `using namespace luabridge` declarations is in effect.
 
   ### Namespaces
 
-  All LuaBridge registrations take place in a `Namespace`, which is loosely
-  resembles a C++ namespace in Lua. To obtain access to the global namespace
-  for a `lua_State* L` we call this function:
+  All LuaBridge registrations take place in a _namespace_, which loosely
+  resembles a C++ namespace in Lua. When we refer to a _namespace_ we are
+  always talking about a namespace in the Lua sense, which is implemented using
+  tables. The Lua namespace does not need to correspond to a C++ namespace,
+  in fact no C++ namespace declarations need to exist at all unless you want
+  them too. LuaBridge namespaces are used only as a logical grouping tool.
+
+  To obtain access to the global namespace for a `lua_State* L`
+  we call this function:
 
       getGlobalNamespace (L);
 
@@ -148,9 +155,9 @@
 
   The result is to create a table in `_G` (the global namespace in Lua)
   called "test". Since we have not performed any registrations, this
-  table will be mostly empty, except for some book-keeping fields that
+  table will be mostly empty, except for some bookkeeping fields that
   LuaBridge inserts. Note that LuaBridge reserves all identifiers that start
-  with a double underscore. So "__test" would be an invalid name (although
+  with a double underscore. So `__test` would be an invalid name (although
   LuaBridge will silently accept it).
 
   Functions like `beginNamespace` return the corresponding object on which
@@ -168,22 +175,19 @@
 
   This creates the following tables: `_G["test"]`, `test["detail"]`, and
   `test["utility"]`. The resulting namespaces are now accessible to Lua as
-  "test.detail" and "test.utility". A namespace registered to Lua does not
-  have to exist as a corresponding namespace in the C++ code. Namespaces are
-  used only as a grouping tool.
+  `test.detail` and `test.utility`.
   
-  Note that we have introduced the `endNamespace` function. Using `endNamespace`
+  Here we have introduced the `endNamespace` function. Using `endNamespace`
   returns an object representing the enclosing namespace, upon which further
   registrations may be added. It is undefined behavior to use `endNamespace` on
-  the global namespace.
-
-  All LuaBridge functions which create registrations return an object upon which
-  subsequent registrations can be made, allowing for an unlimited number of
-  registrations to be chained together using the dot '.' operator.
+  the global namespace. All LuaBridge functions which create registrations
+  return an object upon which subsequent registrations can be made, allowing for
+  an unlimited number of registrations to be chained together using the dot '.'
+  operator.
 
   ### Data, Properties, and Functions
 
-  Data, properties, and functions are registered into a `Namespace` using
+  Data, properties, and functions are registered into a namespace using
   `addVariable`, `addProperty`, and `addFunction`. When functions registered
   to Lua are called by Lua scripts, LuaBridge automatically takes care of the
   conversion of arguments into the appropriate data type when doing so is
