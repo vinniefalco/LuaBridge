@@ -79,26 +79,6 @@
 
   - Does not require C++11.
 
-  ## LuaBridge Demo and Tests
-
-  LuaBridge offers both a command line program and a stand-alone graphical
-  program for compiling and running the test suite. The graphical program
-  provides an interactive window where you can enter execute Lua statements in a
-  persistent environment. This application is cross platform and works on
-  Windows, Mac OS, iOS, Android, and GNU/Linux systems with X11. The stand-alone
-  program should work anywhere. Both of these applications include LuaBridge, Lua
-  version 5.2, and the code necessary to produce a cross platform graphic
-  application. They are all together in a separate repository, with no
-  additional dependencies, available here:
-
-  [LuaBridge Demo and Tests][4]
-
-  <a href="https://github.com/vinniefalco/LuaBridgeDemo">
-  <img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot.png">
-  </a><br>
-
-  ## Integration
-
   LuaBridge is distributed as set of header files. You simply add 
   `#include "LuaBridge.h"` where you want to bind your functions, classes, and
   variables. There are no additional source files, no compilation settings, and
@@ -110,6 +90,24 @@
   It contains template code to automatically generate at compile-time the
   various Lua C API calls necessary to export your program's classes and
   functions to the Lua environment.
+
+  ## LuaBridge Demo and Tests
+
+  LuaBridge provides both a command line program and a stand-alone graphical
+  program for compiling and running the test suite. The graphical program brings
+  up an interactive window where you can enter execute Lua statements in a
+  persistent environment. This application is cross platform and works on
+  Windows, Mac OS, iOS, Android, and GNU/Linux systems with X11. The stand-alone
+  program should work anywhere. Both of these applications include LuaBridge,
+  Lua version 5.2, and the code necessary to produce a cross platform graphic
+  application. They are all together in a separate repository, with no
+  additional dependencies, available here:
+
+  [LuaBridge Demo and Tests][4]
+
+  <a href="https://github.com/vinniefalco/LuaBridgeDemo">
+  <img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot.png">
+  </a><br>
 
   ## Registration
 
