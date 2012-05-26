@@ -43,22 +43,20 @@ integrate.
 
 LuaBridge provides facilities for taking C++ concepts like namespaces,
 variables, functions, and classes, and exposing them to Lua. Because Lua is
-weakly typed, the resulting structure is not rigid.
-
-The API is based on C++ template metaprogramming.  It contains template code
-to automatically generate at compile-time the various Lua C API calls
-necessary to export your program's classes and functions to the Lua
-environment.
+weakly typed, the resulting structure is not rigid. The API is based on C++
+template metaprogramming.  It contains template code to automatically
+generate at compile-time the various Lua C API calls necessary to export your
+program's classes and functions to the Lua environment.
 
 There are four types of objects that LuaBridge can register:
 
-- Namespaces: A namespace is simply a table containing registrations of
-  functions, data, properties, and other namespaces.
+- Data: Global varaibles, static class data members, and class data members.
 
 - Functions: Regular functions, static class members, and class member
   functions
 
-- Data: Global varaibles, static class data members, and class data members.
+- Namespaces: A namespace is simply a table containing registrations of
+  functions, data, properties, and other namespaces.
 
 - Properties: Global properties, static class properties, and class member
   properties. These appear like data to Lua, but are implemented using get
@@ -66,44 +64,40 @@ There are four types of objects that LuaBridge can register:
 
 Both data and properties can be marked as _read-only_ at the time of
 registration. This is different from `const`; the values of these objects can
-be modified on the C++ side, but Lua scripts cannot change them.
-
-For brevity of exposition, in the examples that follow the C++ code samples
-assume that a `using namespace luabridge` declarations is in effect.
+be modified on the C++ side, but Lua scripts cannot change them. For brevity
+of exposition, in the examples that follow the C++ code samples assume that a
+`using namespace luabridge` declaration is in effect.
 
 ### Namespaces
 
 All LuaBridge registrations take place in a _namespace_, which loosely
 resembles a C++ namespace in Lua. When we refer to a _namespace_ we are
 always talking about a namespace in the Lua sense, which is implemented using
-tables. The Lua namespace does not need to correspond to a C++ namespace,
-in fact no C++ namespace declarations need to exist at all unless you want
-them too. LuaBridge namespaces are used only as a logical grouping tool.
+tables. The Lua namespace does not need to correspond to a C++ namespace;
+in fact no C++ namespaces need to exist at all unless you want them to.
+LuaBridge namespaces are visible only to Lua scripts; they are used as a
+logical grouping tool.
 
 To obtain access to the global namespace for a `lua_State* L`
-we call this function:
+we call:
 
     getGlobalNamespace (L);
 
-This returns a temporary object on which we can perform registrations.
-Any registrations will go into the global namespace (a practice which is
-not recommended). Rather than put multiple registrations into the global
-namespace, we can instead add a single namespace to the global namespace,
-like this:
+This returns a temporary object on which we can perform registrations that
+go into the global namespace (a practice which is not recommended). Rather
+than put multiple registrations into the global namespace, we can add a single
+namespace to the global namespace, like this:
 
     getGlobalNamespace (L)
       .beginNamespace ("test");
 
-The result is to create a table in `_G` (the global namespace in Lua)
-called "test". Since we have not performed any registrations, this
-table will be mostly empty, except for some bookkeeping fields that
-LuaBridge inserts. Note that LuaBridge reserves all identifiers that start
-with a double underscore. So `__test` would be an invalid name (although
-LuaBridge will silently accept it).
-
+The result is to create a table in `_G` (the global namespace in Lua) called
+"test". Since we have not performed any registrations, this table will be mostly
+empty, except for some bookkeeping fields that LuaBridge inserts. LuaBridge
+reserves all identifiers that start with a double underscore. So `__test`
+would be an invalid name (although LuaBridge will silently accept it).
 Functions like `beginNamespace` return the corresponding object on which
-further registrations can be performed. We could create a nested namespace
-like this:
+we can make more registrations. This:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -114,93 +108,16 @@ like this:
       .endNamespace ()
       ;
 
-This creates the following tables: `_G["test"]`, `test["detail"]`, and
-`test["utility"]`. The resulting namespaces are now accessible to Lua as
-`test.detail` and `test.utility`.
+Will produce the following nested tables: `_G["test"]`, `test["detail"]`, and
+`test["utility"]`. The results are accessible to Lua as `test.detail` and
+`test.utility`.
   
-Here we have introduced the `endNamespace` function. Using `endNamespace`
-returns an object representing the enclosing namespace, upon which further
-registrations may be added. It is undefined behavior to use `endNamespace` on
-the global namespace. All LuaBridge functions which create registrations
-return an object upon which subsequent registrations can be made, allowing for
-an unlimited number of registrations to be chained together using the dot '.'
-operator.
-
-### Data, Properties, and Functions
-
-Data, properties, and functions are registered into a namespace using
-`addVariable`, `addProperty`, and `addFunction`. When functions registered
-to Lua are called by Lua scripts, LuaBridge automatically takes care of the
-conversion of arguments into the appropriate data type when doing so is
-possible. This automated system works for the function's return value, and
-up to 8 parameters although more can be added by extending the templates.
-Pointers, references, and objects of class type as parameters are treated
-specially, and explained in a later section.
-
-Given the following definitions:
-
-    int globalVar;
-    static float staticVar;
-    std::string stringProperty;
-      
-    std::string getString () {
-      return stringProperty;
-    }
-      
-    void setString (std::string s) {
-      return s;
-    }
-
-    int foo () {
-      return 42;
-    }
-
-    void bar (char const*) {
-    }
-
-The following statement will register everything into a namespace:
-
-    getGlobalNamespace (L)
-      .beginNamespace ("test")
-        .addVariable ("var1", &globalVar)
-        .addVariable ("var2", &staticVar, false) // read-only
-        .addProperty ("prop1", getString, setString)
-        .addProperty ("prop2", getString) // read only
-        .addFunction ("foo", foo)
-        .addFunction ("bar", bar)
-      .endNamespace ()
-      ;
-
-Variables can be marked read-only, by passing false in the second optional
-parameter. If the parameter is omitted, `true` is used making the variable
-read/write. Properties are marked read-only by omitting the set function.
-  
-After executing this code, the following Lua identifiers are valid:
-
-    test        -- a namespace
-    test.var1   -- a lua_Number variable
-    test.var2   -- a read-only lua_Number variable
-    test.prop1  -- a lua_String property
-    test.prop2  -- a read-only lua_String property
-    test.foo    -- a function returning a lua_Number
-    test.bar    -- a function taking a lua_String as a parameter
-
-Note that test.prop2 and test.prop1 both refer to the same value. However,
-since test.prop2 is read-only, assignment does not work. After executing
-the samples, above, these Lua statements have the stated effects:
-
-    test.var1 = 5         -- okay
-    test.var2 = 6         -- error: var2 is not writable
-    test.prop1 = "Hello"  -- okay
-    test.prop1 = 68       -- okay, Lua converts the number to a string.
-    test.prop2 = "bar"    -- error: prop2 is not writable
-
-These effects are also observed:
-
-    test.foo ()           -- calls foo and discards the return value
-    test.var1 = foo ()    -- calls foo and stores the result in var1
-    test.bar ("Employee") -- calls bar with a string
-    test.bar (test)       -- error: bar expects a string not a table
+Here we have introduced the `endNamespace` function, which returns an object
+representing the enclosing namespace, upon which further registrations may be
+added. It is undefined behavior to use `endNamespace` on the global namespace.
+All LuaBridge functions which create registrations return an object upon
+which subsequent registrations can be made, allowing for an unlimited number
+of registrations to be chained together using the dot operator (`.`).
 
 A namespace registration can be re-opened later to add more functions.
 This lets you split up the registration between different source files.
@@ -227,19 +144,91 @@ is equivalent to:
       .endNamespace ()
     ;
 
+### Data, Properties, and Functions
+
+Data, properties, and functions are registered into a namespace using
+`addVariable`, `addProperty`, and `addFunction`. When functions registered
+to Lua are called by Lua scripts, LuaBridge automatically takes care of the
+conversion of arguments into the appropriate data type when doing so is
+possible. This automated system works for the function's return value, and
+up to 8 parameters although more can be added by extending the templates.
+Pointers, references, and objects of class type as parameters are treated
+specially, and explained in a later section.
+
+Given the following definitions:
+
+    int globalVar;
+    static float staticVar;
+    std::string stringProperty;
+
+    std::string getString () {
+      return stringProperty;
+    }
+      
+    void setString (std::string s) {
+      return s;
+    }
+
+    int foo () {
+      return 42;
+    }
+
+    void bar (char const*) {
+    }
+
+The following statement will register everything into a namespace:
+
+    getGlobalNamespace (L)
+      .beginNamespace ("test")
+        .addVariable ("var1", &globalVar)
+        .addVariable ("var2", &staticVar, false)     // read-only
+        .addProperty ("prop1", getString, setString)
+        .addProperty ("prop2", getString)            // read only
+        .addFunction ("foo", foo)
+        .addFunction ("bar", bar)
+      .endNamespace ()
+      ;
+
+Variables can be marked read-only by passing false in the second optional
+parameter. If the parameter is omitted, `true` is used making the variable
+read/write. Properties are marked read-only by omitting the set function or
+passing it as 0 (or `nullptr`).
+
+After executing this code, the following Lua identifiers are valid:
+
+    test        -- a namespace
+    test.var1   -- a lua_Number variable
+    test.var2   -- a read-only lua_Number variable
+    test.prop1  -- a lua_String property
+    test.prop2  -- a read-only lua_String property
+    test.foo    -- a function returning a lua_Number
+    test.bar    -- a function taking a lua_String as a parameter
+
+Note that test.prop2 and test.prop1 both refer to the same value. However,
+since test.prop2 is read-only, assignment does not work. After executing
+the above, we observe these effects in Lua:
+
+    test.var1 = 5         -- okay
+    test.var2 = 6         -- error: var2 is not writable
+    test.prop1 = "Hello"  -- okay
+    test.prop1 = 68       -- okay, Lua converts the number to a string.
+    test.prop2 = "bar"    -- error: prop2 is not writable
+
+    test.foo ()           -- calls foo and discards the return value
+    test.var1 = foo ()    -- calls foo and stores the result in var1
+    test.bar ("Employee") -- calls bar with a string
+    test.bar (test)       -- error: bar expects a string not a table
+
 ### Classes
 
 A class registration is opened using either `beginClass` or `deriveClass` and
 ended using `endClass`. Once registered, a class can later be re-opened for
 more registrations using `beginClass`. However, `deriveClass` should only be
-used once. To add more registrations to a derived class, use `beginClass` on
-it. To be registered, a class must first be declared and then used as the
-template argument to `beginClass`.
+used once. To add more registrations to an already registered derived class,
+use `beginClass`.
 
 We use the word _method_ as an unambiguous synonym for _member function_,
-static or otherwise.
-
-For the examples that follow, these definitions will be used:
+static or otherwise. Given:
 
     struct A {
       static int staticData;
@@ -292,10 +281,10 @@ For the examples that follow, these definitions will be used:
       }
     };
 
-  int A::staticData;
-  float A::staticProperty;
+    int A::staticData;
+    float A::staticProperty;
 
-These classes may be registered using the following statement:
+The corresponding registration statement is:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -318,12 +307,11 @@ These classes may be registered using the following statement:
 
 As with regular variables and properties, class data and properties can
 be marked read-only by passing false in the second parameter, or omitting
-the set function respectively.
-
-The `deriveClass` takes two template arguments: the class to be registered,
-and its base class.  Inherited methods do not have to be re-declared and will
-function normally in Lua. If a class has a base class that is **not**
-registered with Lua, there is no need to declare it as a subclass.
+the set function respectively. The `deriveClass` takes two template arguments:
+the class to be registered, and its base class.  Inherited methods do not have
+to be re-declared and will function normally in Lua. If a class has a base
+class that is **not** registered with Lua, there is no need to declare it as a
+subclass.
 
 ### Data Types
   
@@ -361,7 +349,7 @@ object).
 ### Lua Stack
 
 User-defined types which are convertible to one of the basic types are
-possible, simply provide a Stack<> specialization ine the `luabridge`
+possible, simply provide a `Stack <>` specialization in the `luabridge`
 namespace for your user-defined type, modeled after the existing types.
 For example, here is a specialization for a [juce::String][6]:
 
