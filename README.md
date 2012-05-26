@@ -21,13 +21,13 @@ LuaBridge offers the following features:
 
 ## LuaBridge Demo and Tests
 
-LuaBridge offers both a command line program, and a stand-alone graphical
+LuaBridge offers both a command line program and a stand-alone graphical
 program for compiling and running the test suite. The graphical program
 provides an interactive window where you can enter execute Lua statements in a
-persistent environment. The graphical program is cross platform and works on
+persistent environment. This application is cross platform and works on
 Windows, Mac OS, iOS, Android, and GNU/Linux systems with X11. The stand-alone
-program should work anywhere. Both of these applications include LuaBridge,
-Lua version 5.2, and the code necessary to produce a cross platform graphic
+program should work anywhere. Both of these applications include LuaBridge, Lua
+version 5.2, and the code necessary to produce a cross platform graphic
 application. They are all together in a separate repository, with no
 additional dependencies, available here:
 
@@ -37,20 +37,21 @@ additional dependencies, available here:
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot.png">
 </a><br>
 
-## Usage
+## Integration
 
 LuaBridge is distributed as set of header files. You simply add 
-`#include "LuaBridge.h"` where you want to register your functions, classes,
-and variables. There are no additional source files, no compilation settings,
-and no Makefiles or IDE-specific project files. LuaBridge is easy to
-integrate.
+`#include "LuaBridge.h"` where you want to bind your functions, classes, and
+variables. There are no additional source files, no compilation settings, and
+no Makefiles or IDE-specific project files. LuaBridge is easy to integrate.
 
-LuaBridge provides facilities for taking C++ concepts like namespaces,
-variables, functions, and classes, and exposing them to Lua. Because Lua is
-weakly typed, the resulting structure is not rigid. The API is based on C++
-template metaprogramming.  It contains template code to automatically
-generate at compile-time the various Lua C API calls necessary to export your
-program's classes and functions to the Lua environment.
+C++ concepts like variables and classes are made available to Lua through
+a process called _registration_. Because Lua is weakly typed, the resulting
+structure is not rigid. The API is based on C++ template metaprogramming.
+It contains template code to automatically generate at compile-time the
+various Lua C API calls necessary to export your program's classes and
+functions to the Lua environment.
+
+## Registration
 
 There are four types of objects that LuaBridge can register:
 
@@ -70,38 +71,38 @@ Both data and properties can be marked as _read-only_ at the time of
 registration. This is different from `const`; the values of these objects can
 be modified on the C++ side, but Lua scripts cannot change them. For brevity
 of exposition, in the examples that follow the C++ code samples assume that a
-`using namespace luabridge` declaration is in effect.
+`using namespace luabridge` declaration is in effect. A code sample is either
+in C++, or Lua, depending on the context.
 
 ### Namespaces
 
 All LuaBridge registrations take place in a _namespace_, which loosely
 resembles a C++ namespace in Lua. When we refer to a _namespace_ we are
 always talking about a namespace in the Lua sense, which is implemented using
-tables. The Lua namespace does not need to correspond to a C++ namespace;
-in fact no C++ namespaces need to exist at all unless you want them to.
-LuaBridge namespaces are visible only to Lua scripts; they are used as a
-logical grouping tool.
-
-To obtain access to the global namespace for a `lua_State* L`
-we call:
+tables. The Lua namespace does not need to correspond to a C++ namespace; in
+fact no C++ namespaces need to exist at all unless you want them to. LuaBridge
+namespaces are visible only to Lua scripts; they are used as a logical
+grouping tool. To obtain access to the global namespace for a `lua_State* L`
+we use:
 
     getGlobalNamespace (L);
 
-This returns a temporary object on which we can perform registrations that
-go into the global namespace (a practice which is not recommended). Rather
-than put multiple registrations into the global namespace, we can add a single
-namespace to the global namespace, like this:
+This returns an object on which further registrations can be performed.
+The subsequent registrations will go into the global namespace, a practice
+which is not recommended. Instead, we can add a single global namespace like
+this:
 
     getGlobalNamespace (L)
-      .beginNamespace ("test");
+      .beginNamespace ("test")
+      ;
 
-The result is to create a table in `_G` (the global namespace in Lua) called
-"test". Since we have not performed any registrations, this table will be mostly
+This creates a table in `_G` (the global namespace in Lua) called "test".
+Since we have not performed any registrations, this table will be mostly
 empty, except for some necessary bookkeeping fields. LuaBridge reserves all
 identifiers that start with a double underscore. So `__test` would be an
 invalid name (although LuaBridge will silently accept it). Functions like
 `beginNamespace` return the corresponding object on which we can make more
-registrations. This:
+registrations. Given:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -112,7 +113,7 @@ registrations. This:
       .endNamespace ()
       ;
 
-Creates the following nested tables: `_G["test"]`, `test["detail"]`, and
+The following nested tables are produced: `_G["test"]`, `test["detail"]`, and
 `test["utility"]`. The results are accessible to Lua as `test.detail` and
 `test.utility`.
   
@@ -166,22 +167,13 @@ Given the following:
 
     int globalVar;
     static float staticVar;
+
     std::string stringProperty;
+    std::string getString () { return stringProperty; }
+    void setString (std::string s) { return s; }
 
-    std::string getString () {
-      return stringProperty;
-    }
-      
-    void setString (std::string s) {
-      return s;
-    }
-
-    int foo () {
-      return 42;
-    }
-
-    void bar (char const*) {
-    }
+    int foo () { return 42; }
+    void bar (char const*) { }
 
 The will register everything into the namespace "test":
 
@@ -210,9 +202,9 @@ Lua identifiers are valid:
     test.foo    -- a function returning a lua_Number
     test.bar    -- a function taking a lua_String as a parameter
 
-Note that test.prop2 and test.prop1 both refer to the same value. However,
-since test.prop2 is read-only, assignment does not work. These Lua statements
-have the stated effects:
+Note that `test.prop1` and `test.prop2` both refer to the same value. However,
+since `test.prop2` is read-only, assignment does not work. These Lua
+statements have the stated effects:
 
     test.var1 = 5         -- okay
     test.var2 = 6         -- error: var2 is not writable
@@ -238,51 +230,27 @@ _member function_, static or otherwise. Given:
       static int staticData;
       static float staticProperty;
         
-      static float getStaticProperty () {
-        return staticProperty;
-      }
-
-      static void setStaticProperty (float f) {
-        staticProperty = f;
-      }
-
-      static void staticFunc () {
-      }
+      static float getStaticProperty () { return staticProperty; }
+      static void setStaticProperty (float f) { staticProperty = f; }
+      static void staticFunc () { }
 
       std::string dataMember;
 
       char dataProperty;
+      char getProperty () const { return dataProperty; }
+      void setProperty (char v) { dataProperty = v; }
 
-      char getProperty () const {
-        return dataProperty;
-      }
-
-      void setProperty (char v) {
-        dataProperty = v;
-      }
-
-      void func1 ()
-      {
-      }
-
-      virtual void virtualFunc () {
-      }
+      void func1 () { }
+      virtual void virtualFunc () { }
     };
 
     struct B : public A
     {
       double dataMember2;
 
-      void func1 ()
-      {
-      }
-
-      void func2 ()
-      {
-      }
-
-      void virtualFunc () {
-      }
+      void func1 () { }
+      void func2 () { }
+      void virtualFunc () { }
     };
 
     int A::staticData;
@@ -317,22 +285,9 @@ to be re-declared and will function normally in Lua. If a class has a base
 class that is **not** registered with Lua, there is no need to declare it as a
 subclass.
 
-If we have objects of type A, and B, they can be passed to Lua using the
-provided Stack interface. The following code example will be fully explained
-in a later section, but for now it can be assumed that the effect is to
-create values `_G["a"]` and `_G["b"]` which are userdata representing the
-classes `A` and `B` respectively. After executing the following C++:
-
-    A a;
-    B b;
-
-    Stack <A*>::push (L, &a);
-    lua_setglobal (L, "a");
-      
-    Stack <B*>::push (L, &b);
-    lua_setglobal (L, "a");
-
-The following effects are observed in Lua scripts:
+Given two Lua objects `a` and `b of class types `A` and `B respectively,
+the following effects are observed in Lua scripts (the mechanism for passing
+or creating these objects is explained a later section):
 
     print (test.A.staticData)       -- prints the static data member
     print (test.A.staticProperty)   -- prints the static property member
@@ -355,6 +310,8 @@ The following effects are observed in Lua scripts:
     test.B.virtualFunc (b)          -- calls B::virtualFunc ()
     test.A.virtualFunc (b)          -- calls B::virtualFunc ()
     test.B.virtualFunc (a)          -- error: a is not a class B
+
+## The Stack
 
 ### Pointers, References, and Object Parameters
 
@@ -468,13 +425,31 @@ For example, here is a specialization for a [juce::String][6]:
       }
     };
 
+## Security
+
+The metatables and userdata that LuaBridge creates in the `lua_State` are
+protected using a security system, to eliminate the possibility of undefined
+behavior resulting from scripted manipulation of the environment. This
+security system can be bypassed if scripts are given access to the debug
+library.
+
+When a class member function is called, or class property member accessed,
+the `this` pointer is type-checked. This is because member functions exposed
+to Lua are just plain functions that usually get called with the Lua colon
+notation, which passes the object in question as the first parameter.
+
+If a type check error occurs, LuaBridge uses the `lua_error` mechanism to
+trigger a failure. A host program can always recover from an error through
+the use of `lua_pcall`; proper usage of LuaBridge will never result in
+undefined behavior.
+
 ## Limitations 
 
 LuaBridge does not support:
 
 - Enumerated constants
 - More than 8 parameters on a function or method (although this can be
-  increased by adding more `TypeList` specializations).
+  increased by adding more `TypeListValues` specializations).
 - Overloaded functions, methods, or constructors.
 - Global variables (variables must be wrapped in a named scope).
 - Automatic conversion between STL container types and Lua tables.
