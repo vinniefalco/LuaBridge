@@ -138,11 +138,10 @@
   All LuaBridge registrations take place in a _namespace_, which loosely
   resembles a C++ namespace. When we refer to a _namespace_ we are always
   talking about a namespace in the Lua sense, which is implemented using tables.
-  The Lua namespace does not need to correspond to a C++ namespace; in fact no
-  C++ namespaces need to exist at all unless you want them to. LuaBridge
-  namespaces are visible only to Lua scripts; they are used as a logical
-  grouping tool. To obtain access to the global namespace for a `lua_State* L`
-  we use:
+  The namespace does not need to correspond to a C++ namespace; in fact no C++
+  namespaces need to exist at all unless you want them to. LuaBridge namespaces
+  are visible only to Lua scripts; they are used as a logical grouping tool.
+  To obtain access to the global namespace for a `lua_State* L` we use:
 
       getGlobalNamespace (L);
 
@@ -206,15 +205,13 @@
   ### Data, Properties, and Functions
 
   Data, properties, and functions are registered into a namespace using
-  `addVariable`, `addProperty`, and `addFunction`. When functions registered
-  to Lua are called by Lua scripts, LuaBridge automatically takes care of the
-  conversion of arguments into the appropriate data type when doing so is
-  possible. This automated system works for the function's return value, and
-  up to 8 parameters although more can be added by extending the templates.
-  Pointers, references, and objects of class type as parameters are treated
-  specially, and explained in a later section.
-
-  Given the following:
+  `addVariable`, `addProperty`, and `addFunction`. When registered functions
+  are called by scripts, LuaBridge automatically takes care of the conversion of
+  arguments into the appropriate data type when doing so is possible. This
+  automated system works for the function's return value, and up to 8 parameters
+  although more can be added by extending the templates. Pointers, references,
+  and objects of class type as parameters are treated specially, and explained
+  in a later section. Given the following:
 
       int globalVar;
       static float staticVar;
@@ -238,7 +235,7 @@
           .addFunction ("bar", bar)
         .endNamespace ();
 
-  Variables can be marked read-only by passing false in the second optional
+  Variables can be marked _read-only_ by passing `false` in the second optional
   parameter. If the parameter is omitted, `true` is used making the variable
   read/write. Properties are marked read-only by omitting the set function or
   passing it as 0 (or `nullptr`). After the registrations above, the following
@@ -274,7 +271,7 @@
   more registrations using `beginClass`. However, `deriveClass` should only be
   used once. To add more registrations to an already registered derived class,
   use `beginClass`. We use the word _method_ as an unambiguous synonym for
-  _member function_, static or otherwise. Given:
+  _member function_ - static or otherwise. Given:
 
       struct A {
         static int staticData;
@@ -294,8 +291,7 @@
         virtual void virtualFunc () { }
       };
 
-      struct B : public A
-      {
+      struct B : public A {
         double dataMember2;
 
         void func1 () { }
@@ -306,7 +302,7 @@
       int A::staticData;
       float A::staticProperty;
 
-  The corresponding registration statement is:
+  The statement to register everything is:
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
@@ -334,9 +330,9 @@
   class that is **not** registered with Lua, there is no need to declare it as a
   subclass.
 
-  Given two Lua objects `a` and `b of class types `A` and `B respectively,
-  the following effects are observed in Lua scripts (the mechanism for passing
-  or creating these objects is explained a later section):
+  Given two Lua objects `a` and `b` of class types `A` and `B respectively, the
+  following effects are observed in Lua scripts (the mechanism for passing or
+  creating these objects is explained a later section):
 
       print (test.A.staticData)       -- prints the static data member
       print (test.A.staticProperty)   -- prints the static property member
@@ -361,6 +357,44 @@
       test.B.virtualFunc (a)          -- error: a is not a class B
 
   ## The Stack
+
+  In the Lua C API, all manipulation of the `lua_State` is performed through
+  the Lua stack. In order to pass parameters back and forth between C++ and
+  Lua, including the return value of functions, LuaBridge uses a class template
+  specialized for each possible C++ data type.
+
+  ### Data Types
+
+  Basic types for supported variables, and function arguments and returns, are:
+  
+  - `bool`
+  - `char`, converted to a string of length one.
+  - Integers, `float`, and `double`, converted to Lua_number.
+  - Strings: `char const*` and `std::string`
+
+  Of course, LuaBridge supports passing objects of class type, in a variety of
+  ways including dynamically allocated objects created with `new`. The behavior
+  of the object with respect to lifetime management depends on the manner in
+  which the object is passed. Given `class T`, these argument types are
+  supported:
+
+  - `T`, `T const` : Pass `T` by value. The lifetime is managed by Lua.
+  - `T*`, `T&`, `T const*`, `T const&` : Pass `T` by reference. The lifetime
+     is managed by C++.
+
+  Furthermore, LuaBridge supports a "shared lifetime" model: dynamically
+  allocated and reference counted objects whose ownership is shared by both
+  Lua and C++. The object remains in existence until there are no remaining
+  C++ or Lua references, and Lua performs its usual garbage collection cycle.
+  LuaBridge comes with a few varieties of containers that support this
+  shared lifetime model, or you can use your own (subject to some restrictions).
+
+  Mixing object lifetime models is entirely possible, subject to the usual
+  caveats of holding references to objects which could get deleted. For
+  example, C++ can be called from Lua with a pointer to an object of class
+  type; the function can modify the object or call non-const data members.
+  These modifications are visible to Lua (since they both refer to the same
+  object).
 
   ### Pointers, References, and Object Parameters
 
@@ -419,39 +453,6 @@
   When C++ manages the lifetime of the object, the Lua garbage collector has
   no effect on it. Care must be taken to make sure that the C++ code does not
   destroy the object while Lua still has a reference to it.
-
-  ### Data Types
-  
-  Basic types for supported variables, and function arguments and returns, are:
-  
-  - `bool`
-  - `char`, converted to a string of length one.
-  - Integers, `float`, and `double`, converted to Lua_number.
-  - Strings: `char const*` and `std::string`
-
-  Of course, LuaBridge supports passing objects of class type, in a variety of
-  ways including dynamically allocated objects created with `new`. The behavior
-  of the object with respect to lifetime management depends on the manner in
-  which the object is passed. Given `class T`, these argument types are
-  supported:
-
-  - `T`, `T const` : Pass `T` by value. The lifetime is managed by Lua.
-  - `T*`, `T&`, `T const*`, `T const&` : Pass `T` by reference. The lifetime
-     is managed by C++.
-
-  Furthermore, LuaBridge supports a "shared lifetime" model: dynamically
-  allocated and reference counted objects whose ownership is shared by both
-  Lua and C++. The object remains in existence until there are no remaining
-  C++ or Lua references, and Lua performs its usual garbage collection cycle.
-  LuaBridge comes with a few varieties of containers that support this
-  shared lifetime model, or you can use your own (subject to some restrictions).
-
-  Mixing object lifetime models is entirely possible, subject to the usual
-  caveats of holding references to objects which could get deleted. For
-  example, C++ can be called from Lua with a pointer to an object of class
-  type; the function can modify the object or call non-const data members.
-  These modifications are visible to Lua (since they both refer to the same
-  object).
 
   ### Lua Stack
 
@@ -1167,7 +1168,6 @@ protected:
 };
 
 //==============================================================================
-
 /**
   Lua stack objects with value semantics.
 
@@ -1642,7 +1642,7 @@ private:
   static int vargetProxy (lua_State* L)
   {
     assert (lua_islightuserdata (L, lua_upvalueindex (1)));
-    T* const data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
+    T const* const data = static_cast <T const*> (lua_touserdata (L, lua_upvalueindex (1)));
     assert (data != 0);
     Stack <T>::push (L, *data);
     return 1;
@@ -1654,7 +1654,6 @@ private:
 
     This is used for global variables or class static data members.
   */
-
   template <class T>
   static int varsetProxy (lua_State* L)
   {
@@ -1672,18 +1671,18 @@ private:
     This is used for global functions, global properties, class static methods,
     and class static properties.
   */
-  template <class Function,
-            class ReturnType = typename FuncTraits <Function>::ReturnType>
+  template <class Func,
+            class ReturnType = typename FuncTraits <Func>::ReturnType>
   struct functionProxy
   {
-    typedef typename FuncTraits <Function>::Params Params;
+    typedef typename FuncTraits <Func>::Params Params;
     static int f (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
-      Function fp = *reinterpret_cast <Function*> (lua_touserdata (L, lua_upvalueindex (1)));
+      Func fp = *static_cast <Func*> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fp != 0);
       ArgList <Params> args (L);
-      Stack <ReturnType>::push (L, FuncTraits <Function>::call (fp, args));
+      Stack <ReturnType>::push (L, FuncTraits <Func>::call (fp, args));
       return 1;
     }
   };
@@ -1695,17 +1694,17 @@ private:
     This is used for global functions, global properties, class static methods,
     and class static properties.
   */
-  template <class Function>
-  struct functionProxy <Function, void>
+  template <class Func>
+  struct functionProxy <Func, void>
   {
-    typedef typename FuncTraits <Function>::Params Params;
+    typedef typename FuncTraits <Func>::Params Params;
     static int f (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
-      Function fp = *reinterpret_cast <Function*> (lua_touserdata (L, lua_upvalueindex (1)));
+      Func fp = *static_cast <Func*> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fp != 0);
       ArgList <Params> args (L);
-      FuncTraits <Function>::call (fp, args);
+      FuncTraits <Func>::call (fp, args);
       return 0;
     }
   };
@@ -1729,6 +1728,7 @@ private:
 
     static int callMethod (lua_State* L)
     {
+      assert (lua_isuserdata (L, lua_upvalueindex (1)));
       T* const t = Userdata::get <T> (L, 1, false);
       MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       ArgList <Params, 2> args (L);
@@ -1738,6 +1738,7 @@ private:
 
     static int callConstMethod (lua_State* L)
     {
+      assert (lua_isuserdata (L, lua_upvalueindex (1)));
       T const* const t = Userdata::get <T> (L, 1, true);
       MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       ArgList <Params, 2> args(L);
@@ -1765,7 +1766,7 @@ private:
     static int callMethod (lua_State* L)
     {
       T* const t = Userdata::get <T> (L, 1, false);
-      MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
+      MemFn const fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       ArgList <Params, 2> args (L);
       FuncTraits <MemFn>::call (t, fp, args);
       return 0;
@@ -1774,7 +1775,7 @@ private:
     static int callConstMethod (lua_State* L)
     {
       T const* const t = Userdata::get <T> (L, 1, true);
-      MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
+      MemFn const fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       ArgList <Params, 2> args (L);
       FuncTraits <MemFn>::call (t, fp, args);
       return 0;
@@ -2425,26 +2426,26 @@ private:
     Class <T>& addProperty (char const* name, U (T::* get) () const, void (T::* set) (U) = 0)
     {
       // Add to __propget in class and const tables.
-      rawgetfield (L, -2, "__propget");
-      rawgetfield (L, -4, "__propget");
-      typedef U (T::*MemFn) () const;
-      void* const v = lua_newuserdata (L, sizeof (MemFn));
-      memcpy (v, &get, sizeof (MemFn));
-      lua_pushcclosure (L, &methodProxy <MemFn>::callConstMethod, 1);
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -4, name);
-      rawsetfield (L, -2, name);
-      lua_pop (L, 2);
+      {
+        rawgetfield (L, -2, "__propget");
+        rawgetfield (L, -4, "__propget");
+        typedef U (T::*get_t) () const;
+        new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
+        lua_pushcclosure (L, &methodProxy <get_t>::callConstMethod, 1);
+        lua_pushvalue (L, -1);
+        rawsetfield (L, -4, name);
+        rawsetfield (L, -2, name);
+        lua_pop (L, 2);
+      }
 
       if (set != 0)
       {
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        typedef void (T::* MemFn) (U);
-        void* const v = lua_newuserdata (L, sizeof (MemFn));
-        memcpy (v, &set, sizeof (MemFn));
-        lua_pushcclosure (L, &methodProxy <MemFn>::callMethod, 1);
+        typedef void (T::* set_t) (U);
+        new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
+        lua_pushcclosure (L, &methodProxy <set_t>::callMethod, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
