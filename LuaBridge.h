@@ -1715,8 +1715,8 @@ private:
     typedef typename FuncTraits <Function>::Params Params;
     static int f (lua_State* L)
     {
-      assert (lua_islightuserdata (L, lua_upvalueindex (1)));
-      Function fp = reinterpret_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
+      assert (lua_isuserdata (L, lua_upvalueindex (1)));
+      Function fp = *reinterpret_cast <Function*> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fp != 0);
       ArgList <Params> args (L);
       Stack <ReturnType>::push (L, FuncTraits <Function>::call (fp, args));
@@ -1737,8 +1737,8 @@ private:
     typedef typename FuncTraits <Function>::Params Params;
     static int f (lua_State* L)
     {
-      assert (lua_islightuserdata (L, lua_upvalueindex (1)));
-      Function fp = reinterpret_cast <Function> (lua_touserdata (L, lua_upvalueindex (1)));
+      assert (lua_isuserdata (L, lua_upvalueindex (1)));
+      Function fp = *reinterpret_cast <Function*> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fp != 0);
       ArgList <Params> args (L);
       FuncTraits <Function>::call (fp, args);
@@ -2374,11 +2374,14 @@ private:
     template <class U>
     Class <T>& addStaticProperty (char const* name, U (*get)(), void (*set)(U) = 0)
     {
+      typedef U (*get_t)();
+      typedef void (*set_t)(U);
+      
       assert (lua_istable (L, -1));
 
       rawgetfield (L, -1, "__propget");
       assert (lua_istable (L, -1));
-      lua_pushlightuserdata (L, get);
+      new (lua_newuserdata (L, sizeof (get))) get_t (get);
       lua_pushcclosure (L, &functionProxy <U (*) (void)>::f, 1);
       rawsetfield (L, -2, name);
       lua_pop (L, 1);
@@ -2387,7 +2390,7 @@ private:
       assert (lua_istable (L, -1));
       if (set != 0)
       {
-        lua_pushlightuserdata (L, set);
+        new (lua_newuserdata (L, sizeof (set))) set_t (set);
         lua_pushcclosure (L, &functionProxy <void (*) (U)>::f, 1);
       }
       else
@@ -2408,7 +2411,7 @@ private:
     template <class FP>
     Class <T>& addStaticMethod (char const* name, FP const fp)
     {
-      lua_pushlightuserdata (L, fp);
+      new (lua_newuserdata (L, sizeof (fp))) FP (fp);
       lua_pushcclosure (L, &functionProxy <FP>::f, 1);
       rawsetfield (L, -2, name);
 
@@ -2734,7 +2737,7 @@ public:
   Namespace& addFunction (char const* name, FP const fp)
   {
     assert (lua_istable (L, -1));
-    lua_pushlightuserdata (L, fp);
+    new (lua_newuserdata (L, sizeof (fp))) FP (fp);
     lua_pushcclosure (L, &functionProxy <FP>::f, 1);
     rawsetfield (L, -2, name);
 
