@@ -47,6 +47,7 @@
 #ifndef LUABRIDGE_LUABRIDGE_HEADER
 #define LUABRIDGE_LUABRIDGE_HEADER
 
+#include <stdexcept>
 #include <typeinfo>
 #include <stdint.h>
 #include <string.h>
@@ -695,7 +696,12 @@
 namespace luabridge
 {
 
+#if defined (__APPLE_CPP__) || defined(__APPLE_CC__)
+// Do not define THROWSPEC since the Xcode compilers do not distinguish
+// the throw specification in the function signature.
+#else
 #define THROWSPEC throw()
+#endif
 #include "FuncTraits.h"
 
 //==============================================================================
@@ -729,7 +735,7 @@ struct ContainerInfo
 template <class T>
 struct ContainerInfo <T*>
 {
-  typedef typename T Type;
+  typedef T Type;
 
   static inline void* get (T* p)
   {
@@ -740,7 +746,7 @@ struct ContainerInfo <T*>
 template <class T>
 struct ContainerInfo <T const*>
 {
-  typedef typename T Type;
+  typedef T Type;
 
   static inline void* get (T const* p)
   {
@@ -2118,6 +2124,20 @@ private:
       rawsetfield (L, -2, "__class"); // point to class table
     }
 
+    //==========================================================================
+    /**
+      lua_CFunction to construct a class object.
+    */
+    template <class Params, class C>
+    static int ctorProxy (lua_State* L)
+    {
+      typedef typename ContainerInfo <C>::Type T;
+      ArgList <Params, 2> args (L);
+      T* const p = Constructor <T, Params>::call (args);
+      new (UserdataType <C>::push (L, false)) UserdataType <C> (p);
+      return 1;
+    }
+
     //--------------------------------------------------------------------------
     /**
       Pop the Lua stack.
@@ -2205,25 +2225,10 @@ private:
       return 0;
     }
 
-    //==========================================================================
-    /**
-      lua_CFunction to construct a class object.
-    */
-    template <class Params, class C>
-    static int ctorProxy (lua_State* L)
-    {
-      typedef typename ContainerInfo <C>::Type T;
-      ArgList <Params, 2> args (L);
-      T* const p = Constructor <T, Params>::call (args);
-      new (UserdataType <C>::push (L, false)) UserdataType <C> (p);
-      return 1;
-    }
-
     //--------------------------------------------------------------------------
     /**
       __gc metamethod for a class.
     */
-    template <class T>
     static int gcMetaMethod (lua_State* L)
     {
       Userdata::getExact <T> (L, 1)->~Userdata ();
@@ -2248,11 +2253,11 @@ private:
         lua_pop (L, 1);
 
         createConstTable (name);
-        lua_pushcfunction (L, &gcMetaMethod <T>);
+        lua_pushcfunction (L, &gcMetaMethod);
         rawsetfield (L, -2, "__gc");
 
         createClassTable (name);
-        lua_pushcfunction (L, &gcMetaMethod <T>);
+        lua_pushcfunction (L, &gcMetaMethod);
         rawsetfield (L, -2, "__gc");
 
         createStaticTable (name);
@@ -2289,11 +2294,11 @@ private:
       assert (lua_istable (L, -1));
 
       createConstTable (name);
-      lua_pushcfunction (L, &gcMetaMethod <T>);
+      lua_pushcfunction (L, &gcMetaMethod);
       rawsetfield (L, -2, "__gc");
 
       createClassTable (name);
-      lua_pushcfunction (L, &gcMetaMethod <T>);
+      lua_pushcfunction (L, &gcMetaMethod);
       rawsetfield (L, -2, "__gc");
 
       createStaticTable (name);

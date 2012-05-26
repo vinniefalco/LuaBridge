@@ -325,7 +325,7 @@ bool operator!= (ReferenceCountedObjectClass* object1, RefCountedObjectPtr<Refer
 template <class T>
 struct ContainerInfo <RefCountedObjectPtr <T> >
 {
-  typedef typename T Type;
+  typedef T Type;
 
   template <class U>
   static inline void* get (RefCountedObjectPtr <U>& u)
@@ -340,7 +340,7 @@ struct ContainerInfo <RefCountedObjectPtr <T> >
 template <class T>
 struct ContainerInfo <RefCountedObjectPtr <T const> >
 {
-  typedef typename T Type;
+  typedef T Type;
 
   template <class U>
   static inline void* get (RefCountedObjectPtr <U const>& u)

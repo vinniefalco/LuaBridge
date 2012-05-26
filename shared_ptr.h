@@ -250,7 +250,7 @@ private:
 template <class T>
 struct ContainerInfo <luabridge::shared_ptr <T> >
 {
-  typedef typename T Type;
+  typedef T Type;
 
   template <class U>
   static inline void* get (luabridge::shared_ptr <U>& u)
@@ -265,7 +265,7 @@ struct ContainerInfo <luabridge::shared_ptr <T> >
 template <class T>
 struct ContainerInfo <luabridge::shared_ptr <T const> >
 {
-  typedef typename T Type;
+  typedef T Type;
 
   template <class U>
   static inline void* get (luabridge::shared_ptr <U const>& u)
