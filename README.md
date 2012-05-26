@@ -93,11 +93,11 @@ namespace to the global namespace, like this:
 
 The result is to create a table in `_G` (the global namespace in Lua) called
 "test". Since we have not performed any registrations, this table will be mostly
-empty, except for some bookkeeping fields that LuaBridge inserts. LuaBridge
-reserves all identifiers that start with a double underscore. So `__test`
-would be an invalid name (although LuaBridge will silently accept it).
-Functions like `beginNamespace` return the corresponding object on which
-we can make more registrations. This:
+empty, except for some necessary bookkeeping fields. LuaBridge reserves all
+identifiers that start with a double underscore. So `__test` would be an
+invalid name (although LuaBridge will silently accept it). Functions like
+`beginNamespace` return the corresponding object on which we can make more
+registrations. This:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -108,20 +108,20 @@ we can make more registrations. This:
       .endNamespace ()
       ;
 
-Will produce the following nested tables: `_G["test"]`, `test["detail"]`, and
+Creates the following nested tables: `_G["test"]`, `test["detail"]`, and
 `test["utility"]`. The results are accessible to Lua as `test.detail` and
 `test.utility`.
   
-Here we have introduced the `endNamespace` function, which returns an object
-representing the enclosing namespace, upon which further registrations may be
-added. It is undefined behavior to use `endNamespace` on the global namespace.
-All LuaBridge functions which create registrations return an object upon
-which subsequent registrations can be made, allowing for an unlimited number
-of registrations to be chained together using the dot operator (`.`).
+Here use the `endNamespace` function, which returns an object representing the
+enclosing namespace, upon which further registrations may be added. It is
+undefined behavior to use `endNamespace` on the global namespace. All
+LuaBridge functions which create registrations return an object upon which
+subsequent registrations can be made, allowing for an unlimited number of
+registrations to be chained together using the dot operator `.`.
 
 A namespace registration can be re-opened later to add more functions.
 This lets you split up the registration between different source files.
-The following:
+The following are equivalent:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -135,7 +135,7 @@ The following:
       .endNamespace ()
     ;
 
-is equivalent to:
+and
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -143,6 +143,9 @@ is equivalent to:
         .addFunction ("bar", bar)
       .endNamespace ()
     ;
+
+Adding two objects with the same name, in the same namespace, results in
+undefined behavior (although LuaBridge will silently accept it).
 
 ### Data, Properties, and Functions
 
@@ -155,7 +158,7 @@ up to 8 parameters although more can be added by extending the templates.
 Pointers, references, and objects of class type as parameters are treated
 specially, and explained in a later section.
 
-Given the following definitions:
+Given the following:
 
     int globalVar;
     static float staticVar;
@@ -176,7 +179,7 @@ Given the following definitions:
     void bar (char const*) {
     }
 
-The following statement will register everything into a namespace:
+The will register everything into the namespace "test":
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -192,9 +195,8 @@ The following statement will register everything into a namespace:
 Variables can be marked read-only by passing false in the second optional
 parameter. If the parameter is omitted, `true` is used making the variable
 read/write. Properties are marked read-only by omitting the set function or
-passing it as 0 (or `nullptr`).
-
-After executing this code, the following Lua identifiers are valid:
+passing it as 0 (or `nullptr`). After the registrations above, the following
+Lua identifiers are valid:
 
     test        -- a namespace
     test.var1   -- a lua_Number variable
@@ -205,8 +207,8 @@ After executing this code, the following Lua identifiers are valid:
     test.bar    -- a function taking a lua_String as a parameter
 
 Note that test.prop2 and test.prop1 both refer to the same value. However,
-since test.prop2 is read-only, assignment does not work. After executing
-the above, we observe these effects in Lua:
+since test.prop2 is read-only, assignment does not work. These Lua statements
+have the stated effects:
 
     test.var1 = 5         -- okay
     test.var2 = 6         -- error: var2 is not writable
@@ -225,10 +227,8 @@ A class registration is opened using either `beginClass` or `deriveClass` and
 ended using `endClass`. Once registered, a class can later be re-opened for
 more registrations using `beginClass`. However, `deriveClass` should only be
 used once. To add more registrations to an already registered derived class,
-use `beginClass`.
-
-We use the word _method_ as an unambiguous synonym for _member function_,
-static or otherwise. Given:
+use `beginClass`. We use the word _method_ as an unambiguous synonym for
+_member function_, static or otherwise. Given:
 
     struct A {
       static int staticData;
@@ -312,62 +312,6 @@ the class to be registered, and its base class.  Inherited methods do not have
 to be re-declared and will function normally in Lua. If a class has a base
 class that is **not** registered with Lua, there is no need to declare it as a
 subclass.
-
-### Data Types
-  
-Basic types for supported variables, and function arguments and returns, are:
-  
-- `bool`
-- `char`, converted to a string of length one.
-- Integers, `float`, and `double`, converted to Lua_number.
-- Strings: `char const*` and `std::string`
-
-Of course, LuaBridge supports passing objects of class type, in a variety of
-ways including dynamically allocated objects created with `new`. The behavior
-of the object with respect to lifetime management depends on the manner in
-which the object is passed. Given `class T`, these argument types are
-supported:
-
-- `T`, `T const` : Pass `T` by value. The lifetime is managed by Lua.
-- `T*`, `T&`, `T const*`, `T const&` : Pass `T` by reference. The lifetime
-    is managed by C++.
-
-Furthermore, LuaBridge supports a "shared lifetime" model: dynamically
-allocated and reference counted objects whose ownership is shared by both
-Lua and C++. The object remains in existence until there are no remaining
-C++ or Lua references, and Lua performs its usual garbage collection cycle.
-LuaBridge comes with a few varieties of containers that support this
-shared lifetime model, or you can use your own (subject to some restrictions).
-
-Mixing object lifetime models is entirely possible, subject to the usual
-caveats of holding references to objects which could get deleted. For
-example, C++ can be called from Lua with a pointer to an object of class
-type; the function can modify the object or call non-const data members.
-These modifications are visible to Lua (since they both refer to the same
-object).
-
-### Lua Stack
-
-User-defined types which are convertible to one of the basic types are
-possible, simply provide a `Stack <>` specialization in the `luabridge`
-namespace for your user-defined type, modeled after the existing types.
-For example, here is a specialization for a [juce::String][6]:
-
-    template <>
-    struct Stack <juce::String>
-    {
-      static void push (lua_State* L, juce::String s)
-      {
-        lua_pushstring (L, s.toUTF8 ());
-      }
-
-      static juce::String get (lua_State* L, int index)
-      {
-        return juce::String (luaL_checkstring (L, index));
-      }
-    };
-
-
 
 If we have objects of type A, and B, they can be passed to Lua using the
 provided Stack interface. The following code example will be fully explained
@@ -466,123 +410,59 @@ When C++ manages the lifetime of the object, the Lua garbage collector has
 no effect on it. Care must be taken to make sure that the C++ code does not
 destroy the object while Lua still has a reference to it.
 
+### Data Types
+  
+Basic types for supported variables, and function arguments and returns, are:
+  
+- `bool`
+- `char`, converted to a string of length one.
+- Integers, `float`, and `double`, converted to Lua_number.
+- Strings: `char const*` and `std::string`
 
+Of course, LuaBridge supports passing objects of class type, in a variety of
+ways including dynamically allocated objects created with `new`. The behavior
+of the object with respect to lifetime management depends on the manner in
+which the object is passed. Given `class T`, these argument types are
+supported:
 
+- `T`, `T const` : Pass `T` by value. The lifetime is managed by Lua.
+- `T*`, `T&`, `T const*`, `T const&` : Pass `T` by reference. The lifetime
+    is managed by C++.
 
+Furthermore, LuaBridge supports a "shared lifetime" model: dynamically
+allocated and reference counted objects whose ownership is shared by both
+Lua and C++. The object remains in existence until there are no remaining
+C++ or Lua references, and Lua performs its usual garbage collection cycle.
+LuaBridge comes with a few varieties of containers that support this
+shared lifetime model, or you can use your own (subject to some restrictions).
 
-### Shared Pointers
+Mixing object lifetime models is entirely possible, subject to the usual
+caveats of holding references to objects which could get deleted. For
+example, C++ can be called from Lua with a pointer to an object of class
+type; the function can modify the object or call non-const data members.
+These modifications are visible to Lua (since they both refer to the same
+object).
 
-A `C` container template allows for object lifetime management that
-behaves like `std::shared_ptr`. That is, objects are dynamically allocated
-and reference counted. The object is not destroyed until the reference count
-drops to zero. Such objects are safe to store in C++ and Lua code. A
-garbage collection will only decrement the reference count.
+### Lua Stack
 
-LuaBridge registraton templates will automatically detect arguments which
-behave like containers. For example, this registration is valid:
+User-defined types which are convertible to one of the basic types are
+possible, simply provide a `Stack <>` specialization in the `luabridge`
+namespace for your user-defined type, modeled after the existing types.
+For example, here is a specialization for a [juce::String][6]:
 
-    extern void func (shared_ptr <T> p);
-
-    s.function ("func", &func);
-
-Any container may be used. LuaBridge expects that the container in question
-is a class template with one template argument, and a member function called
-get() which returns a pointer to the underlying object. If you need to use
-a container with a different interface, you can specialize the `C`
-class for your container type and provide an extraction function. Your
-specialization needs to be in the `luabridge` namespace. Here's an example
-specialization for a container called `ReferenceCountedObject` which provides
-a member function `getObject` that retrieves the pointer.
-
-    namespace luabridge
+    template <>
+    struct Stack <juce::String>
     {
-        template <>
-        struct C <ReferenceCountedObjectPtr>
-        {
-          template <class T>
-          static T* get (ReferenceCountedObjectPtr <T> const& p)
-          {
-            return p.getObject ();
-          }
-        };
-    }
+      static void push (lua_State* L, juce::String s)
+      {
+        lua_pushstring (L, s.toUTF8 ());
+      }
 
-### Registering classes
-
-C++ classes can be registered with Lua as follows:
-
-    s .class_ <MyClass> ("MyClass")
-      .Constructor <void (*) (void)> ()
-      .method ("method1", &MyClass::method1)
-      .method ("method2", &MyClass::method2);
-
-    s .subclass <MySubclass, MyBaseClass> ("MySubclass")
-      .Constructor <...>
-      ...
-
-The `class_` function registers a class; its Constructor will be available as
-a global function with name given as argument to `class_`.  The object
-returned can then be used to register the Constructor (no overloading is
-supported, so there can only be one Constructor) and methods.
-
-LuaBridge cannot automatically determine the number and types of Constructor
-parameters like it can for functions and methods, so you must provide them.
-This is done by letting the `Constructor` function take a template parameter,
-which must be a function pointer type.  The parameter types will be extracted
-from this (the return type is ignored).  For example, to register a
-Constructor taking two parameters, one `int` and one `char const*`, you would
-write:
-
-    s .class_ <MyClass> ()
-      .Constructor <void (*) (int, const char *)> ()
-
-Note that in the example above, the name of the class was ommitted from the
-argument to the `class` function. This allows you to add additional
-registrations to a class that has already been registered.
-
-Method registration works just like function registration.  Virtual methods
-work normally; no special syntax is needed. const methods are detected and
-const-correctness is enforced, so if a function returns a const object (or
-rather, a `shared_ptr` to a const object) to Lua, that reference to the object
-will be considered const and only const methods will be called on it.
-Destructors are registered automatically for each class.
-
-Static methods may be registered using the `static_method` function, which is
-simply an alias for the `function` function:
-
-    s .class_ <MyClass> ()
-      .static_method ("method3", &MyClass::method3)
-
-### The `lua_State`
-
-Multiple lua_State registrations
-
-Sometimes it is convenient from within a bound function or member function
-to gain access to the `lua_State` normally available to a `lua_CFunction`.
-With LuaBridge, all you need to do is add a `lua_State*` parameter at any
-position in your bound function:
-
-    void useState (lua_State* L);
-
-    s.function ("useState", &useState);
-
-You can still include regular arguments while receiving the state:
-
-    void useStateAndArgs (lua_State* L, int i, std::string s);
-
-    s.function ("useStateAndArgs", &useStateAndArgs);
-
-
-## Implementation Details
-
-- Nested tables
-
-- Security system
-
-- The registry
-
-- Multiple lua_state
-
+      static juce::String get (lua_State* L, int index)
+      {
+        return juce::String (luaL_checkstring (L, index));
+      }
+    };
 
 ## Limitations 
 
