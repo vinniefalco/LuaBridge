@@ -53,32 +53,33 @@ additional dependencies, available here:
 
 There are four types of objects that LuaBridge can register:
 
-- Data: Global varaibles, static class data members, and class data members.
+- **Data**: Global varaibles, static class data members, and class data
+            members.
 
-- Functions: Regular functions, static class members, and class member
-  functions
+- **Functions**: Regular functions, static class members, and class member
+                  functions
 
-- Namespaces: A namespace is simply a table containing registrations of
-  functions, data, properties, and other namespaces.
+- **Namespaces**: A namespace is simply a table containing registrations of
+                  functions, data, properties, and other namespaces.
 
-- Properties: Global properties, static class properties, and class member
-  properties. These appear like data to Lua, but are implemented using get
-  and set functions on the C++ side.
+- **Properties**: Global properties, static class properties, and class member
+                  properties. These appear like data to Lua, but are
+                  implemented using get and set functions on the C++ side.
 
 Both data and properties can be marked as _read-only_ at the time of
 registration. This is different from `const`; the values of these objects can
 be modified on the C++ side, but Lua scripts cannot change them. For brevity
 of exposition, in the examples that follow the C++ code samples assume that a
 `using namespace luabridge` declaration is in effect. A code sample is either
-in C++, or Lua, depending on the context.
+C++ or Lua, depending on the context.
 
 ### Namespaces
 
 All LuaBridge registrations take place in a _namespace_, which loosely
-resembles a C++ namespace in Lua. When we refer to a _namespace_ we are
-always talking about a namespace in the Lua sense, which is implemented using
-tables. The Lua namespace does not need to correspond to a C++ namespace; in
-fact no C++ namespaces need to exist at all unless you want them to. LuaBridge
+resembles a C++ namespace. When we refer to a _namespace_ we are always
+talking about a namespace in the Lua sense, which is implemented using tables.
+The Lua namespace does not need to correspond to a C++ namespace; in fact no
+C++ namespaces need to exist at all unless you want them to. LuaBridge
 namespaces are visible only to Lua scripts; they are used as a logical
 grouping tool. To obtain access to the global namespace for a `lua_State* L`
 we use:
@@ -91,8 +92,7 @@ which is not recommended. Instead, we can add a single global namespace like
 this:
 
     getGlobalNamespace (L)
-      .beginNamespace ("test")
-      ;
+      .beginNamespace ("test");
 
 This creates a table in `_G` (the global namespace in Lua) called "test".
 Since we have not performed any registrations, this table will be mostly
@@ -108,35 +108,29 @@ registrations. Given:
         .endNamespace ()
         .beginNamespace ("utility")
         .endNamespace ()
-      .endNamespace ()
-      ;
+      .endNamespace ();
 
 The following nested tables are produced: `_G["test"]`, `test["detail"]`, and
 `test["utility"]`. The results are accessible to Lua as `test.detail` and
-`test.utility`.
-  
-Here use the `endNamespace` function, which returns an object representing the
-enclosing namespace, upon which further registrations may be added. It is
-undefined behavior to use `endNamespace` on the global namespace. All
-LuaBridge functions which create registrations return an object upon which
-subsequent registrations can be made, allowing for an unlimited number of
-registrations to be chained together using the dot operator `.`.
+`test.utility`. We also used the `endNamespace` function; it returns an object
+representing the original enclosing namespace. It is undefined behavior to
+use `endNamespace` on the global namespace. All LuaBridge functions which 
+create registrations return an object upon which subsequent registrations can
+be made, allowing for an unlimited number of registrations to be chained
+together using the dot operator `.`.
 
-A namespace registration can be re-opened later to add more functions.
-This lets you split up the registration between different source files.
-The following are equivalent:
+A namespace can be re-opened later to add more functions. This lets you split
+up the registration between different source files. These are equivalent:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
         .addFunction ("foo", foo)
-      .endNamespace ()
-      ;
+      .endNamespace ();
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
         .addFunction ("bar", bar)
-      .endNamespace ()
-    ;
+      .endNamespace ();
 
 and
 
@@ -144,8 +138,7 @@ and
       .beginNamespace ("test")
         .addFunction ("foo", foo)
         .addFunction ("bar", bar)
-      .endNamespace ()
-    ;
+      .endNamespace ();
 
 Adding two objects with the same name, in the same namespace, results in
 undefined behavior (although LuaBridge will silently accept it).
@@ -183,8 +176,7 @@ The will register everything into the namespace "test":
         .addProperty ("prop2", getString)            // read only
         .addFunction ("foo", foo)
         .addFunction ("bar", bar)
-      .endNamespace ()
-      ;
+      .endNamespace ();
 
 Variables can be marked read-only by passing false in the second optional
 parameter. If the parameter is omitted, `true` is used making the variable
@@ -272,8 +264,7 @@ The corresponding registration statement is:
           .addMethod ("func1", &B::func1)
           .addMethod ("func2", &B::func2)
         .endClass ()
-      .endClass ()
-      ;
+      .endClass ();
 
 As with regular variables and properties, class data and properties can
 be marked read-only by passing false in the second parameter, or omitting
