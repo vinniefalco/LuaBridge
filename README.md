@@ -31,7 +31,13 @@ Lua version 5.2, and the code necessary to produce a cross platform graphic
 application. They are all together in a separate repository, with no
 additional dependencies, available here:
 
+<center>
+  
 [LuaBridge Demo and Tests][4]
+
+![LuaBridgeDemo](https://github.com/vinniefalco/LuaBridgeDemo/blob/gh-pages/LuaBridgeDemoScreenshot.png)
+
+</center>
 
 ## Usage
 
