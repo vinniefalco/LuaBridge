@@ -37,10 +37,6 @@ additional dependencies, available here:
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot.png">
 </a><br>
 
-<a href="https://github.com/vinniefalco/LuaBridgeDemo">
-<img src="http://vinniefalco.github.com/LuaBridgeDemo/OSBadges.png">
-</a><br>
-
 ## Usage
 
 LuaBridge is distributed as set of header files. You simply add 
