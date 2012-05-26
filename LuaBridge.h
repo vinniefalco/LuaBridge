@@ -93,11 +93,11 @@
   [LuaBridge Demo and Tests][4]
 
   <a href=https://github.com/vinniefalco/LuaBridgeDemo>
-  <img src="https://github.com/vinniefalco/LuaBridgeDemo/blob/gh-pages/LuaBridgeDemoScreenshot.png">
+  <img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot.png">
   </a><br>
 
   <a href=https://github.com/vinniefalco/LuaBridgeDemo>
-  <img src="https://github.com/vinniefalco/LuaBridgeDemo/blob/gh-pages/OSBadges.png">
+  <img src="http://vinniefalco.github.com/LuaBridgeDemo/OSBadges.png">
   </a><br>
 
   ## Usage
