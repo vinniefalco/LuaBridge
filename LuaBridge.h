@@ -90,13 +90,15 @@
   application. They are all together in a separate repository, with no
   additional dependencies, available here:
 
-  <center>
-  
   [LuaBridge Demo and Tests][4]
 
-  ![LuaBridgeDemo](https://github.com/vinniefalco/LuaBridgeDemo/blob/gh-pages/LuaBridgeDemoScreenshot.png)
+  <a href=https://github.com/vinniefalco/LuaBridgeDemo>
+  <img src="https://github.com/vinniefalco/LuaBridgeDemo/blob/gh-pages/LuaBridgeDemoScreenshot.png">
+  </a><br>
 
-  </center>
+  <a href=https://github.com/vinniefalco/LuaBridgeDemo>
+  <img src="https://github.com/vinniefalco/LuaBridgeDemo/blob/gh-pages/OSBadges.png">
+  </a><br>
 
   ## Usage
 
