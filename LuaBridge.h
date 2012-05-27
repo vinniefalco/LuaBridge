@@ -352,6 +352,44 @@
   - `char const*` and `std::string` strings.
   - Integers, `float`, and `double`, converted to `Lua_number`.
 
+  User-defined types which are convertible to one of the basic types are
+  possible, simply provide a `Stack <>` specialization in the `luabridge`
+  namespace for your user-defined type, modeled after the existing types.
+  For example, here is a specialization for a [juce::String][6]:
+
+      template <>
+      struct Stack <juce::String>
+      {
+        static void push (lua_State* L, juce::String s)
+        {
+          lua_pushstring (L, s.toUTF8 ());
+        }
+
+        static juce::String get (lua_State* L, int index)
+        {
+          return juce::String (luaL_checkstring (L, index));
+        }
+      };
+
+  ### The `lua_State`
+
+  Sometimes it is convenient from within a bound function or member function
+  to gain access to the `lua_State` normally available to a `lua_CFunction`.
+  With LuaBridge, all you need to do is add a `lua_State*` parameter at any
+  position in your bound function:
+
+      void useState (lua_State* L);
+
+      getGlobalNamespace (L).addFunction ("useState", &useState);
+
+  You can still include regular arguments while receiving the state:
+
+      void useStateAndArgs (lua_State* L, int i, std::string s);
+
+      getGlobalNamespace (L).addFunction ("useStateAndArgs", &useStateAndArgs);
+
+  ### Class Object Types
+
   An object of a registered class `T` may be passed to Lua as:
 
   - `T*` or `T&`: Passed by reference, with _C++ lifetime_.
@@ -360,13 +398,13 @@
 
   ### C++ Lifetime
 
-  The C++ code is responsible for creating and destroying objects with C++
-  lifetime. The corresponding object's destructor is not called when Lua
-  garbage collects the reference to the object. Care must be taken to ensure
-  that objects with C++ lifetime are not deleted while still being referenced
-  by a `lua_State`, or else the result is undefined behavior. In the previous
-  examples, an instance of `A` can be passed to Lua with C++ lifetime, like
-  this:
+  The creation and deletion of objects with _C++ lifetime_ is controlled by
+  the C++ code. Lua does nothing when it garbge collects a reference to such an
+  object. Specifically, the object's destructor is not called (since C++ owns
+  it). Care must be taken to ensure that objects with C++ lifetime are not
+  deleted while still being referenced by a `lua_State`, or else undefined
+  behavior results. In the previous examples, an instance of `A` can be passed
+  to Lua with C++ lifetime, like this:
 
       A a;
 
@@ -379,6 +417,8 @@
       push <A const*> (L, &a);  // equivalent to push (L, (A const*)&a)
       lua_setglobal (L, "ac2");
 
+      push (L, new A);          // compiles, but will leak memory
+      lua_setglobal (L, "ap");
 
   ### Lua Lifetime
 
@@ -388,61 +428,42 @@
   for garbage collection. When the userdata is collected, the destructor for
   the class will be called on the object. Care must be taken to ensure that
   objects with Lua lifetime are not accessed by C++ after they are garbage
-  collected, or else the result is undefined behavior. An instance of `B` can be
+  collected, or else undefined behavior results. An instance of `B` can be
   passed to Lua with Lua lifetime this way:
 
       B b;
 
-      push (L, b);              // Copy of b passed, Lua lifetime.
+      push (L, b);                    // Copy of b passed, Lua lifetime.
       lua_setglobal (L, "b");
 
   Given the previous code segments, these Lua statements are applicable:
 
-      print (test.A.staticData)       -- prints the static data member
-      print (test.A.staticProperty)   -- prints the static property member
-      test.A.staticFunc ()            -- calls the static method
+      print (test.A.staticData)       -- Prints the static data member.
+      print (test.A.staticProperty)   -- Prints the static property member.
+      test.A.staticFunc ()            -- Calls the static method.
 
-      print (a.data)                  -- prints the data member
-      print (a.prop)                  -- prints the property member
-      a:func1 ()                      -- calls A::func1 ()
-      test.A.func1 (a)                -- equivalent to a:func1 ()
-      test.A.func1 ("hello")          -- error: "hello" is not a class A
-      a:virtualFunc ()                -- calls A::virtualFunc ()
+      print (a.data)                  -- Prints the data member.
+      print (a.prop)                  -- Prints the property member.
+      a:func1 ()                      -- Calls A::func1 ().
+      test.A.func1 (a)                -- Equivalent to a:func1 ().
+      test.A.func1 ("hello")          -- Error: "hello" is not a class A.
+      a:virtualFunc ()                -- Calls A::virtualFunc ().
 
-      print (b.data)                  -- prints B::dataMember
-      print (b.prop)                  -- prints inherited property member
-      b:func1 ()                      -- calls B::func1 ()
-      b:func2 ()                      -- calls B::func2 ()
-      test.B.func2 (a)                -- error: a is not a class B
-      test.A.func1 (b)                -- calls A::func1 ()
-      b:virtualFunc ()                -- calls B::virtualFunc ()
-      test.B.virtualFunc (b)          -- calls B::virtualFunc ()
-      test.A.virtualFunc (b)          -- calls B::virtualFunc ()
-      test.B.virtualFunc (a)          -- error: a is not a class B
+      print (b.data)                  -- Prints B::dataMember.
+      print (b.prop)                  -- Prints inherited property member.
+      b:func1 ()                      -- Calls B::func1 ().
+      b:func2 ()                      -- Calls B::func2 ().
+      test.B.func2 (a)                -- Error: a is not a class B.
+      test.A.func1 (b)                -- Calls A::func1 ().
+      b:virtualFunc ()                -- Calls B::virtualFunc ().
+      test.B.virtualFunc (b)          -- Calls B::virtualFunc ().
+      test.A.virtualFunc (b)          -- Calls B::virtualFunc ().
+      test.B.virtualFunc (a)          -- Error: a is not a class B.
 
       a = nil; collectgarbage ()      -- 'a' still exists in C++.
       b = nil; collectgarbage ()      -- Lua calls ~B() on the copy of b.
 
-  ### Shared Lifetime
-
-
-
-
-
-
-  Given two Lua objects `a` and `b` of class types `A` and `B respectively, the
-  following effects are observed in Lua scripts (the mechanism for passing or
-  creating these objects is explained a later section):
-
-
-
-
-
-
-
-
-
-  ### Pointers, References, and Passing Objects by Value
+  ### Pointers, References, and Pass by Value
 
   When C++ objects are passed from Lua back to C++ as arguments to functions,
   or set as data members, LuaBridge does its best to automate the conversion.
@@ -463,75 +484,32 @@
       func3 (a)   -- Passes a reference to a.
       func4 (a)   -- Passes a reference to a const a.
 
-  In the example above, All functions can read the data members and property
+  In the example above, all functions can read the data members and property
   members of `a`, or call const member functions of `a`. Only `func0`, `func1`
   and `func3` can modify the data members and data properties, or call
   non-const member functions of `a`.
-
-  Except for `func0`, a problem can arise when C++ receives pointers or
-  references to objects seen by Lua. Undefined behavior can result if the Lua
-  garbage collector destroys the class while the C++ code is keeping a pointer
-  to the object somewhere. In the body of the function above, access is safe
-  because there is always a reference to the object on the Lua stack. To
-  prevent undefined behavior, do not store pointers to objects that come from
-  C++ functions called by Lua. Instead, use a _Container_. This is explained in
-  a later section.
 
   The usual C++ inheritance and pointer assignment rules apply. Given:
 
       void func5 (B b);
       void func6 (B* b);
 
-  The following Lua effects are observed:
+  These Lua statements hold:
 
       func5 (b)   - Passes a copy of b, using B's copy constructor.
       func6 (b)   - Passes a pointer to b.
       func6 (a)   - Error: Pointer to B expected.
       func1 (b)   - Okay, b is a subclass of a.
 
-  When Lua manages the lifetime of the object, it is subjected to all of the
-  normal garbage collection rules. C++ functions and member functions can
-  receive pointers and references to these objects, but care must be taken
-  to make sure that no attempt is made to access the object after it is
-  garbage collected. Usually this is done by simply not storing a pointer to
-  the object somewhere inside your C++.
-
-  When C++ manages the lifetime of the object, the Lua garbage collector has
-  no effect on it. Care must be taken to make sure that the C++ code does not
-  destroy the object while Lua still has a reference to it.
-
-
-
-
-  User-defined types which are convertible to one of the basic types are
-  possible, simply provide a `Stack <>` specialization in the `luabridge`
-  namespace for your user-defined type, modeled after the existing types.
-  For example, here is a specialization for a [juce::String][6]:
-
-      template <>
-      struct Stack <juce::String>
-      {
-        static void push (lua_State* L, juce::String s)
-        {
-          lua_pushstring (L, s.toUTF8 ());
-        }
-
-        static juce::String get (lua_State* L, int index)
-        {
-          return juce::String (luaL_checkstring (L, index));
-        }
-      };
-
-  ### Shared Object Lifetime
+  ## Shared Lifetime
 
   LuaBridge supports a "shared lifetime" model: dynamically allocated and
   reference counted objects whose ownership is shared by both Lua and C++.
   The object remains in existence until there are no remaining C++ or Lua
-  references, and Lua performs its usual garbage collection cycle. LuaBridge
-  comes with a few varieties of containers that support this shared lifetime
-  model, or you can use your own (subject to some restrictions).
+  references, and Lua performs its usual garbage collection cycle.
 
-  Note that 
+  LuaBridge comes with a few varieties of containers that support this
+  shared lifetime model, or you can use your own (subject to some restrictions).
 
   Mixing object lifetime models is entirely possible, subject to the usual
   caveats of holding references to objects which could get deleted. For
@@ -540,24 +518,33 @@
   These modifications are visible to Lua (since they both refer to the same
   object).
 
-  ### The `lua_State`
+  ### RefCountedObjectPtr
 
-  Multiple lua_State registrations
+  This is an intrusive style container. Your existing class declaration must be
+  changed to be also derived from RefCountedObject. Given class T, derived
+  from RefCountedObject, the container RefCountedObjectPtr <T> may be used.
 
-  Sometimes it is convenient from within a bound function or member function
-  to gain access to the `lua_State` normally available to a `lua_CFunction`.
-  With LuaBridge, all you need to do is add a `lua_State*` parameter at any
-  position in your bound function:
+  ### shared_ptr
 
-      void useState (lua_State* L);
+  This is a non intrusive reference counted pointer. The reference counts are
+  kept in a global hash table, which does incur a small performance penalty.
+  However, it does not require changing any already existing class declarations.
 
-      s.function ("useState", &useState);
+  ### Custom Containers
 
-  You can still include regular arguments while receiving the state:
+  If you have your own container, you must specialize `ContainerTraits` before
+  it will be recognized by LuaBridge (or else the code will not compile):
 
-      void useStateAndArgs (lua_State* L, int i, std::string s);
+      template <class T>
+      struct ContainerTraits <CustomContainer <T> >
+      {
+        typedef typename T Type;
 
-      s.function ("useStateAndArgs", &useStateAndArgs);
+        static T* get (CustomContainer <T> const& c)
+        {
+          return c.getPointerToObject ();
+        }
+      };
 
   ## Security
 
@@ -1506,6 +1493,19 @@ struct Stack <T const&> : Detail
   static T const& get (lua_State* L, int index)
   {
     return *Userdata::get <T> (L, index, true);
+  }
+};
+
+//------------------------------------------------------------------------------
+/**
+  Receive the lua_State* as an argument.
+*/
+template <>
+struct Stack <lua_State*>
+{
+  static lua_State* get (lua_State* L, int)
+  {
+    return L;
   }
 };
 

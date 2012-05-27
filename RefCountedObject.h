@@ -327,7 +327,7 @@ struct ContainerTraits <RefCountedObjectPtr <T> >
 {
   typedef typename T Type;
 
-  static void* get (RefCountedObjectPtr <T> const& c)
+  static T* get (RefCountedObjectPtr <T> const& c)
   {
     return c.getObject ();
   }
