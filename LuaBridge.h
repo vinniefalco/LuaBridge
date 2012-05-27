@@ -146,21 +146,21 @@
   implemented using tables. The namespace need not correspond to a C++ namespace;
   in fact no C++ namespaces need to exist at all unless you want them to.
   LuaBridge namespaces are visible only to Lua scripts; they are used as a
-  logical grouping tool. To obtain access to the global namespace we use:
+  logical grouping tool. To obtain access to the global namespace we write:
 
       getGlobalNamespace (L);
 
   This returns an object on which further registrations can be performed. The
   subsequent registrations will go into the global namespace, a practice which
-  is not recommended. Instead, we can add our own namespace like this:
+  is not recommended. Instead, we can add our own namespace by writing:
 
       getGlobalNamespace (L)
         .beginNamespace ("test");
 
   This creates a table in `_G` called "test". Since we have not performed any
-  registrations, this table will be empty except for some bookkeeping keys.
-  LuaBridge reserves all identifiers that start with a double underscore. So
-  `__test` would be an invalid name (although LuaBridge will silently accept
+  registrations, this table will be empty except for some bookkeeping key/value
+  pairs. LuaBridge reserves all identifiers that start with a double underscore.
+  So `__test` would be an invalid name (although LuaBridge will silently accept
   it). Functions like `beginNamespace` return the corresponding object on which
   we can make more registrations. Given:
 
@@ -172,14 +172,13 @@
           .endNamespace ()
         .endNamespace ();
 
-  The following nested tables are produced: `_G["test"]`, `test["detail"]`, and
-  `test["utility"]`. The results are accessible to Lua as `test.detail` and
-  `test.utility`. We also used the `endNamespace` function; it returns an object
-  representing the original enclosing namespace. It is undefined behavior to
-  use `endNamespace` on the global namespace. All LuaBridge functions which 
+  The results are accessible to Lua as `test`, `test.detail`, and
+  `test.utility`. We also introduce the `endNamespace` function; it returns an
+  object representing the original enclosing namespace. All LuaBridge functions which 
   create registrations return an object upon which subsequent registrations can
   be made, allowing for an unlimited number of registrations to be chained
-  together using the dot operator `.`.
+  together using the dot operator `.`. It is undefined behavior to use
+  `endNamespace` on the global namespace. 
 
   A namespace can be re-opened later to add more functions. This lets you split
   up the registration between different source files. These are equivalent:
@@ -3138,10 +3137,10 @@ private:
     static int f (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
-      Func fp = *static_cast <Func*> (lua_touserdata (L, lua_upvalueindex (1)));
+      Func const& fp = *static_cast <Func const*> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fp != 0);
       ArgList <Params> args (L);
-      Stack <ReturnType>::push (L, FuncTraits <Func>::call (fp, args));
+      push (L, FuncTraits <Func>::call (fp, args));
       return 1;
     }
   };
@@ -3160,7 +3159,7 @@ private:
     static int f (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
-      Func fp = *static_cast <Func*> (lua_touserdata (L, lua_upvalueindex (1)));
+      Func const& fp = *static_cast <Func const*> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fp != 0);
       ArgList <Params> args (L);
       FuncTraits <Func>::call (fp, args);
@@ -3944,8 +3943,9 @@ private:
       {
         rawgetfield (L, -2, "__propget");
         rawgetfield (L, -4, "__propget");
-        lua_pushlightuserdata (L, get);
-        lua_pushcclosure (L, &functionProxy <GT (*) (T const*)>::f, 1);
+        typedef GT (*get_t) (T const*);
+        new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
+        lua_pushcclosure (L, &functionProxy <get_t>::f, 1);
         lua_pushvalue (L, -1);
         rawsetfield (L, -4, name);
         rawsetfield (L, -2, name);
@@ -3957,8 +3957,9 @@ private:
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        lua_pushlightuserdata (L, set)
-        lua_pushcclosure (L, &functionProxy <void (*) (T const*, ST)>::f, 1);
+        typedef void (*set_t) (T*, ST);
+        new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
+        lua_pushcclosure (L, &functionProxy <set_t>::f, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
