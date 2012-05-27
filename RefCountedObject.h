@@ -6,8 +6,8 @@
   Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright 2004-11 by Raw Material Software Ltd.
 
-  This is a derivative work, used by permission, from JUCE,
-  available at http://www.rawaterialsoftware.com
+  This is a derivative work used by permission from part of
+  JUCE, available at http://www.rawaterialsoftware.com
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
