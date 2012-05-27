@@ -764,7 +764,8 @@
   the use of `lua_pcall`; proper usage of LuaBridge will never result in
   undefined behavior.
 
-  ## 
+  ## Limitations 
+
   LuaBridge does not support:
 
   - Enumerated constants
