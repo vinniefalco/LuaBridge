@@ -624,7 +624,7 @@
   the correspoding specialization is present. Two styles of containers come with
   LuaBridge, including the necessary specializations:
 
-  ### `RefCountedObjectPtr`
+  ### The `RefCountedObjectPtr` Container
 
   This is an intrusive style container. Your existing class declaration must be
   changed to be also derived from `RefCountedObject`. Given `class T`, derived
@@ -649,7 +649,7 @@
         a->foo ();
       }
 
-  ### `RefCountedPtr`
+  ### The `RefCountedPtr` Container
 
   This is a non intrusive reference counted pointer. The reference counts are
   kept in a global hash table, which does incur a small performance penalty.
@@ -727,12 +727,10 @@
       getGlobalNamespace (L)
         .beginNamespace ("test")
           .beginClass <C> ("C")
-            .addConstructor <void (*) (void),
-                             RefCountedObjectPtr <C> > ()
+            .addConstructor <void (*) (void), RefCountedObjectPtr <C> > ()
           .endClass ()
           .beginClass <D> ("D")
-            .addConstructor <void (*) (void),
-                             RefCountedPtr <D> > ()
+            .addConstructor <void (*) (void), RefCountedPtr <D> > ()
           .endClass ();
         .endNamespace ()
 
