@@ -3928,6 +3928,46 @@ private:
 
     //--------------------------------------------------------------------------
     /**
+      Add or replace a property member, by proxy.
+
+      When a class is closed for modification and does not provide (or cannot
+      provide) the function signatures necessary to implement get or set for
+      a property, this will allow non-member functions act as proxies.
+
+      Both the get and the set functions require a T const* and T* in the first
+      argument respectively.
+    */
+    template <class GT, class ST>
+    Class <T>& addProperty (char const* name, GT (*get) (T const*), void (*set) (T*, ST) = 0)
+    {
+      // Add to __propget in class and const tables.
+      {
+        rawgetfield (L, -2, "__propget");
+        rawgetfield (L, -4, "__propget");
+        lua_pushlightuserdata (L, get);
+        lua_pushcclosure (L, &functionProxy <GT (*) (T const*)>::f, 1);
+        lua_pushvalue (L, -1);
+        rawsetfield (L, -4, name);
+        rawsetfield (L, -2, name);
+        lua_pop (L, 2);
+      }
+
+      if (set != 0)
+      {
+        // Add to __propset in class table.
+        rawgetfield (L, -2, "__propset");
+        assert (lua_istable (L, -1));
+        lua_pushlightuserdata (L, set)
+        lua_pushcclosure (L, &functionProxy <void (*) (T const*, ST)>::f, 1);
+        rawsetfield (L, -2, name);
+        lua_pop (L, 1);
+      }
+
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
       Add or replace a member function.
     */
     template <class MemFn>
