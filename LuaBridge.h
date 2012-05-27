@@ -2248,8 +2248,8 @@ private:
       rawsetfield (L, -2, "__newindex");
       lua_newtable (L);
       rawsetfield (L, -2, "__propget");
-      lua_pushboolean (L, 0);
-      rawsetfield (L, -2, "__metatable");
+      //lua_pushboolean (L, 0);
+      //rawsetfield (L, -2, "__metatable");
     }
 
     //--------------------------------------------------------------------------
@@ -2275,8 +2275,8 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
-      lua_pushboolean (L, 0);
-      rawsetfield (L, -2, "__metatable");
+      //lua_pushboolean (L, 0);
+      //rawsetfield (L, -2, "__metatable");
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__const"); // point to const table
 
@@ -2315,8 +2315,8 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
-      lua_pushboolean (L, 0);
-      rawsetfield (L, -2, "__metatable");
+      //lua_pushboolean (L, 0);
+      //rawsetfield (L, -2, "__metatable");
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__class"); // point to class table
     }
