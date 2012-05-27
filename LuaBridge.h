@@ -3895,14 +3895,14 @@ private:
 
       If the set function is null, the property is read-only.
     */
-    template <class U>
-    Class <T>& addProperty (char const* name, U (T::* get) () const, void (T::* set) (U) = 0)
+    template <class GT, class ST>
+    Class <T>& addProperty (char const* name, GT (T::* get) () const, void (T::* set) (ST) = 0)
     {
       // Add to __propget in class and const tables.
       {
         rawgetfield (L, -2, "__propget");
         rawgetfield (L, -4, "__propget");
-        typedef U (T::*get_t) () const;
+        typedef GT (T::*get_t) () const;
         new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
         lua_pushcclosure (L, &methodProxy <get_t>::callConstMethod, 1);
         lua_pushvalue (L, -1);
@@ -3916,7 +3916,7 @@ private:
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        typedef void (T::* set_t) (U);
+        typedef void (T::* set_t) (ST);
         new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
         lua_pushcclosure (L, &methodProxy <set_t>::callMethod, 1);
         rawsetfield (L, -2, name);
@@ -4148,15 +4148,15 @@ public:
 
     If the set function is omitted or null, the property is read-only.
   */
-  template <class T>
-  Namespace& addProperty (char const* name, T (*get) (), void (*set)(T) = 0)
+  template <class GT, class ST>
+  Namespace& addProperty (char const* name, GT (*get) (), void (*set)(ST) = 0)
   {
     assert (lua_istable (L, -1));
 
     rawgetfield (L, -1, "__propget");
     assert (lua_istable (L, -1));
     lua_pushlightuserdata (L, get);
-    lua_pushcclosure (L, &functionProxy <T (*) (void)>::f, 1);
+    lua_pushcclosure (L, &functionProxy <GT (*) (void)>::f, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
 
@@ -4165,7 +4165,7 @@ public:
     if (set != 0)
     {
       lua_pushlightuserdata (L, set);
-      lua_pushcclosure (L, &functionProxy <void (*) (T)>::f, 1);
+      lua_pushcclosure (L, &functionProxy <void (*) (ST)>::f, 1);
     }
     else
     {
