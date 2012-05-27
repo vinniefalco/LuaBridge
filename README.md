@@ -82,31 +82,28 @@ and that a `using namespace luabridge` using-directive is in effect.
 
 ### Namespaces
 
-All LuaBridge registrations take place in a _namespace_, which loosely
-resembles a C++ namespace. When we refer to a _namespace_ we are always
-talking about a namespace in the Lua sense, which is implemented using tables.
-The namespace does not need to correspond to a C++ namespace; in fact no C++
-namespaces need to exist at all unless you want them to. LuaBridge namespaces
-are visible only to Lua scripts; they are used as a logical grouping tool.
-To obtain access to the global namespace for a `lua_State* L` we use:
+All LuaBridge registrations take place in a _namespace_. When we refer to a
+_namespace_ we are always talking about a namespace in the Lua sense, which is
+implemented using tables. The namespace need not correspond to a C++ namespace;
+in fact no C++ namespaces need to exist at all unless you want them to.
+LuaBridge namespaces are visible only to Lua scripts; they are used as a
+logical grouping tool. To obtain access to the global namespace we write:
 
     getGlobalNamespace (L);
 
-This returns an object on which further registrations can be performed.
-The subsequent registrations will go into the global namespace, a practice
-which is not recommended. Instead, we can add a single global namespace like
-this:
+This returns an object on which further registrations can be performed. The
+subsequent registrations will go into the global namespace, a practice which
+is not recommended. Instead, we can add our own namespace by writing:
 
     getGlobalNamespace (L)
       .beginNamespace ("test");
 
-This creates a table in `_G` (the global namespace in Lua) called "test".
-Since we have not performed any registrations, this table will be mostly
-empty, except for some necessary bookkeeping fields. LuaBridge reserves all
-identifiers that start with a double underscore. So `__test` would be an
-invalid name (although LuaBridge will silently accept it). Functions like
-`beginNamespace` return the corresponding object on which we can make more
-registrations. Given:
+This creates a table in `_G` called "test". Since we have not performed any
+registrations, this table will be empty except for some bookkeeping key/value
+pairs. LuaBridge reserves all identifiers that start with a double underscore.
+So `__test` would be an invalid name (although LuaBridge will silently accept
+it). Functions like `beginNamespace` return the corresponding object on which
+we can make more registrations. Given:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -116,14 +113,13 @@ registrations. Given:
         .endNamespace ()
       .endNamespace ();
 
-The following nested tables are produced: `_G["test"]`, `test["detail"]`, and
-`test["utility"]`. The results are accessible to Lua as `test.detail` and
-`test.utility`. We also used the `endNamespace` function; it returns an object
-representing the original enclosing namespace. It is undefined behavior to
-use `endNamespace` on the global namespace. All LuaBridge functions which 
+The results are accessible to Lua as `test`, `test.detail`, and
+`test.utility`. We also introduce the `endNamespace` function; it returns an
+object representing the original enclosing namespace. All LuaBridge functions which 
 create registrations return an object upon which subsequent registrations can
 be made, allowing for an unlimited number of registrations to be chained
-together using the dot operator `.`.
+together using the dot operator `.`. It is undefined behavior to use
+`endNamespace` on the global namespace. 
 
 A namespace can be re-opened later to add more functions. This lets you split
 up the registration between different source files. These are equivalent:
@@ -158,7 +154,7 @@ arguments into the appropriate data type when doing so is possible. This
 automated system works for the function's return value, and up to 8 parameters
 although more can be added by extending the templates. Pointers, references,
 and objects of class type as parameters are treated specially, and explained
-in a later section. Given the following:
+later. Given the following:
 
     int globalVar;
     static float staticVar;
