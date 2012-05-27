@@ -265,6 +265,11 @@
       test.bar ("Employee") -- calls bar with a string
       test.bar (test)       -- error: bar expects a string not a table
 
+  LuaBridge does not support overloaded functions nor is it likely to in the
+  future. Since Lua is dynamically typed, any system that tries to resolve a set
+  of parameters passed from a script will face considerable ambiguity when
+  trying to choose an appropriately matching C++ function signature.
+
   ### Classes
 
   A class registration is opened using either `beginClass` or `deriveClass` and
@@ -323,12 +328,19 @@
           .endClass ()
         .endClass ();
 
-  As with regular variables and properties, class data and properties can
-  be marked read-only by passing false in the second parameter, or omitting
-  the set function respectively. The `deriveClass` takes two template arguments:
-  the class to be registered, and its base class.  Inherited methods do not have
-  to be re-declared and will function normally in Lua. If a class has a base
-  class that is **not** registered with Lua, there is no need to declare it as a
+  Method registration works just like function registration.  Virtual methods
+  work normally; no special syntax is needed. const methods are detected and
+  const-correctness is enforced, so if a function returns a const object (or
+  a container holding to a const object) to Lua, that reference to the object
+  will be considered const and only const methods can be called on it.
+  Destructors are registered automatically for each class.
+
+  As with regular variables and properties, class data and properties can be
+  marked read-only by passing false in the second parameter, or omitting the set
+  set function respectively. The `deriveClass` takes two template arguments: the
+  class to be registered, and its base class.  Inherited methods do not have to
+  be re-declared and will function normally in Lua. If a class has a base class
+  that is **not** registered with Lua, there is no need to declare it as a
   subclass.
 
   ### Class Property Proxies
@@ -379,6 +391,44 @@
             .addProperty ("z", &VecHelper::get <2>, &VecHelper::set <2>)
           .endClass ()
         .endNamespace ();
+
+  ### Constructors
+
+  A single constructor may be added for a class using `addConstructor`.
+  LuaBridge cannot automatically determine the number and types of constructor
+  parameters like it can for functions and methods, so you must provide them.
+  This is done by providing the signature of the desired constructor function
+  as the first template parameter to `addConstructor`. The parameter types will
+  be extracted from this (the return type is ignored).  For example, these
+  statements register constructors for the given classes:
+
+      struct A
+      {
+        A () { }
+      };
+
+      struct B
+      {
+        explicit B (char const* s, int nChars) { }
+      };
+
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .beginClass <A> ("A")
+            .addConstructor <void (*) (void)> ()
+          .endClass ()
+          .beginClass <B> ("B")
+            .addConstructor <void (*) (char const*, int)> ()
+          .endClass ();
+        .endNamespace ()
+
+  Constructors added in this fashion are called from Lua using the fully
+  qualified name of the class. This Lua code will create instances of `A` and
+  `B`
+
+    a = test.A ()           -- Create a new A.
+    b = test.B ("hello", 5) -- Create a new B.
+    b = test.B ()           -- Error: expected string in argument 1
 
   ## The Lua Stack
 
@@ -518,6 +568,13 @@
       a = nil; collectgarbage ()      -- 'a' still exists in C++.
       b = nil; collectgarbage ()      -- Lua calls ~B() on the copy of b.
 
+  When Lua script creates an object of class type using a registered
+  constructor, the resulting value will have Lua lifetime. After Lua no longer
+  references the object, it becomes eligible for garbage collection. You can
+  still pass these to C++, either by reference or by value. If passed by
+  reference, the usual warnings apply about accessing the reference later,
+  after it has been garbage collected.
+
   ### Pointers, References, and Pass by Value
 
   When C++ objects are passed from Lua back to C++ as arguments to functions,
@@ -561,29 +618,73 @@
   LuaBridge supports a "shared lifetime" model: dynamically allocated and
   reference counted objects whose ownership is shared by both Lua and C++.
   The object remains in existence until there are no remaining C++ or Lua
-  references, and Lua performs its usual garbage collection cycle.
-
-  LuaBridge comes with a few varieties of containers that support this
-  shared lifetime model, or you can use your own (subject to some restrictions).
-
-  Mixing object lifetime models is entirely possible, subject to the usual
-  caveats of holding references to objects which could get deleted. For
-  example, C++ can be called from Lua with a pointer to an object of class
-  type; the function can modify the object or call non-const data members.
-  These modifications are visible to Lua (since they both refer to the same
-  object).
+  references, and Lua performs its usual garbage collection cycle. A container
+  is recognized by a specialization of the `ContainerTraits` template class.
+  LuaBridge will automatically recognize when a data type is a container when
+  the correspoding specialization is present. Two styles of containers come with
+  LuaBridge, including the necessary specializations:
 
   ### `RefCountedObjectPtr`
 
   This is an intrusive style container. Your existing class declaration must be
-  changed to be also derived from RefCountedObject. Given class T, derived
-  from RefCountedObject, the container RefCountedObjectPtr <T> may be used.
+  changed to be also derived from `RefCountedObject`. Given `class T`, derived
+  from `RefCountedObject`, the container `RefCountedObjectPtr <T>` may be used.
+  In order for reference counts to be maintained properly, all C++ code must
+  store a container instead of the pointer. This is similar in style to
+  `std::shared_ptr` although there are slight differences. For example:
 
-  ### `shared_ptr`
+      // A is reference counted.
+      struct A : public RefCountedObject
+      {
+        void foo () { }
+      };
+
+      struct B
+      {
+        RefCountedObjectPtr <A> a; // holds a reference to A
+      };
+
+      void bar (RefCountedObjectPtr <A> a)
+      {
+        a->foo ();
+      }
+
+  ### `RefCountedPtr`
 
   This is a non intrusive reference counted pointer. The reference counts are
   kept in a global hash table, which does incur a small performance penalty.
   However, it does not require changing any already existing class declarations.
+  This is especially useful when the classes to be registered come from a third
+  party library and cannot be modified. To use it, simply wrap all pointers
+  to class objects with the container instead:
+
+      struct A
+      {
+        void foo () { }
+      };
+
+      struct B
+      {
+        RefCountedPtr <A> a;
+      };
+
+      RefCountedPtr <A> createA ()
+      {
+        return new A;
+      }
+
+      void bar (RefCountedPtr <A> a)
+      {
+        a->foo ();
+      }
+
+      void callFoo ()
+      {
+        bar (createA ());
+
+        // The created A will be destroyed
+        // when we leave this scope
+      }
 
   ### Custom Containers
 
@@ -601,6 +702,49 @@
           return c.getPointerToObject ();
         }
       };
+
+  ### Container Construction
+
+  When a constructor is registered for a class, there is an additional
+  optional second template parameter describing the type of container to use.
+  If this parameter is specified, calls to the constructor will create the
+  object dynamically, via operator new, and place it a container of that
+  type. The container must have been previously specialized in
+  `ContainerTraits`, or else a compile error will result. This code will
+  register two objects, each using a constructor that creates an object
+  with Lua lifetime using the specified container:
+
+      class C : public RefCountedObject
+      {
+        C () { }
+      };
+
+      class D
+      {
+        D () { }
+      };
+
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .beginClass <C> ("C")
+            .addConstructor <void (*) (void),
+                             RefCountedObjectPtr <C> > ()
+          .endClass ()
+          .beginClass <D> ("D")
+            .addConstructor <void (*) (void),
+                             RefCountedPtr <D> > ()
+          .endClass ();
+        .endNamespace ()
+
+  ### Mixing Lifetimes
+
+  Mixing object lifetime models is entirely possible, subject to the usual
+  caveats of holding references to objects which could get deleted. For
+  example, C++ can be called from Lua with a pointer to an object of class
+  type; the function can modify the object or call non-const data members.
+  These modifications are visible to Lua (since they both refer to the same
+  object). An object store in a container can be passed to a function expecting
+  a pointer. These conversion work seamlessly.
 
   ## Security
 
@@ -620,8 +764,7 @@
   the use of `lua_pcall`; proper usage of LuaBridge will never result in
   undefined behavior.
 
-  ## Limitations 
-
+  ## 
   LuaBridge does not support:
 
   - Enumerated constants
@@ -665,54 +808,6 @@
   [4]: https://github.com/vinniefalco/LuaBridgeDemo "LuaBridge Demo"
   [5]: http://lua.org "The Lua Programming Language"
   [6]: http://www.rawmaterialsoftware.com/juce/api/classString.html "juce::String"
-*/
-
-/**
-  ### Shared Pointers
-
-  A `C` container template allows for object lifetime management that
-  behaves like `std::shared_ptr`. That is, objects are dynamically allocated
-  and reference counted. The object is not destroyed until the reference count
-  drops to zero. Such objects are safe to store in C++ and Lua code. A
-  garbage collection will only decrement the reference count.
-
-  The `class_` function registers a class; its Constructor will be available as
-  a global function with name given as argument to `class_`.  The object
-  returned can then be used to register the Constructor (no overloading is
-  supported, so there can only be one Constructor) and methods.
-
-  LuaBridge cannot automatically determine the number and types of Constructor
-  parameters like it can for functions and methods, so you must provide them.
-  This is done by letting the `Constructor` function take a template parameter,
-  which must be a function pointer type.  The parameter types will be extracted
-  from this (the return type is ignored).  For example, to register a
-  Constructor taking two parameters, one `int` and one `char const*`, you would
-  write:
-
-      s .class_ <MyClass> ()
-        .Constructor <void (*) (int, const char *)> ()
-
-  Note that in the example above, the name of the class was ommitted from the
-  argument to the `class` function. This allows you to add additional
-  registrations to a class that has already been registered.
-
-  Method registration works just like function registration.  Virtual methods
-  work normally; no special syntax is needed. const methods are detected and
-  const-correctness is enforced, so if a function returns a const object (or
-  rather, a `shared_ptr` to a const object) to Lua, that reference to the object
-  will be considered const and only const methods will be called on it.
-  Destructors are registered automatically for each class.
-
-
-  ## Implementation Details
-
-  - Nested tables
-
-  - Security system
-
-  - The registry
-
-  - Multiple lua_state
 */
 
 #include <cassert>
@@ -2025,7 +2120,7 @@ struct Detail
     metatable. The value is a boolean = true, although any value could have been
     used.
 
-    Because of Lua's weak typing and our improvised system of imposing C++
+    Because of Lua's dynamic typing and our improvised system of imposing C++
     class structure, there is the possibility that executing scripts may
     knowingly or unknowingly cause invalid data to get passed to the C functions
     created by LuaBridge. In particular, our security model addresses the
