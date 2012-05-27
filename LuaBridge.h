@@ -1172,10 +1172,17 @@ struct Detail
       // If this fails to compile it means you forgot to provide
       // a Container specialization for your container!
       //
-      return static_cast <T*> (&m_storage [0]);
+      return reinterpret_cast <T*> (&m_storage [0]);
     }
 
   private:
+    /**
+      Used for placement construction.
+    */
+    UserdataValue ()
+    {
+    }
+
     ~UserdataValue ()
     {
       getObject ()->~T ();
@@ -1195,7 +1202,7 @@ struct Detail
     */
     static void* place (lua_State* const L)
     {
-      Userdata* const ud = new (
+      UserdataValue <T>* const ud = new (
         lua_newuserdata (L, sizeof (UserdataValue <T>))) UserdataValue <T> ();
       lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
       // If this goes off it means you forgot to register the class!
@@ -2343,7 +2350,6 @@ private:
     static int ctorPlacementProxy (lua_State* L)
     {
       ArgList <Params, 2> args (L);
-      UserdataShared <C>::push (L, p);
       Constructor <T, Params>::call (UserdataValue <T>::place (L), args);
       return 1;
     }
@@ -2723,7 +2729,18 @@ private:
     template <class MemFn, class C>
     Class <T>& addConstructor ()
     {
-      lua_pushcclosure (L, &ctorContainerProxy <typename FuncTraits <MemFn>::Params, C>, 0);
+      lua_pushcclosure (L,
+        &ctorContainerProxy <typename FuncTraits <MemFn>::Params, C>, 0);
+      rawsetfield(L, -2, "__call");
+
+      return *this;
+    }
+
+    template <class MemFn>
+    Class <T>& addConstructor ()
+    {
+      lua_pushcclosure (L,
+        &ctorPlacementProxy <typename FuncTraits <MemFn>::Params, T>, 0);
       rawsetfield(L, -2, "__call");
 
       return *this;
