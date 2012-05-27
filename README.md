@@ -644,6 +644,13 @@ recognized by LuaBridge (or else the code will not compile):
       }
     };
 
+Standard containers like `std::shared_ptr` or `boost::shared_ptr` **will not
+work**. This is because of type erasure; when the object goes from C++ to
+Lua and back to C++, there is no way to associate the object with the
+original container. The new container is constructed from a pointer to the
+object instead of an existing container. The result is undefined behavior
+since there are now two sets of reference counts.
+
 ### Container Construction
 
 When a constructor is registered for a class, there is an additional
