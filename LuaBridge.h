@@ -238,9 +238,8 @@
 
   Variables can be marked _read-only_ by passing `false` in the second optional
   parameter. If the parameter is omitted, `true` is used making the variable
-  read/write. Properties are marked read-only by omitting the set function or
-  passing it as 0 (or `nullptr`). After the registrations above, the following
-  Lua identifiers are valid:
+  read/write. Properties are marked read-only by omitting the set function.
+  After the registrations above, the following Lua identifiers are valid:
 
       test        -- a namespace
       test.var1   -- a lua_Number variable
@@ -501,6 +500,8 @@
   - `T const*` or `T const&`: Passed by const reference, with _C++ lifetime_.
   - `T` or `T const`: Passed by value (a copy), with _Lua lifetime_.
 
+  When a pointer or pointer to const is passed and the value is null (zero),
+  LuaBridge will
   ### C++ Lifetime
 
   The creation and deletion of objects with _C++ lifetime_ is controlled by
@@ -780,6 +781,7 @@
   - Global variables (variables must be wrapped in a named scope).
   - Automatic conversion between STL container types and Lua tables.
   - Inheriting Lua classes from C++ classes.
+  - Passing nil to a C++ function that expects a pointer or reference.
 
   ## Development
 
@@ -2590,27 +2592,44 @@ struct Detail
     */
     static void push (lua_State* L, void* const p, void const* const key)
     {
-      new (lua_newuserdata (L, sizeof (UserdataPtr))) UserdataPtr (p);
-      lua_rawgetp (L, LUA_REGISTRYINDEX, key);
-      // If this goes off it means you forgot to register the class!
-      assert (lua_istable (L, -1));
-      lua_setmetatable (L, -2);
+      if (p)
+      {
+        new (lua_newuserdata (L, sizeof (UserdataPtr))) UserdataPtr (p);
+        lua_rawgetp (L, LUA_REGISTRYINDEX, key);
+        // If this goes off it means you forgot to register the class!
+        assert (lua_istable (L, -1));
+        lua_setmetatable (L, -2);
+      }
+      else
+      {
+        lua_pushnil (L);
+      }
     }
 
     /** Push const pointer to object using metatable key.
     */
     static void push (lua_State* L, void const* const p, void const* const key)
     {
-      new (lua_newuserdata (L, sizeof (UserdataPtr)))
-        UserdataPtr (const_cast <void*> (p));
-      lua_rawgetp (L, LUA_REGISTRYINDEX, key);
-      // If this goes off it means you forgot to register the class!
-      assert (lua_istable (L, -1));
-      lua_setmetatable (L, -2);
+      if (p)
+      {
+        new (lua_newuserdata (L, sizeof (UserdataPtr)))
+          UserdataPtr (const_cast <void*> (p));
+        lua_rawgetp (L, LUA_REGISTRYINDEX, key);
+        // If this goes off it means you forgot to register the class!
+        assert (lua_istable (L, -1));
+        lua_setmetatable (L, -2);
+      }
+      else
+      {
+        lua_pushnil (L);
+      }
     }
 
     explicit UserdataPtr (void* const p) : m_p (p)
     {
+      // Can't construct with a null pointer!
+      //
+      assert (m_p != 0);
     }
 
   public:
@@ -4045,11 +4064,9 @@ private:
     //--------------------------------------------------------------------------
     /**
       Add or replace a property member.
-
-      If the set function is null, the property is read-only.
     */
     template <class GT, class ST>
-    Class <T>& addProperty (char const* name, GT (T::* get) () const, void (T::* set) (ST) = 0)
+    Class <T>& addProperty (char const* name, GT (T::* get) () const, void (T::* set) (ST))
     {
       // Add to __propget in class and const tables.
       {
@@ -4064,7 +4081,6 @@ private:
         lua_pop (L, 2);
       }
 
-      if (set != 0)
       {
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
@@ -4075,6 +4091,24 @@ private:
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
+
+      return *this;
+    }
+
+    // read-only
+    template <class GT>
+    Class <T>& addProperty (char const* name, GT (T::* get) () const)
+    {
+      // Add to __propget in class and const tables.
+      rawgetfield (L, -2, "__propget");
+      rawgetfield (L, -4, "__propget");
+      typedef GT (T::*get_t) () const;
+      new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
+      lua_pushcclosure (L, &methodProxy <get_t>::callConstMethod, 1);
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -4, name);
+      rawsetfield (L, -2, name);
+      lua_pop (L, 2);
 
       return *this;
     }
@@ -4091,7 +4125,7 @@ private:
       argument respectively.
     */
     template <class GT, class ST>
-    Class <T>& addProperty (char const* name, GT (*get) (T const*), void (*set) (T*, ST) = 0)
+    Class <T>& addProperty (char const* name, GT (*get) (T const*), void (*set) (T*, ST))
     {
       // Add to __propget in class and const tables.
       {
@@ -4117,6 +4151,24 @@ private:
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
+
+      return *this;
+    }
+
+    // read-only
+    template <class GT, class ST>
+    Class <T>& addProperty (char const* name, GT (*get) (T const*))
+    {
+      // Add to __propget in class and const tables.
+      rawgetfield (L, -2, "__propget");
+      rawgetfield (L, -4, "__propget");
+      typedef GT (*get_t) (T const*);
+      new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
+      lua_pushcclosure (L, &functionProxy <get_t>::f, 1);
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -4, name);
+      rawsetfield (L, -2, name);
+      lua_pop (L, 2);
 
       return *this;
     }
