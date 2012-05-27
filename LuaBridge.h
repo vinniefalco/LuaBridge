@@ -49,7 +49,6 @@
 
 #include <stdexcept>
 #include <typeinfo>
-#include <stdint.h>
 #include <string.h>
 
 //==============================================================================
@@ -142,31 +141,28 @@
 
   ### Namespaces
 
-  All LuaBridge registrations take place in a _namespace_, which loosely
-  resembles a C++ namespace. When we refer to a _namespace_ we are always
-  talking about a namespace in the Lua sense, which is implemented using tables.
-  The namespace does not need to correspond to a C++ namespace; in fact no C++
-  namespaces need to exist at all unless you want them to. LuaBridge namespaces
-  are visible only to Lua scripts; they are used as a logical grouping tool.
-  To obtain access to the global namespace for a `lua_State* L` we use:
+  All LuaBridge registrations take place in a _namespace_. When we refer to a
+  _namespace_ we are always talking about a namespace in the Lua sense, which is
+  implemented using tables. The namespace need not correspond to a C++ namespace;
+  in fact no C++ namespaces need to exist at all unless you want them to.
+  LuaBridge namespaces are visible only to Lua scripts; they are used as a
+  logical grouping tool. To obtain access to the global namespace we use:
 
       getGlobalNamespace (L);
 
-  This returns an object on which further registrations can be performed.
-  The subsequent registrations will go into the global namespace, a practice
-  which is not recommended. Instead, we can add a single global namespace like
-  this:
+  This returns an object on which further registrations can be performed. The
+  subsequent registrations will go into the global namespace, a practice which
+  is not recommended. Instead, we can add our own namespace like this:
 
       getGlobalNamespace (L)
         .beginNamespace ("test");
 
-  This creates a table in `_G` (the global namespace in Lua) called "test".
-  Since we have not performed any registrations, this table will be mostly
-  empty, except for some necessary bookkeeping fields. LuaBridge reserves all
-  identifiers that start with a double underscore. So `__test` would be an
-  invalid name (although LuaBridge will silently accept it). Functions like
-  `beginNamespace` return the corresponding object on which we can make more
-  registrations. Given:
+  This creates a table in `_G` called "test". Since we have not performed any
+  registrations, this table will be empty except for some bookkeeping keys.
+  LuaBridge reserves all identifiers that start with a double underscore. So
+  `__test` would be an invalid name (although LuaBridge will silently accept
+  it). Functions like `beginNamespace` return the corresponding object on which
+  we can make more registrations. Given:
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
@@ -218,7 +214,7 @@
   automated system works for the function's return value, and up to 8 parameters
   although more can be added by extending the templates. Pointers, references,
   and objects of class type as parameters are treated specially, and explained
-  in a later section. Given the following:
+  later. Given the following:
 
       int globalVar;
       static float staticVar;
