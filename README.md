@@ -48,9 +48,9 @@ Windows, Mac OS, iOS, Android, and GNU/Linux systems with X11. The stand-alone
 program should work anywhere. Both of these applications include LuaBridge,
 Lua version 5.2, and the code necessary to produce a cross platform graphic
 application. They are all together in a separate repository, with no
-additional dependencies, available at [LuaBridge Demo and Tests][4]. This is
-what the GUI application looks like, along with the C++ code snippet for
-registering the two classes:
+additional dependencies, available on Github at [LuaBridge Demo and Tests][4].
+This is what the GUI application looks like, along with the C++ code snippet
+for registering the two classes:
   
 <a href="https://github.com/vinniefalco/LuaBridgeDemo">
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot.png">
@@ -75,10 +75,10 @@ There are four types of objects that LuaBridge can register:
 
 Both data and properties can be marked as _read-only_ at the time of
 registration. This is different from `const`; the values of these objects can
-be modified on the C++ side, but Lua scripts cannot change them. For brevity
-of exposition, in the examples that follow the C++ code samples assume that a
-`using namespace luabridge` declaration is in effect. A code sample is either
-C++ or Lua, depending on the context.
+be modified on the C++ side, but Lua scripts cannot change them. Code samples
+that follow are in C++ or Lua, depending on context. For brevity of exposition
+code samples in C++ assume the traditional variable `lua_State* L` is defined,
+and that a `using namespace luabridge` using-directive is in effect.
 
 ### Namespaces
 
