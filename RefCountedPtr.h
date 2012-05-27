@@ -236,7 +236,7 @@ namespace luabridge
 template <class T>
 struct ContainerTraits <RefCountedPtr <T> >
 {
-  typedef typename T Type;
+  typedef T Type;
 
   static T* get (RefCountedPtr <T> const& c)
   {

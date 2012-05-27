@@ -332,7 +332,7 @@ namespace luabridge
 template <class T>
 struct ContainerTraits <RefCountedObjectPtr <T> >
 {
-  typedef typename T Type;
+  typedef T Type;
 
   static T* get (RefCountedObjectPtr <T> const& c)
   {

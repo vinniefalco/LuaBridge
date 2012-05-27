@@ -2110,13 +2110,13 @@ struct Detail
     template <class T>
     struct removeConst
     {
-      typedef typename T Type;
+      typedef T Type;
     };
 
     template <class T>
     struct removeConst <T const>
     {
-      typedef typename T Type;
+      typedef T Type;
     };
   };
 
