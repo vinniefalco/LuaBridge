@@ -500,8 +500,9 @@
   - `T const*` or `T const&`: Passed by const reference, with _C++ lifetime_.
   - `T` or `T const`: Passed by value (a copy), with _Lua lifetime_.
 
-  When a pointer or pointer to const is passed and the value is null (zero),
-  LuaBridge will
+  When a pointer or pointer to const is passed to Lua and the pointer is null
+  (zero), LuaBridge will pass Lua a `nil` instead.
+
   ### C++ Lifetime
 
   The creation and deletion of objects with _C++ lifetime_ is controlled by
