@@ -334,8 +334,7 @@
 
   In the Lua C API, all operations on the `lua_State` are performed through the
   Lua stack. In order to pass parameters back and forth between C++ and Lua,
-  including the return value of functions, LuaBridge uses specializations
-  of this template class concept:
+  LuaBridge uses specializations of this template class concept:
 
       template <class T>
       struct Stack
@@ -344,16 +343,16 @@
         static T get (lua_State* L, int index);
       };
 
-  Specializations of the Stack template class are used automatically for
-  variables, properties, data members, property members, function arguments and
-  return values. These basic types are supported:
+  The Stack template class specializations are used automatically for variables,
+  properties, data members, property members, function arguments and return
+  values. These basic types are supported:
 
   - `bool`
   - `char`, converted to a string of length one.
+  - `char const*` and `std::string` strings.
   - Integers, `float`, and `double`, converted to `Lua_number`.
-  - Strings: `char const*` and `std::string`
 
-  Furthermore, an object of a registered class `T` may be passed to Lua as:
+  An object of a registered class `T` may be passed to Lua as:
 
   - `T*` or `T&`: Passed by reference, with _C++ lifetime_.
   - `T const*` or `T const&`: Passed by const reference, with _C++ lifetime_.
@@ -361,23 +360,40 @@
 
   ### C++ Lifetime
 
-  When a pointer or reference to an object of a registered class is passed from
-  C++ into Lua, the resulting object has _C++ lifetime_. This means that the C++
-  code is responsible for creating and destroying the object; when the pointer
-  or reference is garbage collected by Lua, the original object is not deleted.
-  Care must be taken to ensure that objects with C++ lifetime are not deleted
-  while still being referenced by a `lua_State`.
-
-  In the previous example, instances of `A` and `B` can be passed to Lua with
-  C++ lifetime, like this:
+  The C++ code is responsible for creating and destroying objects with C++
+  lifetime. The corresponding object's destructor is not called when Lua
+  garbage collects the reference to the object. Care must be taken to ensure
+  that objects with C++ lifetime are not deleted while still being referenced
+  by a `lua_State`, or else the result is undefined behavior. In the previous
+  examples, an instance of `A` can be passed to Lua with C++ lifetime, like
+  this:
 
       A a;
+
+      push (L, &a);             // pointer to 'a', C++ lifetime
+      lua_setglobal (L, "a");
+
+      push (L, (A const*)&a);   // pointer to 'a const', C++ lifetime
+      lua_setglobal (L, "ac");
+
+      push <A const*> (L, &a);  // equivalent to push (L, (A const*)&a)
+      lua_setglobal (L, "ac2");
+
+
+  ### Lua Lifetime
+
+  When an object of a registered class is passed by value to Lua, it will have
+  _Lua lifetime_. A copy of the passed object is constructed inside the
+  userdata. When Lua has no more references to the object, it becomes eligible
+  for garbage collection. When the userdata is collected, the destructor for
+  the class will be called on the object. Care must be taken to ensure that
+  objects with Lua lifetime are not accessed by C++ after they are garbage
+  collected, or else the result is undefined behavior. An instance of `B` can be
+  passed to Lua with Lua lifetime this way:
+
       B b;
 
-      push (L, &a);
-      lua_setglobal (L, "a");
-      
-      push (L, &b);
+      push (L, b);              // Copy of b passed, Lua lifetime.
       lua_setglobal (L, "b");
 
   Given the previous code segments, these Lua statements are applicable:
@@ -405,15 +421,7 @@
       test.B.virtualFunc (a)          -- error: a is not a class B
 
       a = nil; collectgarbage ()      -- 'a' still exists in C++.
-
-  ### Lua Lifetime
-
-  When an object of a registered class is passed by value to Lua, the resulting
-  Lua object is said to have _Lua lifetime_. A copy of the object is created
-  inside the corresponding userdata. When Lua has no more references to the
-  object, it is eligible for garbage collection. Care must be taken to ensure
-  that objects with Lua lifetime are not accessed by C++ after they are garbage
-  collected.
+      b = nil; collectgarbage ()      -- Lua calls ~B() on the copy of b.
 
   ### Shared Lifetime
 
