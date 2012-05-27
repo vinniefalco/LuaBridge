@@ -330,9 +330,57 @@
   class that is **not** registered with Lua, there is no need to declare it as a
   subclass.
 
-  Given two Lua objects `a` and `b` of class types `A` and `B respectively, the
-  following effects are observed in Lua scripts (the mechanism for passing or
-  creating these objects is explained a later section):
+  ## The Lua Stack
+
+  In the Lua C API, all operations on the `lua_State` are performed through the
+  Lua stack. In order to pass parameters back and forth between C++ and Lua,
+  including the return value of functions, LuaBridge uses specializations
+  of this template class concept:
+
+      template <class T>
+      struct Stack
+      {
+        static void push (lua_State* L, T t);
+        static T get (lua_State* L, int index);
+      };
+
+  Specializations of the Stack template class are used automatically for
+  variables, properties, data members, property members, function arguments and
+  return values. These basic types are supported:
+
+  - `bool`
+  - `char`, converted to a string of length one.
+  - Integers, `float`, and `double`, converted to `Lua_number`.
+  - Strings: `char const*` and `std::string`
+
+  Furthermore, an object of a registered class `T` may be passed to Lua as:
+
+  - `T*` or `T&`: Passed by reference, with _C++ lifetime_.
+  - `T const*` or `T const&`: Passed by const reference, with _C++ lifetime_.
+  - `T` or `T const`: Passed by value (a copy), with _Lua lifetime_.
+
+  ### C++ Lifetime
+
+  When a pointer or reference to an object of a registered class is passed from
+  C++ into Lua, the resulting object has _C++ lifetime_. This means that the C++
+  code is responsible for creating and destroying the object; when the pointer
+  or reference is garbage collected by Lua, the original object is not deleted.
+  Care must be taken to ensure that objects with C++ lifetime are not deleted
+  while still being referenced by a `lua_State`.
+
+  In the previous example, instances of `A` and `B` can be passed to Lua with
+  C++ lifetime, like this:
+
+      A a;
+      B b;
+
+      push (L, &a);
+      lua_setglobal (L, "a");
+      
+      push (L, &b);
+      lua_setglobal (L, "b");
+
+  Given the previous code segments, these Lua statements are applicable:
 
       print (test.A.staticData)       -- prints the static data member
       print (test.A.staticProperty)   -- prints the static property member
@@ -356,47 +404,37 @@
       test.A.virtualFunc (b)          -- calls B::virtualFunc ()
       test.B.virtualFunc (a)          -- error: a is not a class B
 
-  ## The Stack
+      a = nil; collectgarbage ()      -- 'a' still exists in C++.
 
-  In the Lua C API, all manipulation of the `lua_State` is performed through
-  the Lua stack. In order to pass parameters back and forth between C++ and
-  Lua, including the return value of functions, LuaBridge uses a class template
-  specialized for each possible C++ data type.
+  ### Lua Lifetime
 
-  ### Data Types
+  When an object of a registered class is passed by value to Lua, the resulting
+  Lua object is said to have _Lua lifetime_. A copy of the object is created
+  inside the corresponding userdata. When Lua has no more references to the
+  object, it is eligible for garbage collection. Care must be taken to ensure
+  that objects with Lua lifetime are not accessed by C++ after they are garbage
+  collected.
 
-  Basic types for supported variables, and function arguments and returns, are:
-  
-  - `bool`
-  - `char`, converted to a string of length one.
-  - Integers, `float`, and `double`, converted to Lua_number.
-  - Strings: `char const*` and `std::string`
+  ### Shared Lifetime
 
-  Of course, LuaBridge supports passing objects of class type, in a variety of
-  ways including dynamically allocated objects created with `new`. The behavior
-  of the object with respect to lifetime management depends on the manner in
-  which the object is passed. Given `class T`, these argument types are
-  supported:
 
-  - `T`, `T const` : Pass `T` by value. The lifetime is managed by Lua.
-  - `T*`, `T&`, `T const*`, `T const&` : Pass `T` by reference. The lifetime
-     is managed by C++.
 
-  Furthermore, LuaBridge supports a "shared lifetime" model: dynamically
-  allocated and reference counted objects whose ownership is shared by both
-  Lua and C++. The object remains in existence until there are no remaining
-  C++ or Lua references, and Lua performs its usual garbage collection cycle.
-  LuaBridge comes with a few varieties of containers that support this
-  shared lifetime model, or you can use your own (subject to some restrictions).
 
-  Mixing object lifetime models is entirely possible, subject to the usual
-  caveats of holding references to objects which could get deleted. For
-  example, C++ can be called from Lua with a pointer to an object of class
-  type; the function can modify the object or call non-const data members.
-  These modifications are visible to Lua (since they both refer to the same
-  object).
 
-  ### Pointers, References, and Object Parameters
+
+  Given two Lua objects `a` and `b` of class types `A` and `B respectively, the
+  following effects are observed in Lua scripts (the mechanism for passing or
+  creating these objects is explained a later section):
+
+
+
+
+
+
+
+
+
+  ### Pointers, References, and Passing Objects by Value
 
   When C++ objects are passed from Lua back to C++ as arguments to functions,
   or set as data members, LuaBridge does its best to automate the conversion.
@@ -422,7 +460,7 @@
   and `func3` can modify the data members and data properties, or call
   non-const member functions of `a`.
 
-  Except for func0(), a problem can arise when C++ receives pointers or
+  Except for `func0`, a problem can arise when C++ receives pointers or
   references to objects seen by Lua. Undefined behavior can result if the Lua
   garbage collector destroys the class while the C++ code is keeping a pointer
   to the object somewhere. In the body of the function above, access is safe
@@ -454,7 +492,8 @@
   no effect on it. Care must be taken to make sure that the C++ code does not
   destroy the object while Lua still has a reference to it.
 
-  ### Lua Stack
+
+
 
   User-defined types which are convertible to one of the basic types are
   possible, simply provide a `Stack <>` specialization in the `luabridge`
@@ -474,6 +513,43 @@
           return juce::String (luaL_checkstring (L, index));
         }
       };
+
+  ### Shared Object Lifetime
+
+  LuaBridge supports a "shared lifetime" model: dynamically allocated and
+  reference counted objects whose ownership is shared by both Lua and C++.
+  The object remains in existence until there are no remaining C++ or Lua
+  references, and Lua performs its usual garbage collection cycle. LuaBridge
+  comes with a few varieties of containers that support this shared lifetime
+  model, or you can use your own (subject to some restrictions).
+
+  Note that 
+
+  Mixing object lifetime models is entirely possible, subject to the usual
+  caveats of holding references to objects which could get deleted. For
+  example, C++ can be called from Lua with a pointer to an object of class
+  type; the function can modify the object or call non-const data members.
+  These modifications are visible to Lua (since they both refer to the same
+  object).
+
+  ### The `lua_State`
+
+  Multiple lua_State registrations
+
+  Sometimes it is convenient from within a bound function or member function
+  to gain access to the `lua_State` normally available to a `lua_CFunction`.
+  With LuaBridge, all you need to do is add a `lua_State*` parameter at any
+  position in your bound function:
+
+      void useState (lua_State* L);
+
+      s.function ("useState", &useState);
+
+  You can still include regular arguments while receiving the state:
+
+      void useStateAndArgs (lua_State* L, int i, std::string s);
+
+      s.function ("useStateAndArgs", &useStateAndArgs);
 
   ## Security
 
@@ -549,48 +625,6 @@
   drops to zero. Such objects are safe to store in C++ and Lua code. A
   garbage collection will only decrement the reference count.
 
-  LuaBridge registraton templates will automatically detect arguments which
-  behave like containers. For example, this registration is valid:
-
-      extern void func (shared_ptr <T> p);
-
-      s.function ("func", &func);
-
-  Any container may be used. LuaBridge expects that the container in question
-  is a class template with one template argument, and a member function called
-  get() which returns a pointer to the underlying object. If you need to use
-  a container with a different interface, you can specialize the `C`
-  class for your container type and provide an extraction function. Your
-  specialization needs to be in the `luabridge` namespace. Here's an example
-  specialization for a container called `ReferenceCountedObject` which provides
-  a member function `getObject` that retrieves the pointer.
-
-      namespace luabridge
-      {
-          template <>
-          struct C <ReferenceCountedObjectPtr>
-          {
-            template <class T>
-            static T* get (ReferenceCountedObjectPtr <T> const& p)
-            {
-              return p.getObject ();
-            }
-         };
-      }
-
-  ### Registering classes
-
-  C++ classes can be registered with Lua as follows:
-
-      s .class_ <MyClass> ("MyClass")
-        .Constructor <void (*) (void)> ()
-        .method ("method1", &MyClass::method1)
-        .method ("method2", &MyClass::method2);
-
-      s .subclass <MySubclass, MyBaseClass> ("MySubclass")
-        .Constructor <...>
-        ...
-
   The `class_` function registers a class; its Constructor will be available as
   a global function with name given as argument to `class_`.  The object
   returned can then be used to register the Constructor (no overloading is
@@ -617,31 +651,6 @@
   rather, a `shared_ptr` to a const object) to Lua, that reference to the object
   will be considered const and only const methods will be called on it.
   Destructors are registered automatically for each class.
-
-  Static methods may be registered using the `static_method` function, which is
-  simply an alias for the `function` function:
-
-      s .class_ <MyClass> ()
-        .static_method ("method3", &MyClass::method3)
-
-  ### The `lua_State`
-
-  Multiple lua_State registrations
-
-  Sometimes it is convenient from within a bound function or member function
-  to gain access to the `lua_State` normally available to a `lua_CFunction`.
-  With LuaBridge, all you need to do is add a `lua_State*` parameter at any
-  position in your bound function:
-
-      void useState (lua_State* L);
-
-      s.function ("useState", &useState);
-
-  You can still include regular arguments while receiving the state:
-
-      void useStateAndArgs (lua_State* L, int i, std::string s);
-
-      s.function ("useStateAndArgs", &useStateAndArgs);
 
 
   ## Implementation Details
@@ -673,10 +682,11 @@ namespace luabridge
 /**
   Container traits.
 
-  Unspecialized Container sets isContainer to false for enable_if. All user
-  defined containers must supply an appropriate specialization for Container.
-  The containers that come with LuaBridge also come with specializations for
-  their types, see the corresponding container declarations for details.
+  Unspecialized Container has the isContainer typedef for SFINAE. All user
+  defined containers must supply an appropriate specialization for Container
+  (without the typedef). The containers that come with LuaBridge also come
+  with specializations for their types, see the corresponding container
+  declarations for details.
 */
 template <class T>
 struct ContainerTraits
@@ -719,7 +729,7 @@ struct Stack;
 
 struct Detail
 {
-//protected:
+protected:
   //----------------------------------------------------------------------------
   /**
     Return the identity pointer for our lightuserdata tokens.
