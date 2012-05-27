@@ -173,15 +173,17 @@
         .endNamespace ();
 
   The results are accessible to Lua as `test`, `test.detail`, and
-  `test.utility`. We also introduce the `endNamespace` function; it returns an
+  `test.utility`. Here we introduce the `endNamespace` function; it returns an
   object representing the original enclosing namespace. All LuaBridge functions which 
   create registrations return an object upon which subsequent registrations can
   be made, allowing for an unlimited number of registrations to be chained
-  together using the dot operator `.`. It is undefined behavior to use
-  `endNamespace` on the global namespace. 
+  together using the dot operator `.`. Adding two objects with the same name, in
+  the same namespace, results in undefined behavior (although LuaBridge will
+  silently accept it).
 
-  A namespace can be re-opened later to add more functions. This lets you split
-  up the registration between different source files. These are equivalent:
+  A namespace can be re-opened later to add
+  more functions. This lets you split up the registration between different
+  source files. These are equivalent:
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
@@ -201,19 +203,16 @@
           .addFunction ("bar", bar)
         .endNamespace ();
 
-  Adding two objects with the same name, in the same namespace, results in
-  undefined behavior (although LuaBridge will silently accept it).
 
   ### Data, Properties, and Functions
 
-  Data, properties, and functions are registered into a namespace using
-  `addVariable`, `addProperty`, and `addFunction`. When registered functions
-  are called by scripts, LuaBridge automatically takes care of the conversion of
-  arguments into the appropriate data type when doing so is possible. This
-  automated system works for the function's return value, and up to 8 parameters
-  although more can be added by extending the templates. Pointers, references,
-  and objects of class type as parameters are treated specially, and explained
-  later. Given the following:
+  These are registered into a namespace using `addVariable`, `addProperty`,
+  and `addFunction`. When registered functions are called by scripts, LuaBridge
+  automatically takes care of the conversion of arguments into the appropriate
+  data type when doing so is possible. This automated system works for the
+  function's return value, and up to 8 parameters although more can be added by
+  extending the templates. Pointers, references, and objects of class type as
+  parameters are treated specially, and explained later. If we have:
 
       int globalVar;
       static float staticVar;
@@ -225,7 +224,7 @@
       int foo () { return 42; }
       void bar (char const*) { }
 
-  The will register everything into the namespace "test":
+  These are registered with:
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
@@ -273,7 +272,7 @@
   more registrations using `beginClass`. However, `deriveClass` should only be
   used once. To add more registrations to an already registered derived class,
   use `beginClass`. We use the word _method_ as an unambiguous synonym for
-  _member function_ - static or otherwise. Given:
+  _member function_ - static or otherwise. These declarations:
 
       struct A {
         static int staticData;
@@ -304,7 +303,7 @@
       int A::staticData;
       float A::staticProperty;
 
-  The statement to register everything is:
+  Are registered using:
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
@@ -331,6 +330,55 @@
   to be re-declared and will function normally in Lua. If a class has a base
   class that is **not** registered with Lua, there is no need to declare it as a
   subclass.
+
+  ### Class Property Proxies
+
+  Sometimes when registering a class which comes from a third party library, the
+  data is not exposed in a way that can be expressed as a pointer to member,
+  there are no get or set functions, or the get and set functons do not have the
+  right function signature. LuaBridge handles this by supporting _property
+  member proxies_. This is a flat function which takes as its first parameter
+  a pointer to the class which is closed for modification. This is easily
+  understood with the following example:
+
+      // External structure, can't be changed
+      struct Vec 
+      {
+        float coord [3];
+      };
+
+  Taking the address of an array element, e.g. `&Vec::coord [0]` results in an
+  error instead of a pointer-to-member. The class is closed for modifications,
+  but we want to export Vec objects to Lua using the familiar object notation.
+  To do this, first we add a "helper" class:
+
+      struct VecHelper
+      {
+        template <unsigned index>
+        static float get (Vec const* vec)
+        {
+          return vec->coord [index];
+        }
+
+        template <unsigned index>
+        static void set (Vec* vec, float value)
+        {
+          vec->coord [index] = value;
+        }
+      };
+
+  This helper class is only used to provide property member proxies. Vec
+  continues to be used in the C++ code as it was before. Now we can register
+  our `Vec` class like this:
+
+    getGlobalNamespace (L)
+      .beginNamespace ("test")
+        .beginClass <Vec> ("Vec")
+          .addProperty ("x", &VecHelper::get <0>, &VecHelper::set <0>)
+          .addProperty ("y", &VecHelper::get <1>, &VecHelper::set <1>)
+          .addProperty ("z", &VecHelper::get <2>, &VecHelper::set <2>)
+        .endClass ()
+      .endNamespace ();
 
   ## The Lua Stack
 
@@ -4034,6 +4082,11 @@ protected:
     m_stackSize = child->m_stackSize - 1;
     child->m_stackSize = 1;
     child->pop (1);
+
+    // It is not necessary or valid to call
+    // endNamespace() for the global namespace!
+    //
+    assert (m_stackSize != 0);
   }
 
   //----------------------------------------------------------------------------
