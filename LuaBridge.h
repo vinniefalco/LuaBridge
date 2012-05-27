@@ -2248,8 +2248,8 @@ private:
       rawsetfield (L, -2, "__newindex");
       lua_newtable (L);
       rawsetfield (L, -2, "__propget");
-      //lua_pushboolean (L, 0);
-      //rawsetfield (L, -2, "__metatable");
+      lua_pushboolean (L, 0);
+      rawsetfield (L, -2, "__metatable");
     }
 
     //--------------------------------------------------------------------------
@@ -2275,8 +2275,8 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
-      //lua_pushboolean (L, 0);
-      //rawsetfield (L, -2, "__metatable");
+      lua_pushboolean (L, 0);
+      rawsetfield (L, -2, "__metatable");
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__const"); // point to const table
 
@@ -2315,24 +2315,36 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
-      //lua_pushboolean (L, 0);
-      //rawsetfield (L, -2, "__metatable");
+      lua_pushboolean (L, 0);
+      rawsetfield (L, -2, "__metatable");
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__class"); // point to class table
     }
 
     //==========================================================================
     /**
-      lua_CFunction to construct a class object.
+      lua_CFunction to construct a class object wrapped in a container.
     */
     template <class Params, class C>
-    static int ctorProxy (lua_State* L)
+    static int ctorContainerProxy (lua_State* L)
     {
       typedef typename ContainerTraits <C>::Type T;
       ArgList <Params, 2> args (L);
       T* const p = Constructor <T, Params>::call (args);
       UserdataShared <C>::push (L, p);
-      //new (UserdataType <C>::push (L, false)) UserdataType <C> (p);
+      return 1;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      lua_CFunction to construct a class object in-place in the userdata.
+    */
+    template <class Params, class T>
+    static int ctorPlacementProxy (lua_State* L)
+    {
+      ArgList <Params, 2> args (L);
+      UserdataShared <C>::push (L, p);
+      Constructor <T, Params>::call (UserdataValue <T>::place (L), args);
       return 1;
     }
 
@@ -2711,7 +2723,7 @@ private:
     template <class MemFn, class C>
     Class <T>& addConstructor ()
     {
-      lua_pushcclosure (L, &ctorProxy <typename FuncTraits <MemFn>::Params, C>, 0);
+      lua_pushcclosure (L, &ctorContainerProxy <typename FuncTraits <MemFn>::Params, C>, 0);
       rawsetfield(L, -2, "__call");
 
       return *this;
