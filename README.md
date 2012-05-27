@@ -7,7 +7,7 @@ language.
 
 LuaBridge offers the following features:
 
-- Nothing to compile, just include headers!
+- Nothing to compile, just include one header file!
 
 - Simple, light, and nothing else needed (like Boost).
 
@@ -19,10 +19,13 @@ LuaBridge offers the following features:
 
 - Does not require C++11.
 
-LuaBridge is distributed as set of header files. You simply add 
+LuaBridge is distributed as a single header file. You simply add 
 `#include "LuaBridge.h"` where you want to bind your functions, classes, and
 variables. There are no additional source files, no compilation settings, and
 no Makefiles or IDE-specific project files. LuaBridge is easy to integrate.
+A few additional header files provide optional features. Like the main header
+file, these are simply used via `#include`. No additional source files need
+to be compiled.
 
 C++ concepts like variables and classes are made available to Lua through
 a process called _registration_. Because Lua is weakly typed, the resulting
