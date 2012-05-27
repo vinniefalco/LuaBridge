@@ -458,13 +458,13 @@ type; the function can modify the object or call non-const data members.
 These modifications are visible to Lua (since they both refer to the same
 object).
 
-### RefCountedObjectPtr
+### `RefCountedObjectPtr`
 
 This is an intrusive style container. Your existing class declaration must be
 changed to be also derived from RefCountedObject. Given class T, derived
 from RefCountedObject, the container RefCountedObjectPtr <T> may be used.
 
-### shared_ptr
+### `shared_ptr`
 
 This is a non intrusive reference counted pointer. The reference counts are
 kept in a global hash table, which does incur a small performance penalty.
@@ -472,8 +472,9 @@ However, it does not require changing any already existing class declarations.
 
 ### Custom Containers
 
-If you have your own container, you must specialize `ContainerTraits` before
-it will be recognized by LuaBridge (or else the code will not compile):
+If you have your own container, you must provide a specialization of
+`ContainerTraits` in the `luabridge` namespace for yor type before it will be
+recognized by LuaBridge (or else the code will not compile):
 
     template <class T>
     struct ContainerTraits <CustomContainer <T> >

@@ -518,13 +518,13 @@
   These modifications are visible to Lua (since they both refer to the same
   object).
 
-  ### RefCountedObjectPtr
+  ### `RefCountedObjectPtr`
 
   This is an intrusive style container. Your existing class declaration must be
   changed to be also derived from RefCountedObject. Given class T, derived
   from RefCountedObject, the container RefCountedObjectPtr <T> may be used.
 
-  ### shared_ptr
+  ### `shared_ptr`
 
   This is a non intrusive reference counted pointer. The reference counts are
   kept in a global hash table, which does incur a small performance penalty.
@@ -532,8 +532,9 @@
 
   ### Custom Containers
 
-  If you have your own container, you must specialize `ContainerTraits` before
-  it will be recognized by LuaBridge (or else the code will not compile):
+  If you have your own container, you must provide a specialization of
+  `ContainerTraits` in the `luabridge` namespace for yor type before it will be
+  recognized by LuaBridge (or else the code will not compile):
 
       template <class T>
       struct ContainerTraits <CustomContainer <T> >
@@ -674,14 +675,34 @@ namespace luabridge
 #include "TypeTraits.h"
 
 //==============================================================================
+
+// Forward declaration required.
+template <class T>
+struct Stack;
+
+//------------------------------------------------------------------------------
 /**
   Container traits.
 
-  Unspecialized Container has the isContainer typedef for SFINAE. All user
-  defined containers must supply an appropriate specialization for Container
-  (without the typedef). The containers that come with LuaBridge also come
-  with specializations for their types, see the corresponding container
-  declarations for details.
+  Unspecialized ContainerTraits has the isNotContainer typedef for SFINAE. All
+  user defined containers must supply an appropriate specialization for
+  ContinerTraits (without the typedef isNotContainer). The containers that come
+  with LuaBridge also come with the appropriate ContainerTraits specialization.
+  See the corresponding declaration for details.
+
+  A specialization of ContainerTraits for some generic type ContainerType
+  looks like this:
+
+  template <class T>
+  struct ContainerTraits <ContainerType <T> >
+  {
+    typedef typename T Type;
+
+    static T* get (ContainerType <T> const& c)
+    {
+      return c.get (); // Implementation-dependent on ContainerType
+    }
+  };
 */
 template <class T>
 struct ContainerTraits
@@ -689,43 +710,69 @@ struct ContainerTraits
   typedef bool isNotContainer;
 };
 
-//------------------------------------------------------------------------------
-/**
-  Get a table value, bypassing metamethods.
-*/  
-inline void rawgetfield (lua_State* const L, int index, char const* const key)
-{
-  assert (lua_istable (L, index));
-  index = lua_absindex (L, index);
-  lua_pushstring (L, key);
-  lua_rawget (L, index);
-}
-
-//------------------------------------------------------------------------------
-/**
-  Set a table value, bypassing metamethods.
-*/  
-inline void rawsetfield (lua_State* const L, int index, char const* const key)
-{
-  assert (lua_istable (L, index));
-  index = lua_absindex (L, index);
-  lua_pushstring (L, key);
-  lua_insert (L, -2);
-  lua_rawset (L, index);
-}
-
 //==============================================================================
-
-// Forward declaration required.
-template <class T>
-struct Stack;
-
-//------------------------------------------------------------------------------
 
 struct Detail
 {
-protected:
-  //----------------------------------------------------------------------------
+  struct TypeTraits
+  {
+    //--------------------------------------------------------------------------
+    /**
+      Determine if type T is a container.
+
+      To be considered a container, there must be a specialization of
+      ContainerTraits with the required fields.
+    */
+    template <typename T>
+    class isContainer
+    {
+      typedef char yes[1]; // sizeof (yes) == 1
+      typedef char no [2]; // sizeof (no)  == 2
+
+      template <typename C>
+      static no& test (typename C::isNotContainer*);
+ 
+      template <typename>
+      static yes& test (...);
+ 
+    public:
+      static const bool value = sizeof (test <ContainerTraits <T> >(0)) == sizeof (yes);
+    };
+
+    //--------------------------------------------------------------------------
+    /**
+      Determine if T is const qualified.
+    */
+    template <class T>
+    struct isConst
+    {
+      static bool const value = false;
+    };
+
+    template <class T>
+    struct isConst <T const>
+    {
+      static bool const value = true;
+    };
+
+    //--------------------------------------------------------------------------
+    /**
+      Strip the const qualifier from T.
+    */
+    template <class T>
+    struct removeConst
+    {
+      typedef typename T Type;
+    };
+
+    template <class T>
+    struct removeConst <T const>
+    {
+      typedef typename T Type;
+    };
+  };
+
+  //============================================================================
   /**
     Return the identity pointer for our lightuserdata tokens.
 
@@ -762,7 +809,7 @@ protected:
 
       7. Our lightuserdata is unique.
 
-         This follows from #4.
+          This follows from #4.
 
     Lemma:
 
@@ -797,7 +844,7 @@ protected:
       The static table holds the static data members, static properties, and
       static member functions for a class.
     */
-    static void const* const  getStaticKey ()
+    static void const* const getStaticKey ()
     {
       static char value;
       return &value;
@@ -829,67 +876,34 @@ protected:
     }
   };
 
-  //============================================================================
+  //----------------------------------------------------------------------------
   /**
-    Determine if type T is a container.
-
-    To be considered a container, there must be a specialization of
-    ContainerTraits with the required fields.
-  */
-  template <class T>
-  struct isContainer
+    Get a table value, bypassing metamethods.
+  */  
+  static inline void rawgetfield (lua_State* const L, int index, char const* const key)
   {
-    // Types "yes" and "no" are guaranteed to have different sizes,
-    // specifically sizeof(yes) == 1 and sizeof(no) == 2.
-    typedef char yes[1];
-    typedef char no [2];
-
-    template <typename C>
-    static yes& test (typename C::isNotContainer*);
- 
-    template <typename>
-    static no& test (...);
- 
-    // If the "sizeof" the result of calling test<T>(0) would be equal to the sizeof(yes),
-    // the first overload worked and T has a nested type named foobar.
-    static const bool value = sizeof (test <ContainerTraits <T> >(0)) == sizeof (no);
-  };
+    assert (lua_istable (L, index));
+    index = lua_absindex (L, index);
+    lua_pushstring (L, key);
+    lua_rawget (L, index);
+  }
 
   //----------------------------------------------------------------------------
   /**
-    Strip the const qualifier from T.
-  */
-  template <class T>
-  struct withoutConst
+    Set a table value, bypassing metamethods.
+  */  
+  static inline void rawsetfield (lua_State* const L, int index, char const* const key)
   {
-    typedef typename T Type;
-  };
-
-  template <class T>
-  struct withoutConst <T const>
-  {
-    typedef typename T Type;
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-    Determine if T is const qualified.
-  */
-  template <class T>
-  struct isConstQualified
-  {
-    static bool const value = false;
-  };
-
-  template <class T>
-  struct isConstQualified <T const>
-  {
-    static bool const value = true;
-  };
+    assert (lua_istable (L, index));
+    index = lua_absindex (L, index);
+    lua_pushstring (L, key);
+    lua_insert (L, -2);
+    lua_rawset (L, index);
+  }
 
   //============================================================================
   /**
-    Class wrapped in a Lua userdata.
+    Interface to a class poiner retrievable from a userdata.
   */
   class Userdata
   {
@@ -1117,7 +1131,7 @@ protected:
       If the class does not match, a Lua error is raised.
     */
     template <class T>
-    static Userdata* getExact (lua_State* L, int index)
+    static inline Userdata* getExact (lua_State* L, int index)
     {
       return getExactClass (L, index, ClassInfo <T>::getClassKey ());
     }
@@ -1130,111 +1144,10 @@ protected:
       const-ness, a Lua error is raised.
     */
     template <class T>
-    static T* get (lua_State* L, int index, bool canBeConst)
+    static inline T* get (lua_State* L, int index, bool canBeConst)
     {
-      Userdata* const ud = getClass (L, index, ClassInfo <T>::getClassKey (), canBeConst);
-      return static_cast <T*> (ud->getPointer ());
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-    Wraps a container thet references a class object.
-
-    The template argument C is the container type, for which a specialization
-    in ContainerTraits must exist.
-  */
-  template <class C>
-  class UserdataShared : public Userdata
-  {
-  private:
-    UserdataShared (UserdataShared <C> const&);
-    UserdataShared <C>& operator= (UserdataShared <C> const&);
-
-    typedef typename withoutConst <typename ContainerTraits <C>::Type>::Type T;
-
-    C m_c;
-
-  private:
-    ~UserdataShared ()
-    {
-    }
-
-    void* getPointer ()
-    {
-      return const_cast <void*> (reinterpret_cast <void const*> (
-        (ContainerTraits <C>::get (m_c))));
-    }
-
-    template <bool makeObjectConst>
-    struct Helper
-    {
-      static void push (lua_State* L, C const& c)
-      {
-        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
-        // If this goes off it means the class T is unregistered!
-        assert (lua_istable (L, -1));
-        lua_setmetatable (L, -2);
-      }
-
-      static void push (lua_State* L, T* const t)
-      {
-        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
-        // If this goes off it means the class T is unregistered!
-        assert (lua_istable (L, -1));
-        lua_setmetatable (L, -2);
-      }
-    };
-
-    template <>
-    struct Helper <true>
-    {
-      static void push (lua_State* L, C const& c)
-      {
-        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
-        // If this goes off it means the class T is unregistered!
-        assert (lua_istable (L, -1));
-        lua_setmetatable (L, -2);
-      }
-
-      static void push (lua_State* L, T* const t)
-      {
-        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
-        // If this goes off it means the class T is unregistered!
-        assert (lua_istable (L, -1));
-        lua_setmetatable (L, -2);
-      }
-    };
-
-  public:
-    /**
-      Construct from a container to the class or a derived class.
-    */
-    template <class U>
-    explicit UserdataShared (U const& u) : m_c (u)
-    {
-    }
-
-    /**
-      Construct from a pointer to the class or a derived class.
-    */
-    template <class U>
-    explicit UserdataShared (U* u) : m_c (u)
-    {
-    }
-
-    static void push (lua_State* L, C const& c)
-    {
-      Helper <isConstQualified <typename ContainerTraits <C>::Type>::value>::push (L, c);
-    }
-
-    static void push (lua_State* L, T* const t)
-    {
-      Helper <isConstQualified <typename ContainerTraits <C>::Type>::value>::push (L, t);
+      return static_cast <T*> (getClass (L, index,
+        ClassInfo <T>::getClassKey (), canBeConst)->getPointer ());
     }
   };
 
@@ -1254,6 +1167,14 @@ protected:
 
     char m_storage [sizeof (T)];
 
+    inline T* getObject ()
+    {
+      // If this fails to compile it means you forgot to provide
+      // a Container specialization for your container!
+      //
+      return static_cast <T*> (&m_storage [0]);
+    }
+
   private:
     ~UserdataValue ()
     {
@@ -1263,14 +1184,6 @@ protected:
     void* getPointer ()
     {
       return &m_storage [0];
-    }
-
-    T* getObject ()
-    {
-      // If this fails to compile it means you forgot to provide
-      // a Container specialization for your container!
-      //
-      return static_cast <T*> (&m_storage [0]);
     }
 
   public:
@@ -1365,6 +1278,108 @@ protected:
       push (L, p, ClassInfo <T>::getConstKey ());
     }
   };
+
+  //============================================================================
+  /**
+    Wraps a container thet references a class object.
+
+    The template argument C is the container type, ContainerTraits must be
+    specialized on C or else a compile error will result.
+  */
+  template <class C>
+  class UserdataShared : public Userdata
+  {
+  private:
+    UserdataShared (UserdataShared <C> const&);
+    UserdataShared <C>& operator= (UserdataShared <C> const&);
+
+    typedef typename TypeTraits::removeConst <
+      typename ContainerTraits <C>::Type>::Type T;
+
+    C m_c;
+
+  private:
+    ~UserdataShared ()
+    {
+    }
+
+    void* getPointer ()
+    {
+      return const_cast <void*> (reinterpret_cast <void const*> (
+        (ContainerTraits <C>::get (m_c))));
+    }
+
+    template <bool makeObjectConst>
+    struct Helper
+    {
+      static void push (lua_State* L, C const& c)
+      {
+        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
+        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
+        // If this goes off it means the class T is unregistered!
+        assert (lua_istable (L, -1));
+        lua_setmetatable (L, -2);
+      }
+
+      static void push (lua_State* L, T* const t)
+      {
+        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
+        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
+        // If this goes off it means the class T is unregistered!
+        assert (lua_istable (L, -1));
+        lua_setmetatable (L, -2);
+      }
+    };
+
+    template <>
+    struct Helper <true>
+    {
+      static void push (lua_State* L, C const& c)
+      {
+        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
+        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
+        // If this goes off it means the class T is unregistered!
+        assert (lua_istable (L, -1));
+        lua_setmetatable (L, -2);
+      }
+
+      static void push (lua_State* L, T* const t)
+      {
+        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
+        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
+        // If this goes off it means the class T is unregistered!
+        assert (lua_istable (L, -1));
+        lua_setmetatable (L, -2);
+      }
+    };
+
+  public:
+    /**
+      Construct from a container to the class or a derived class.
+    */
+    template <class U>
+    explicit UserdataShared (U const& u) : m_c (u)
+    {
+    }
+
+    /**
+      Construct from a pointer to the class or a derived class.
+    */
+    template <class U>
+    explicit UserdataShared (U* u) : m_c (u)
+    {
+    }
+
+    static void push (lua_State* L, C const& c)
+    {
+      Helper <TypeTraits::isConst <typename ContainerTraits <C>::Type>::value>::push (L, c);
+    }
+
+    static void push (lua_State* L, T* const t)
+    {
+      Helper <TypeTraits::isConst <typename ContainerTraits <C>::Type>::value>::push (L, t);
+    }
+  };
 };
 
 //==============================================================================
@@ -1372,7 +1387,7 @@ protected:
   Lua stack conversions for class objects passed by value.
 */
 template <class T>
-struct Stack : Detail
+struct Stack
 {
 private:
   /**
@@ -1389,13 +1404,13 @@ private:
   {
     static inline void push (lua_State* L, T const& t)
     {
-      UserdataShared <T>::push (L, t);
+      Detail::UserdataShared <T>::push (L, t);
     }
 
     static inline T get (lua_State* L, int index)
     {
       typedef typename ContainerTraits <T>::Type U;
-      return Userdata::get <U> (L, index, true);
+      return Detail::Userdata::get <U> (L, index, true);
     }
   };
 
@@ -1411,24 +1426,24 @@ private:
   {
     static inline void push (lua_State* L, T const& t)
     {
-      UserdataValue <T>::push (L, t);
+      Detail::UserdataValue <T>::push (L, t);
     }
 
     static inline T const& get (lua_State* L, int index)
     {
-      return *Userdata::get <T> (L, index, true);
+      return *Detail::Userdata::get <T> (L, index, true);
     }
   };
 
 public:
   static inline void push (lua_State* L, T const& t)
   {
-    Helper <isContainer <T>::value>::push (L, t);
+    Helper <Detail::TypeTraits::isContainer <T>::value>::push (L, t);
   }
 
   static inline T get (lua_State* L, int index)
   {
-    return Helper <isContainer <T>::value>::get (L, index);
+    return Helper <Detail::TypeTraits::isContainer <T>::value>::get (L, index);
   }
 };
 
@@ -1441,58 +1456,58 @@ public:
   handling of the const and volatile qualifiers happens in UserdataPtr.
 */
 template <class T>
-struct Stack <T*> : Detail
+struct Stack <T*>
 {
   static inline void push (lua_State* L, T* const p)
   {
-    UserdataPtr::push (L, p);
+    Detail::UserdataPtr::push (L, p);
   }
 
   static inline T* const get (lua_State* L, int index)
   {
-    return Userdata::get <T> (L, index, false);
+    return Detail::Userdata::get <T> (L, index, false);
   }
 };
 
 template <class T>
-struct Stack <T const*> : Detail
+struct Stack <T const*>
 {
   static inline void push (lua_State* L, T const* const p)
   {
-    UserdataPtr::push (L, p);
+    Detail::UserdataPtr::push (L, p);
   }
 
   static inline T const* const get (lua_State* L, int index)
   {
-    return Userdata::get <T> (L, index, true);
+    return Detail::Userdata::get <T> (L, index, true);
   }
 };
 
 template <class T>
-struct Stack <T&> : Detail
+struct Stack <T&>
 {
   static inline void push (lua_State* L, T& t)
   {
-    UserdataPtr::push (L, &t);
+    Detail::UserdataPtr::push (L, &t);
   }
 
   static T& get (lua_State* L, int index)
   {
-    return *Userdata::get <T> (L, index, false);
+    return *Detail::Userdata::get <T> (L, index, false);
   }
 };
 
 template <class T>
-struct Stack <T const&> : Detail
+struct Stack <T const&>
 {
   static inline void push (lua_State* L, T const& t)
   {
-    UserdataPtr::push (L, &t);
+    Detail::UserdataPtr::push (L, &t);
   }
 
   static T const& get (lua_State* L, int index)
   {
-    return *Userdata::get <T> (L, index, true);
+    return *Detail::Userdata::get <T> (L, index, true);
   }
 };
 
@@ -1684,23 +1699,12 @@ struct ArgList <TypeList <Head, Tail>, Start>
   }
 };
 
-//==============================================================================
-/**
-  Push objects onto the Lua stack.
-*/
-
-template <class T>
-inline void push (lua_State* L, T t)
-{
-  Stack <T>::push (L, t);
-}
-
-//==============================================================================
+//=============================================================================
 
 /**
   Provides a namespace registration in a lua_State.
 */
-class Namespace : private Detail
+class Namespace : protected Detail
 {
 private:
   Namespace& operator= (Namespace const& other);
@@ -2961,6 +2965,26 @@ public:
     return Class <T> (name, this, ClassInfo <U>::getStaticKey ());
   }
 };
+
+//==============================================================================
+/**
+  Push objects onto the Lua stack.
+*/
+template <class T>
+inline void push (lua_State* L, T t)
+{
+  Stack <T>::push (L, t);
+}
+
+/**
+  Set a global value in the lua_State.
+*/
+template <class T>
+inline void setglobal (lua_State* L, T t, char const* name)
+{
+  push (L, t);
+  lua_setglobal (L, name);
+}
 
 //==============================================================================
 /**
