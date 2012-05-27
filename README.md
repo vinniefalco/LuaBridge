@@ -1,5 +1,3 @@
-@details
-
 <a href="http://lua.org">
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/Lua-Logo_64x64.png">
 </a><br>
@@ -310,9 +308,9 @@ To do this, first we add a "helper" class:
       }
     };
 
-This helper class is only used to provide property member proxies. Vec
+This helper class is only used to provide property member proxies. `Vec`
 continues to be used in the C++ code as it was before. Now we can register
-our `Vec` class like this:
+our class like this:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -377,9 +375,14 @@ position in your bound function:
 
 You can still include regular arguments while receiving the state:
 
-    void useStateAndArgs (lua_State* L, int i, std::string s);
+    void useStateAndArgs (int i, lua_State* L, std::string s);
 
     getGlobalNamespace (L).addFunction ("useStateAndArgs", &useStateAndArgs);
+
+When a script calls `useStateandArgs`, it passes only the integer and string
+parameters. LuaBridge takes care of inserting the `lua_State` into the
+argument list for the corresponding C++ function. This will work correctly
+even for the state created by coroutines.
 
 ### Class Object Types
 
