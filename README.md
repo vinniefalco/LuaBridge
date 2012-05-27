@@ -1,13 +1,13 @@
-# LuaBridge <a href="http://lua.org"><img src="http://vinniefalco.github.com/LuaBridgeDemo/Lua-Logo_64x64.png"></a>
+<a href="http://lua.org">
+<img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.gif">
+</a><br>
+
+# LuaBridge
 
 [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
 functions, and classes available to Lua. It works with Lua revisions starting
 from 5.1.2.
   
-<a href="http://lua.org">
-<img src="http://vinniefalco.github.com/LuaBridgeDemo/Lua-Logo_64x64.png">
-</a><br>
-
 [Lua][5] is a powerful, fast, lightweight, embeddable scripting
 language.
 
