@@ -78,7 +78,7 @@ public:
       This is done automatically by the smart pointer, but is public just
       in case it's needed for nefarious purposes.
   */
-  inline void incReferenceCount()
+  inline void incReferenceCount() const
   {
     ++refCount;
   }
@@ -87,7 +87,7 @@ public:
 
       If the count gets to zero, the object will be deleted.
   */
-  inline void decReferenceCount()
+  inline void decReferenceCount() const
   {
     assert (getReferenceCount() > 0);
 
@@ -117,7 +117,7 @@ protected:
 
 private:
   //==============================================================================
-  CounterType refCount;
+  CounterType mutable refCount;
 };
 
 //==============================================================================
@@ -323,78 +323,13 @@ bool operator!= (ReferenceCountedObjectClass* object1, RefCountedObjectPtr<Refer
 //==============================================================================
 
 template <class T>
-struct ContainerInfo <RefCountedObjectPtr <T> >
+struct ContainerTraits <RefCountedObjectPtr <T> >
 {
-  typedef T Type;
+  typedef typename T Type;
 
-  template <class U>
-  static inline void* get (RefCountedObjectPtr <U>& u)
+  static void* get (RefCountedObjectPtr <T> const& c)
   {
-    T* p = u.getObject ();
-    return p;
-  }
-};
-
-//------------------------------------------------------------------------------
-
-template <class T>
-struct ContainerInfo <RefCountedObjectPtr <T const> >
-{
-  typedef T Type;
-
-  template <class U>
-  static inline void* get (RefCountedObjectPtr <U const>& u)
-  {
-    T const* p = u.getObject ();
-    return const_cast <T*> (p);
-  }
-};
-
-//------------------------------------------------------------------------------
-
-template <class T>
-struct Stack <RefCountedObjectPtr <T> > : Detail
-{
-  static inline void push (lua_State* L, RefCountedObjectPtr <T> const& p)
-  {
-    new (UserdataType <RefCountedObjectPtr <T> >::push (L, false))
-      UserdataType <RefCountedObjectPtr <T> > (p);
-  }
-
-  template <class U>
-  static inline void push (lua_State* L, RefCountedObjectPtr <U> const& p)
-  {
-    new (UserdataType <RefCountedObjectPtr <T> >::push (L, false))
-      UserdataType <RefCountedObjectPtr <T> > (p);
-  }
-
-  static inline RefCountedObjectPtr <T> get (lua_State* L, int index)
-  {
-    return Userdata::get <T> (L, index, false);
-  }
-};
-
-//------------------------------------------------------------------------------
-
-template <class T>
-struct Stack <RefCountedObjectPtr <T const> > : Detail
-{
-  static inline void push (lua_State* L, RefCountedObjectPtr <T const> const& p)
-  {
-    new (UserdataType <RefCountedObjectPtr <T const> >::push (L, true))
-      UserdataType <RefCountedObjectPtr <T const> > (p);
-  }
-
-  template <class U>
-  static inline void push (lua_State* L, RefCountedObjectPtr <U const> const& p)
-  {
-    new (UserdataType <RefCountedObjectPtr <T const> >::push (L, true))
-      UserdataType <RefCountedObjectPtr <T const> > (p);
-  }
-
-  static inline RefCountedObjectPtr <T const> get (lua_State* L, int index)
-  {
-    return Userdata::get <T> (L, index, true);
+    return c.getObject ();
   }
 };
 

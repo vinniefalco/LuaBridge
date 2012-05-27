@@ -44,8 +44,16 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_FUNCTRAITS_HEADER
-#define LUABRIDGE_FUNCTRAITS_HEADER
+#ifndef LUABRIDGE_TYPERAITS_HEADER
+#define LUABRIDGE_TYPERAITS_HEADER
+
+//==============================================================================
+/**
+  Templates for extracting type information.
+
+  These templates are used for extracting information about types used in
+  various ways
+*/
 
 /**
   Since the throw specification is part of a function signature, the FuncTraits
@@ -184,7 +192,7 @@ struct FuncTraits
 template <typename R>
 struct FuncTraits <R (*) ()>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef nil Params;
   static R call (R (*fp) (), const TypeListValues<Params> &tvl)
@@ -197,7 +205,7 @@ struct FuncTraits <R (*) ()>
 template <typename R, typename P1>
 struct FuncTraits <R (*) (P1)>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
   static R call (R (*fp) (P1), const TypeListValues<Params> &tvl)
@@ -209,7 +217,7 @@ struct FuncTraits <R (*) (P1)>
 template <typename R, typename P1, typename P2>
 struct FuncTraits <R (*) (P1, P2)>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
   static R call (R (*fp) (P1, P2), const TypeListValues<Params> &tvl)
@@ -221,7 +229,7 @@ struct FuncTraits <R (*) (P1, P2)>
 template <typename R, typename P1, typename P2, typename P3>
 struct FuncTraits <R (*) (P1, P2, P3)>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
   static R call (R (*fp) (P1, P2, P3), const TypeListValues<Params> &tvl)
@@ -233,7 +241,7 @@ struct FuncTraits <R (*) (P1, P2, P3)>
 template <typename R, typename P1, typename P2, typename P3, typename P4>
 struct FuncTraits <R (*) (P1, P2, P3, P4)>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
   static R call (R (*fp) (P1, P2, P3, P4),
@@ -247,7 +255,7 @@ template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5>
 struct FuncTraits <R (*) (P1, P2, P3, P4, P5)>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4,
     TypeList <P5> > > > > Params;
@@ -263,7 +271,7 @@ template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6>
 struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6)>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, 
     TypeList <P6> > > > > > Params;
@@ -279,7 +287,7 @@ template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7>
 struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7)>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
     TypeList <P6, TypeList <P7> > > > > > > Params;
@@ -296,7 +304,7 @@ template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7, typename P8>
 struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
     TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
@@ -314,8 +322,8 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 template <class T, typename R>
 struct FuncTraits <R (T::*) ()>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef nil Params;
@@ -329,8 +337,8 @@ struct FuncTraits <R (T::*) ()>
 template <class T, typename R, typename P1>
 struct FuncTraits <R (T::*) (P1)>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
@@ -344,8 +352,8 @@ struct FuncTraits <R (T::*) (P1)>
 template <class T, typename R, typename P1, typename P2>
 struct FuncTraits <R (T::*) (P1, P2)>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
@@ -359,8 +367,8 @@ struct FuncTraits <R (T::*) (P1, P2)>
 template <class T, typename R, typename P1, typename P2, typename P3>
 struct FuncTraits <R (T::*) (P1, P2, P3)>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
@@ -375,8 +383,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4)>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
@@ -391,8 +399,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5)>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4,
@@ -409,8 +417,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6)>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -427,8 +435,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7)>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -446,8 +454,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -466,8 +474,8 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8)>
 template <class T, typename R>
 struct FuncTraits <R (T::*) () const>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef nil Params;
@@ -482,8 +490,8 @@ struct FuncTraits <R (T::*) () const>
 template <class T, typename R, typename P1>
 struct FuncTraits <R (T::*) (P1) const>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
@@ -497,8 +505,8 @@ struct FuncTraits <R (T::*) (P1) const>
 template <class T, typename R, typename P1, typename P2>
 struct FuncTraits <R (T::*) (P1, P2) const>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
@@ -512,8 +520,8 @@ struct FuncTraits <R (T::*) (P1, P2) const>
 template <class T, typename R, typename P1, typename P2, typename P3>
 struct FuncTraits <R (T::*) (P1, P2, P3) const>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
@@ -528,8 +536,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4) const>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
@@ -544,8 +552,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4,
@@ -562,8 +570,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -581,8 +589,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -601,8 +609,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -624,7 +632,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const>
 template <typename R>
 struct FuncTraits <R (*) () THROWSPEC>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef nil Params;
   static R call (R (*fp) () THROWSPEC, const TypeListValues<Params> &tvl)
@@ -637,7 +645,7 @@ struct FuncTraits <R (*) () THROWSPEC>
 template <typename R, typename P1>
 struct FuncTraits <R (*) (P1) THROWSPEC>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
   static R call (R (*fp) (P1) THROWSPEC, const TypeListValues<Params> &tvl)
@@ -649,7 +657,7 @@ struct FuncTraits <R (*) (P1) THROWSPEC>
 template <typename R, typename P1, typename P2>
 struct FuncTraits <R (*) (P1, P2) THROWSPEC>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
   static R call (R (*fp) (P1, P2) THROWSPEC, const TypeListValues<Params> &tvl)
@@ -661,7 +669,7 @@ struct FuncTraits <R (*) (P1, P2) THROWSPEC>
 template <typename R, typename P1, typename P2, typename P3>
 struct FuncTraits <R (*) (P1, P2, P3) THROWSPEC>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
   static R call (R (*fp) (P1, P2, P3) THROWSPEC, const TypeListValues<Params> &tvl)
@@ -673,7 +681,7 @@ struct FuncTraits <R (*) (P1, P2, P3) THROWSPEC>
 template <typename R, typename P1, typename P2, typename P3, typename P4>
 struct FuncTraits <R (*) (P1, P2, P3, P4) THROWSPEC>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
   static R call (R (*fp) (P1, P2, P3, P4) THROWSPEC,
@@ -687,7 +695,7 @@ template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5>
 struct FuncTraits <R (*) (P1, P2, P3, P4, P5) THROWSPEC>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4,
     TypeList <P5> > > > > Params;
@@ -703,7 +711,7 @@ template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6>
 struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6) THROWSPEC>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, 
     TypeList <P6> > > > > > Params;
@@ -719,7 +727,7 @@ template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7>
 struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
     TypeList <P6, TypeList <P7> > > > > > > Params;
@@ -736,7 +744,7 @@ template <typename R, typename P1, typename P2, typename P3, typename P4,
   typename P5, typename P6, typename P7, typename P8>
 struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
 {
-  static const bool isMemberFunction = false;
+  static bool const isMemberFunction = false;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
     TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
@@ -754,8 +762,8 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
 template <class T, typename R>
 struct FuncTraits <R (T::*) () THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef nil Params;
@@ -769,8 +777,8 @@ struct FuncTraits <R (T::*) () THROWSPEC>
 template <class T, typename R, typename P1>
 struct FuncTraits <R (T::*) (P1) THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
@@ -784,8 +792,8 @@ struct FuncTraits <R (T::*) (P1) THROWSPEC>
 template <class T, typename R, typename P1, typename P2>
 struct FuncTraits <R (T::*) (P1, P2) THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
@@ -799,8 +807,8 @@ struct FuncTraits <R (T::*) (P1, P2) THROWSPEC>
 template <class T, typename R, typename P1, typename P2, typename P3>
 struct FuncTraits <R (T::*) (P1, P2, P3) THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
@@ -815,8 +823,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4) THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
@@ -831,8 +839,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4,
@@ -849,8 +857,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -867,8 +875,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -886,8 +894,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = false;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = false;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -906,8 +914,8 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC>
 template <class T, typename R>
 struct FuncTraits <R (T::*) () const THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef nil Params;
@@ -922,8 +930,8 @@ struct FuncTraits <R (T::*) () const THROWSPEC>
 template <class T, typename R, typename P1>
 struct FuncTraits <R (T::*) (P1) const THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
@@ -937,8 +945,8 @@ struct FuncTraits <R (T::*) (P1) const THROWSPEC>
 template <class T, typename R, typename P1, typename P2>
 struct FuncTraits <R (T::*) (P1, P2) const THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
@@ -952,8 +960,8 @@ struct FuncTraits <R (T::*) (P1, P2) const THROWSPEC>
 template <class T, typename R, typename P1, typename P2, typename P3>
 struct FuncTraits <R (T::*) (P1, P2, P3) const THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
@@ -968,8 +976,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4) const THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
@@ -984,8 +992,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4,
@@ -1002,8 +1010,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -1020,8 +1028,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
@@ -1040,8 +1048,8 @@ template <class T, typename R, typename P1, typename P2, typename P3,
   typename P4, typename P5, typename P6, typename P7, typename P8>
 struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const THROWSPEC>
 {
-  static const bool isMemberFunction = true;
-  static const bool isConstMemberFunction = true;
+  static bool const isMemberFunction = true;
+  static bool const isConstMemberFunction = true;
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,
