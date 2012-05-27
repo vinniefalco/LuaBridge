@@ -314,14 +314,14 @@ This helper class is only used to provide property member proxies. Vec
 continues to be used in the C++ code as it was before. Now we can register
 our `Vec` class like this:
 
-  getGlobalNamespace (L)
-    .beginNamespace ("test")
-      .beginClass <Vec> ("Vec")
-        .addProperty ("x", &VecHelper::get <0>, &VecHelper::set <0>)
-        .addProperty ("y", &VecHelper::get <1>, &VecHelper::set <1>)
-        .addProperty ("z", &VecHelper::get <2>, &VecHelper::set <2>)
-      .endClass ()
-    .endNamespace ();
+    getGlobalNamespace (L)
+      .beginNamespace ("test")
+        .beginClass <Vec> ("Vec")
+          .addProperty ("x", &VecHelper::get <0>, &VecHelper::set <0>)
+          .addProperty ("y", &VecHelper::get <1>, &VecHelper::set <1>)
+          .addProperty ("z", &VecHelper::get <2>, &VecHelper::set <2>)
+        .endClass ()
+      .endNamespace ();
 
 ## The Lua Stack
 
