@@ -2059,8 +2059,33 @@ struct ContainerTraits
 };
 
 //==============================================================================
+/**
+  Get a table value, bypassing metamethods.
+*/  
+inline void rawgetfield (lua_State* const L, int index, char const* const key)
+{
+  assert (lua_istable (L, index));
+  index = lua_absindex (L, index);
+  lua_pushstring (L, key);
+  lua_rawget (L, index);
+}
 
-struct Detail
+//------------------------------------------------------------------------------
+/**
+  Set a table value, bypassing metamethods.
+*/  
+inline void rawsetfield (lua_State* const L, int index, char const* const key)
+{
+  assert (lua_istable (L, index));
+  index = lua_absindex (L, index);
+  lua_pushstring (L, key);
+  lua_insert (L, -2);
+  lua_rawset (L, index);
+}
+
+//==============================================================================
+
+namespace Detail
 {
   struct TypeTraits
   {
@@ -2223,31 +2248,6 @@ struct Detail
       return &value;
     }
   };
-
-  //----------------------------------------------------------------------------
-  /**
-    Get a table value, bypassing metamethods.
-  */  
-  static inline void rawgetfield (lua_State* const L, int index, char const* const key)
-  {
-    assert (lua_istable (L, index));
-    index = lua_absindex (L, index);
-    lua_pushstring (L, key);
-    lua_rawget (L, index);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    Set a table value, bypassing metamethods.
-  */  
-  static inline void rawsetfield (lua_State* const L, int index, char const* const key)
-  {
-    assert (lua_istable (L, index));
-    index = lua_absindex (L, index);
-    lua_pushstring (L, key);
-    lua_insert (L, -2);
-    lua_rawset (L, index);
-  }
 
   //============================================================================
   /**
@@ -2828,6 +2828,8 @@ public:
   value may result in undefined behavior if C++ destroys the object. The
   handling of the const and volatile qualifiers happens in UserdataPtr.
 */
+
+// pointer
 template <class T>
 struct Stack <T*>
 {
@@ -2857,6 +2859,7 @@ struct Stack <T* const>
   }
 };
 
+// pointer to const
 template <class T>
 struct Stack <T const*>
 {
@@ -2886,6 +2889,7 @@ struct Stack <T const* const>
   }
 };
 
+// reference
 template <class T>
 struct Stack <T&>
 {
@@ -2900,6 +2904,7 @@ struct Stack <T&>
   }
 };
 
+// reference to const
 template <class T>
 struct Stack <T const&>
 {
@@ -3107,7 +3112,7 @@ struct ArgList <TypeList <Head, Tail>, Start>
 /**
   Provides a namespace registration in a lua_State.
 */
-class Namespace : protected Detail
+class Namespace
 {
 private:
   Namespace& operator= (Namespace const& other);
@@ -3365,7 +3370,7 @@ private:
     static int callMethod (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
-      T* const t = Userdata::get <T> (L, 1, false);
+      T* const t = Detail::Userdata::get <T> (L, 1, false);
       MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       ArgList <Params, 2> args (L);
       Stack <ReturnType>::push (L, FuncTraits <MemFn>::call (t, fp, args));
@@ -3375,7 +3380,7 @@ private:
     static int callConstMethod (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
-      T const* const t = Userdata::get <T> (L, 1, true);
+      T const* const t = Detail::Userdata::get <T> (L, 1, true);
       MemFn fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       ArgList <Params, 2> args(L);
       Stack <ReturnType>::push (L, FuncTraits <MemFn>::call (t, fp, args));
@@ -3402,7 +3407,7 @@ private:
 
     static int callMethod (lua_State* L)
     {
-      T* const t = Userdata::get <T> (L, 1, false);
+      T* const t = Detail::Userdata::get <T> (L, 1, false);
       MemFn const fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       ArgList <Params, 2> args (L);
       FuncTraits <MemFn>::call (t, fp, args);
@@ -3411,7 +3416,7 @@ private:
 
     static int callConstMethod (lua_State* L)
     {
-      T const* const t = Userdata::get <T> (L, 1, true);
+      T const* const t = Detail::Userdata::get <T> (L, 1, true);
       MemFn const fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
       ArgList <Params, 2> args (L);
       FuncTraits <MemFn>::call (t, fp, args);
@@ -3638,7 +3643,7 @@ private:
       lua_pushvalue (L, -1);
       lua_setmetatable (L, -2);
       lua_pushboolean (L, 1);
-      lua_rawsetp (L, -2, getIdentityKey ());
+      lua_rawsetp (L, -2, Detail::getIdentityKey ());
       lua_pushstring (L, (std::string ("const ") + name).c_str ());
       rawsetfield (L, -2, "__type");
       lua_pushcfunction (L, &indexMetaMethod);
@@ -3663,7 +3668,7 @@ private:
       lua_pushvalue (L, -1);
       lua_setmetatable (L, -2);
       lua_pushboolean (L, 1);
-      lua_rawsetp (L, -2, getIdentityKey ());
+      lua_rawsetp (L, -2, Detail::getIdentityKey ());
       lua_pushstring (L, name);
       rawsetfield (L, -2, "__type");
       lua_pushcfunction (L, &indexMetaMethod);
@@ -3730,7 +3735,7 @@ private:
       typedef typename ContainerTraits <C>::Type T;
       ArgList <Params, 2> args (L);
       T* const p = Constructor <T, Params>::call (args);
-      UserdataShared <C>::push (L, p);
+      Detail::UserdataShared <C>::push (L, p);
       return 1;
     }
 
@@ -3742,7 +3747,7 @@ private:
     static int ctorPlacementProxy (lua_State* L)
     {
       ArgList <Params, 2> args (L);
-      Constructor <T, Params>::call (UserdataValue <T>::place (L), args);
+      Constructor <T, Params>::call (Detail::UserdataValue <T>::place (L), args);
       return 1;
     }
 
@@ -3811,7 +3816,7 @@ private:
     template <typename U>
     static int propgetProxy (lua_State* L)
     {
-      T const* const t = Userdata::get <T> (L, 1, true);
+      T const* const t = Detail::Userdata::get <T> (L, 1, true);
       U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
       Stack <U>::push (L, t->*mp);
       return 1;
@@ -3827,7 +3832,7 @@ private:
     template <typename U>
     static int propsetProxy (lua_State* L)
     {
-      T* const t = Userdata::get <T> (L, 1, false);
+      T* const t = Detail::Userdata::get <T> (L, 1, false);
       U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
       t->*mp = Stack <U>::get (L, 2);
       return 0;
@@ -3839,7 +3844,7 @@ private:
     */
     static int gcMetaMethod (lua_State* L)
     {
-      Userdata::getExact <T> (L, 1)->~Userdata ();
+      Detail::Userdata::getExact <T> (L, 1)->~Userdata ();
       return 0;
     }
 
@@ -3872,11 +3877,11 @@ private:
 
         // Map T back to its tables.
         lua_pushvalue (L, -1);
-        lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getStaticKey ());
+        lua_rawsetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getStaticKey ());
         lua_pushvalue (L, -2);
-        lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
+        lua_rawsetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getClassKey ());
         lua_pushvalue (L, -3);
-        lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
+        lua_rawsetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getConstKey ());
       }
       else
       {
@@ -3923,11 +3928,11 @@ private:
       rawsetfield (L, -2, "__parent");
 
       lua_pushvalue (L, -1);
-      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getStaticKey ());
+      lua_rawsetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getStaticKey ());
       lua_pushvalue (L, -2);
-      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
+      lua_rawsetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getClassKey ());
       lua_pushvalue (L, -3);
-      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
+      lua_rawsetp (L, LUA_REGISTRYINDEX, Detail::ClassInfo <T>::getConstKey ());
     }
 
     //--------------------------------------------------------------------------
@@ -4463,7 +4468,7 @@ public:
   template <class T, class U>
   Class <T> deriveClass (char const* name)
   {
-    return Class <T> (name, this, ClassInfo <U>::getStaticKey ());
+    return Class <T> (name, this, Detail::ClassInfo <U>::getStaticKey ());
   }
 };
 
