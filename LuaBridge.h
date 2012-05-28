@@ -3341,7 +3341,6 @@ private:
             class ReturnType = typename FuncTraits <MemFn>::ReturnType>
   struct methodProxy
   {
-    //typedef typename Container <typename FuncTraits <MemFn>::ClassType>::Type T;
     typedef typename FuncTraits <MemFn>::ClassType T;
     typedef typename FuncTraits <MemFn>::Params Params;
 
@@ -3379,7 +3378,6 @@ private:
   template <class MemFn>
   struct methodProxy <MemFn, void>
   {
-    //typedef typename Container <typename FuncTraits <MemFn>::ClassType>::Type T;
     typedef typename FuncTraits <MemFn>::ClassType T;
     typedef typename FuncTraits <MemFn>::Params Params;
 
