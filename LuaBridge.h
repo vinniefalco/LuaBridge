@@ -2755,6 +2755,7 @@ struct Detail
 };
 
 //==============================================================================
+
 /**
   Lua stack conversions for class objects passed by value.
 */
@@ -3311,10 +3312,12 @@ private:
     static int f (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
-      Func const& fp = *static_cast <Func const*> (lua_touserdata (L, lua_upvalueindex (1)));
+      Func const& fp = *static_cast <Func const*> (
+        lua_touserdata (L, lua_upvalueindex (1)));
       assert (fp != 0);
       ArgList <Params> args (L);
-      push (L, FuncTraits <Func>::call (fp, args));
+      Stack <typename FuncTraits <Func>::ReturnType>::push (
+        L, FuncTraits <Func>::call (fp, args));
       return 1;
     }
   };
@@ -3418,16 +3421,10 @@ private:
 
   //----------------------------------------------------------------------------
   /**
-    Template to add class member functions.
-  */
-  template <class MemFn, bool isConst>
-  struct methodHelper;
-
-  /**
     Create a proxy for a const member function.
   */
-  template <class MemFn>
-  struct methodHelper <MemFn, true>
+  template <class MemFn, bool isConst>
+  struct methodHelper
   {
     static void add (lua_State* L, char const* name, MemFn mf)
     {
