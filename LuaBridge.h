@@ -763,7 +763,7 @@
     so these class tables are immutable from Lua.
 
   - Metatables have `__metatable` set to a boolean value. Scripts cannot
-    obtain the metatable from a Luabridge object.
+    obtain the metatable from a LuaBridge object.
 
   - Classes are mapped to metatables through the registry, which Lua scripts
     cannot access. The global environment does not expose metatables
@@ -809,12 +809,13 @@
   [Github][3] is the new official home for LuaBridge. The old SVN repository is
   deprecated since it is no longer used, or maintained. The original author has
   graciously passed the reins to Vinnie Falco for maintaining and improving the
-  project. To obtain the older official releases, checkout the tags from 2.1
+  project. To obtain the older official releases, checkout the tags from 0.2.1
   and earlier.
 
-  We welcome contributions to LuaBridge. Feel free to fork the repository and
-  issue a Pull Request. All questions, comments, suggestions, and/or proposed
-  changes will be handled by the new maintainer.
+  If you are an existing LuaBridge user, a new LuaBridge user, or a potential
+  LuaBridge user, we welcome your input, feedback, and contributions. Feel
+  free to open Issues, or fork the repository. All questions, comments,
+  suggestions, and/or proposed changes will be handled by the new maintainer.
 
   ## License
 
