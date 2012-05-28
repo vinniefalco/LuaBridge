@@ -3846,8 +3846,8 @@ private:
     static int propgetProxy (lua_State* L)
     {
       T const* const t = Detail::Userdata::get <T> (L, 1, true);
-      U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
-      Stack <U>::push (L, t->*mp);
+      U T::** mp = static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
+      Stack <U>::push (L, t->**mp);
       return 1;
     }
 
@@ -3862,8 +3862,8 @@ private:
     static int propsetProxy (lua_State* L)
     {
       T* const t = Detail::Userdata::get <T> (L, 1, false);
-      U T::* mp = *static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
-      t->*mp = Stack <U>::get (L, 2);
+      U T::** mp = static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
+      t->**mp = Stack <U>::get (L, 2);
       return 0;
     }
 
@@ -4067,24 +4067,26 @@ private:
     template <class U>
     Class <T>& addData (char const* name, const U T::* mp, bool isWritable = true)
     {
+      typedef const U T::*mp_t;
+
       // Add to __propget in class and const tables.
-      rawgetfield (L, -2, "__propget");
-      rawgetfield (L, -4, "__propget");
-      void* const v = lua_newuserdata (L, sizeof (U T::*));
-      memcpy (v, &mp, sizeof (U T::*));
-      lua_pushcclosure (L, &propgetProxy <U>, 1);
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -4, name);
-      rawsetfield (L, -2, name);
-      lua_pop (L, 2);
+      {
+        rawgetfield (L, -2, "__propget");
+        rawgetfield (L, -4, "__propget");
+        new (lua_newuserdata (L, sizeof (mp_t))) mp_t (mp);
+        lua_pushcclosure (L, &propgetProxy <U>, 1);
+        lua_pushvalue (L, -1);
+        rawsetfield (L, -4, name);
+        rawsetfield (L, -2, name);
+        lua_pop (L, 2);
+      }
 
       if (isWritable)
       {
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        void* const v = lua_newuserdata (L, sizeof (U T::*));
-        memcpy (v, &mp, sizeof (U T::*));
+        new (lua_newuserdata (L, sizeof (mp_t))) mp_t (mp);
         lua_pushcclosure (L, &propsetProxy <U>, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
