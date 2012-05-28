@@ -2681,50 +2681,6 @@ namespace Detail
         (ContainerTraits <C>::get (m_c))));
     }
 
-    template <bool makeObjectConst>
-    struct Helper
-    {
-      static void push (lua_State* L, C const& c)
-      {
-        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
-        // If this goes off it means the class T is unregistered!
-        assert (lua_istable (L, -1));
-        lua_setmetatable (L, -2);
-      }
-
-      static void push (lua_State* L, T* const t)
-      {
-        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
-        // If this goes off it means the class T is unregistered!
-        assert (lua_istable (L, -1));
-        lua_setmetatable (L, -2);
-      }
-    };
-
-    template <>
-    struct Helper <true>
-    {
-      static void push (lua_State* L, C const& c)
-      {
-        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
-        // If this goes off it means the class T is unregistered!
-        assert (lua_istable (L, -1));
-        lua_setmetatable (L, -2);
-      }
-
-      static void push (lua_State* L, T* const t)
-      {
-        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
-        // If this goes off it means the class T is unregistered!
-        assert (lua_istable (L, -1));
-        lua_setmetatable (L, -2);
-      }
-    };
-
   public:
     /**
       Construct from a container to the class or a derived class.
@@ -2741,30 +2697,67 @@ namespace Detail
     explicit UserdataShared (U* u) : m_c (u)
     {
     }
+  };
+
+  //----------------------------------------------------------------------------
+  //
+  // SFINAE helpers.
+  //
+
+  // non-const objects
+  template <class C, bool makeObjectConst>
+  struct UserdataSharedHelper
+  {
+    typedef typename TypeTraits::removeConst <
+      typename ContainerTraits <C>::Type>::Type T;
 
     static void push (lua_State* L, C const& c)
     {
-      Helper <TypeTraits::isConst <typename ContainerTraits <C>::Type>::value>::push (L, c);
+      new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
+      lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
+      // If this goes off it means the class T is unregistered!
+      assert (lua_istable (L, -1));
+      lua_setmetatable (L, -2);
     }
 
     static void push (lua_State* L, T* const t)
     {
-      Helper <TypeTraits::isConst <typename ContainerTraits <C>::Type>::value>::push (L, t);
+      new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
+      lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
+      // If this goes off it means the class T is unregistered!
+      assert (lua_istable (L, -1));
+      lua_setmetatable (L, -2);
     }
   };
-};
 
-//==============================================================================
+  // const objects
+  template <class C>
+  struct UserdataSharedHelper <C, true>
+  {
+    typedef typename TypeTraits::removeConst <
+      typename ContainerTraits <C>::Type>::Type T;
 
-/**
-  Lua stack conversions for class objects passed by value.
-*/
-template <class T>
-struct Stack
-{
-private:
+    static void push (lua_State* L, C const& c)
+    {
+      new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
+      lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
+      // If this goes off it means the class T is unregistered!
+      assert (lua_istable (L, -1));
+      lua_setmetatable (L, -2);
+    }
+
+    static void push (lua_State* L, T* const t)
+    {
+      new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (t);
+      lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
+      // If this goes off it means the class T is unregistered!
+      assert (lua_istable (L, -1));
+      lua_setmetatable (L, -2);
+    }
+  };
+
   /**
-    Pass by pointer wrapped in a container.
+    Pass by container.
 
     The container controls the object lifetime. Typically this will be a
     lifetime shared by C++ and Lua using a reference count. Because of type
@@ -2772,18 +2765,21 @@ private:
     either be of the intrusive variety, or in the style of the RefCountedPtr
     type provided by LuaBridge (that uses a global hash table).
   */
-  template <bool byContainer>
-  struct Helper
+  template <class C, bool byContainer>
+  struct StackHelper
   {
-    static inline void push (lua_State* L, T const& t)
+    static inline void push (lua_State* L, C const& c)
     {
-      Detail::UserdataShared <T>::push (L, t);
+      UserdataSharedHelper <C,
+        TypeTraits::isConst <typename ContainerTraits <C>::Type>::value>::push (L, c);
     }
 
-    static inline T get (lua_State* L, int index)
+    typedef typename TypeTraits::removeConst <
+      typename ContainerTraits <C>::Type>::Type T;
+
+    static inline C get (lua_State* L, int index)
     {
-      typedef typename ContainerTraits <T>::Type U;
-      return Detail::Userdata::get <U> (L, index, true);
+      return Detail::Userdata::get <T> (L, index, true);
     }
   };
 
@@ -2794,8 +2790,8 @@ private:
     reference to an object outside the activation record in which it was
     retrieved may result in undefined behavior if Lua garbage collected it.
   */
-  template <>
-  struct Helper <false>
+  template <class T>
+  struct StackHelper <T, false>
   {
     static inline void push (lua_State* L, T const& t)
     {
@@ -2808,15 +2804,27 @@ private:
     }
   };
 
+};
+
+//==============================================================================
+
+/**
+  Lua stack conversions for class objects passed by value.
+*/
+template <class T>
+struct Stack
+{
 public:
   static inline void push (lua_State* L, T const& t)
   {
-    Helper <Detail::TypeTraits::isContainer <T>::value>::push (L, t);
+    Detail::StackHelper <T,
+      Detail::TypeTraits::isContainer <T>::value>::push (L, t);
   }
 
   static inline T get (lua_State* L, int index)
   {
-    return Helper <Detail::TypeTraits::isContainer <T>::value>::get (L, index);
+    return Detail::StackHelper <T,
+      Detail::TypeTraits::isContainer <T>::value>::get (L, index);
   }
 };
 
@@ -3735,7 +3743,7 @@ private:
       typedef typename ContainerTraits <C>::Type T;
       ArgList <Params, 2> args (L);
       T* const p = Constructor <T, Params>::call (args);
-      Detail::UserdataShared <C>::push (L, p);
+      Detail::UserdataSharedHelper <C, false>::push (L, p);
       return 1;
     }
 
