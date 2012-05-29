@@ -876,11 +876,11 @@ namespace luabridge
 //==============================================================================
 
 /**
-  nil type means void parameters or return value.
+  None type means void parameters or return value.
 */
-typedef void nil;
+typedef void None;
 
-template <typename Head, typename Tail = nil>
+template <typename Head, typename Tail = None>
 struct TypeList
 {
 };
@@ -1001,7 +1001,7 @@ struct FuncTraits <R (*) (), D>
   static bool const isMemberFunction = false;
   typedef D DeclType;
   typedef R ReturnType;
-  typedef nil Params;
+  typedef None Params;
   static R call (DeclType fp, TypeListValues <Params> const&)
   {
     return fp ();
@@ -1128,7 +1128,7 @@ struct FuncTraits <R (T::*) (), D>
   typedef D DeclType;
   typedef T ClassType;
   typedef R ReturnType;
-  typedef nil Params;
+  typedef None Params;
   static R call (T* const obj, DeclType fp, TypeListValues <Params> const&)
   {
     return (obj->*fp)();
@@ -1271,7 +1271,7 @@ struct FuncTraits <R (T::*) () const, D>
   typedef D DeclType;
   typedef T ClassType;
   typedef R ReturnType;
-  typedef nil Params;
+  typedef None Params;
   static R call (T const* const obj, DeclType fp, TypeListValues <Params> const&)
   {
     return (obj->*fp)();
@@ -1415,7 +1415,7 @@ struct FuncTraits <R (*) () THROWSPEC, D>
   static bool const isMemberFunction = false;
   typedef D DeclType;
   typedef R ReturnType;
-  typedef nil Params;
+  typedef None Params;
   static R call (DeclType fp, TypeListValues <Params> const&)
   {
     return fp ();
@@ -1542,7 +1542,7 @@ struct FuncTraits <R (T::*) () THROWSPEC, D>
   typedef D DeclType;
   typedef T ClassType;
   typedef R ReturnType;
-  typedef nil Params;
+  typedef None Params;
   static R call (T* const obj, DeclType fp, TypeListValues <Params> const&)
   {
     return (obj->*fp)();
@@ -1685,7 +1685,7 @@ struct FuncTraits <R (T::*) () const THROWSPEC, D>
   typedef D DeclType;
   typedef T ClassType;
   typedef R ReturnType;
-  typedef nil Params;
+  typedef None Params;
   static R call (T const* const obj, DeclType fp, TypeListValues <Params> const&)
   {
     (void)tvl;
@@ -1838,13 +1838,13 @@ template <class T, typename List>
 struct Constructor {};
 
 template <class T>
-struct Constructor <T, nil>
+struct Constructor <T, None>
 {
-  static T* call (TypeListValues <nil> const&)
+  static T* call (TypeListValues <None> const&)
   {
     return new T;
   }
-  static T* call (void* mem, TypeListValues <nil> const&)
+  static T* call (void* mem, TypeListValues <None> const&)
   {
     return new (mem) T;
   }
@@ -3067,7 +3067,7 @@ struct ArgList
 };
 
 template <int Start>
-struct ArgList <nil, Start> : public TypeListValues <nil>
+struct ArgList <None, Start> : public TypeListValues <None>
 {
   ArgList (lua_State*)
   {
