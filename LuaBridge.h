@@ -101,11 +101,11 @@
 
   LuaBridge repository branches are as follows:
 
-  - **master**: Tagged, stable release versions.
+  - **[master][7]**: Tagged, stable release versions.
 
-  - **release**: Tagged candidates for pending release versions.
+  - **[release][8]**: Tagged candidates for imminent release.
 
-  - **develop**: Work in progress.
+  - **[develop][9]**: Work in progress.
 
   ## LuaBridge Demo and Tests
 
@@ -848,6 +848,9 @@
   [4]: https://github.com/vinniefalco/LuaBridgeDemo "LuaBridge Demo"
   [5]: http://lua.org "The Lua Programming Language"
   [6]: http://www.rawmaterialsoftware.com/juce/api/classString.html "juce::String"
+  [7]: https://github.com/vinniefalco/LuaBridge "LuaBridge master branch"
+  [8]: https://github.com/vinniefalco/LuaBridge/tree/release "LuaBridge release branch"
+  [9]: https://github.com/vinniefalco/LuaBridge/tree/develop "LuaBridge develop branch"
 */
 
 #include <cassert>
