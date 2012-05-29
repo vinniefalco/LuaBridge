@@ -38,6 +38,16 @@ It contains template code to automatically generate at compile-time the
 various Lua C API calls necessary to export your program's classes and
 functions to the Lua environment.
 
+### Version
+
+LuaBridge repository branches are as follows:
+
+- **master**: Tagged, stable release versions.
+
+- **release**: Tagged candidates for pending release versions.
+
+- **develop**: Work in progress.
+
 ## LuaBridge Demo and Tests
 
 LuaBridge provides both a command line program and a stand-alone graphical
