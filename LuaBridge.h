@@ -129,7 +129,7 @@
 
   There are four types of objects that LuaBridge can register:
 
-  - **Data**: Global varaibles, static class data members, and class data
+  - **Data**: Global variables, static class data members, and class data
               members.
 
   - **Functions**: Regular functions, static class members, and class member
