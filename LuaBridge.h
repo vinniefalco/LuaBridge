@@ -3821,7 +3821,8 @@ private:
     */
     static int gcMetaMethod (lua_State* L)
     {
-      Detail::Userdata::getExact <T> (L, 1)->~Userdata ();
+      Detail::Userdata* ud = Detail::Userdata::getExact <T> (L, 1);
+      ud->~Userdata ();
       return 0;
     }
 
