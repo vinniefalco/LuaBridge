@@ -860,9 +860,9 @@
 namespace luabridge
 {
 
-#if defined (__APPLE_CPP__) || defined(__APPLE_CC__)
-// Do not define THROWSPEC since the Xcode compilers do not distinguish
-// the throw specification in the function signature.
+#if defined (__APPLE_CPP__) || defined(__APPLE_CC__) || defined (__GNUC__)
+// Do not define THROWSPEC since the Xcode and gcc  compilers do not
+// distinguish the throw specification in the function signature.
 #else
 #define THROWSPEC throw()
 #endif
