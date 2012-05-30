@@ -2383,17 +2383,64 @@ namespace Detail
       assert (lua_istable (L, -1));
 
       // Make sure we have a userdata.
-      if (!mismatch && !lua_isuserdata (L, index))
-        mismatch = true;
-
-      // Make sure it's metatable is ours.
-      if (!mismatch)
+      if (lua_isuserdata (L, index))
       {
+        // Make sure it's metatable is ours.
         lua_getmetatable (L, index);
         lua_rawgetp (L, -1, getIdentityKey ());
         if (lua_isboolean (L, -1))
         {
           lua_pop (L, 1);
+
+          // If __const is present, object is NOT const.
+          rawgetfield (L, -1, "__const");
+          assert (lua_istable (L, -1) || lua_isnil (L, -1));
+          bool const isConst = lua_isnil (L, -1);
+          lua_pop (L, 1);
+
+          // Replace the class table with the const table if needed.
+          if (isConst)
+          {
+            rawgetfield (L, -2, "__const");
+            assert (lua_istable (L, -1));
+            lua_replace (L, -3);
+          }
+
+          for (;;)
+          {
+            if (lua_rawequal (L, -1, -2))
+            {
+              lua_pop (L, 2);
+
+              // Match, now check const-ness.
+              if (isConst && !canBeConst)
+              {
+                luaL_argerror (L, index, "cannot be const");
+              }
+              else
+              {
+                ud = static_cast <Userdata*> (lua_touserdata (L, index));
+                break;
+              }
+            }
+            else
+            {
+              // Replace current metatable with it's base class.
+              rawgetfield (L, -1, "__parent");
+              lua_remove (L, -2);
+
+              if (lua_isnil (L, -1))
+              {
+                // Mismatch, but its one of ours so get a type name.
+                rawgetfield (L, -2, "__type");
+                lua_insert (L, -4);
+                lua_pop (L, 2);
+                got = lua_tostring (L, -2);
+                mismatch = true;
+                break;
+              }
+            }
+          }
         }
         else
         {
@@ -2401,58 +2448,9 @@ namespace Detail
           mismatch = true;
         }      
       }
-
-      if (!mismatch)
+      else
       {
-        // If __const is present, object is NOT const.
-        rawgetfield (L, -1, "__const");
-        assert (lua_istable (L, -1) || lua_isnil (L, -1));
-        bool const isConst = lua_isnil (L, -1);
-        lua_pop (L, 1);
-
-        // Replace the class table with the const table if needed.
-        if (isConst)
-        {
-          rawgetfield (L, -2, "__const");
-          assert (lua_istable (L, -1));
-          lua_replace (L, -3);
-        }
-
-        for (;;)
-        {
-          if (lua_rawequal (L, -1, -2))
-          {
-            lua_pop (L, 2);
-
-            // Match, now check const-ness.
-            if (isConst && !canBeConst)
-            {
-              luaL_argerror (L, index, "cannot be const");
-            }
-            else
-            {
-              ud = static_cast <Userdata*> (lua_touserdata (L, index));
-              break;
-            }
-          }
-          else
-          {
-            // Replace current metatable with it's base class.
-            rawgetfield (L, -1, "__parent");
-            lua_remove (L, -2);
-
-            if (lua_isnil (L, -1))
-            {
-              // Mismatch, but its one of ours so get a type name.
-              rawgetfield (L, -2, "__type");
-              lua_insert (L, -4);
-              lua_pop (L, 2);
-              got = lua_tostring (L, -2);
-              mismatch = true;
-              break;
-            }
-          }
-        }
+        mismatch = true;
       }
 
       if (mismatch)
