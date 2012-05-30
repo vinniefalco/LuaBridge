@@ -61,12 +61,13 @@
   <img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
   </a><br>
 
-  # LuaBridge 1.0
+  # LuaBridge 1.0.1
 
   [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
-  functions, and classes available to Lua. It has been tested and works with Lua
-  revisions starting from 5.2.0., although it may work in earlier versions.
-  [Lua][5] is a powerful, fast, lightweight, embeddable scripting language.
+  functions, and classes available to [Lua][5]: A powerful, fast, lightweight,
+  embeddable scripting language. LuaBridge has been tested and works with Lua
+  revisions starting from 5.1.5., although it should work in any version of Lua
+  from 5.1.0 and later.
 
   LuaBridge offers the following features:
 
@@ -780,7 +781,7 @@
     cannot access. The global environment does not expose metatables
 
   - Metatables created by LuaBridge are tagged with a lightuserdata key which
-    is unique in the process. Other libraries cannot forge a Luabridge
+    is unique in the process. Other libraries cannot forge a LuaBridge
     metatable.
 
   This security system can be easily bypassed if scripts are given access to
