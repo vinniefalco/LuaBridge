@@ -2043,6 +2043,37 @@ struct ContainerTraits
 };
 
 //==============================================================================
+
+#if LUA_VERSION_NUM < 502
+/**
+  Helpers for Lua versions prior to 5.2.0.
+*/
+
+inline int lua_absindex (lua_State *L, int idx)
+{
+  if (idx > LUA_REGISTRYINDEX && idx < 0)
+    return lua_gettop (L) + idx + 1;
+  else
+    return idx;
+}
+
+inline void lua_rawgetp (lua_State *L, int idx, void const* p)
+{
+  idx = lua_absindex (L, idx);
+  lua_pushlightuserdata (L, const_cast <void*> (p));
+  lua_rawget (L,idx);
+}
+
+inline void lua_rawsetp (lua_State *L, int idx, void const* p)
+{
+  idx = lua_absindex (L, idx);
+  lua_pushlightuserdata (L, const_cast <void*> (p));
+  // put key behind value
+  lua_insert (L, -2);
+  lua_rawset (L, idx);
+}
+#endif
+
 /**
   Get a table value, bypassing metamethods.
 */  
