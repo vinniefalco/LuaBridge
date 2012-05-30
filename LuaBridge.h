@@ -2371,10 +2371,10 @@ namespace Detail
       first so that the error message is informative.
     */
     static Userdata* const getClass (
-      lua_State* L, int narg, void const* const baseClassKey, bool const canBeConst)
+      lua_State* L, int const index, void const* const baseClassKey, bool const canBeConst)
     {
+      assert (index > 0);
       Userdata* ud = 0;
-      int const index = lua_absindex (L, narg);
 
       bool mismatch = false;
       char const* got = 0;
@@ -2427,10 +2427,7 @@ namespace Detail
             // Match, now check const-ness.
             if (isConst && !canBeConst)
             {
-              if (narg > 0)
-                luaL_argerror (L, narg, "cannot be const");
-              else
-                luaL_error (L, "cannot be const");
+              luaL_argerror (L, index, "cannot be const");
             }
             else
             {
@@ -2470,10 +2467,7 @@ namespace Detail
         char const* const msg = lua_pushfstring (
           L, "%s expected, got %s", expected, got);
 
-        if (narg > 0)
-          luaL_argerror (L, narg, msg);
-        else
-          lua_error (L);
+        luaL_argerror (L, index, msg);
       }
 
       return ud;
