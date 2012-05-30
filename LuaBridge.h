@@ -64,9 +64,9 @@
   # LuaBridge 1.0
 
   [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
-  functions, and classes available to Lua. It works with Lua revisions starting
-  from 5.1.2. [Lua][5] is a powerful, fast, lightweight, embeddable scripting
-  language.
+  functions, and classes available to Lua. It has been tested and works with Lua
+  revisions starting from 5.2.0., although it may work in earlier versions.
+  [Lua][5] is a powerful, fast, lightweight, embeddable scripting language.
 
   LuaBridge offers the following features:
 
