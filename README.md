@@ -461,12 +461,6 @@ An object of a registered class `T` may be passed to Lua as:
 - `T const*` or `T const&`: Passed by const reference, with _C++ lifetime_.
 - `T` or `T const`: Passed by value (a copy), with _Lua lifetime_.
 
-When a pointer or pointer to const is passed to Lua and the pointer is null
-(zero), LuaBridge will pass Lua a `nil` instead. When Lua passes a `nil`
-to C++ where a pointer is expected, a null (zero) is passed instead.
-Attempting to pass a null pointer to a C++ function expecting a reference
-results in `lua_error` being called.
-
 ### C++ Lifetime
 
 The creation and deletion of objects with _C++ lifetime_ is controlled by
@@ -578,6 +572,12 @@ These Lua statements hold:
     func6 (b)   - Passes a pointer to b.
     func6 (a)   - Error: Pointer to B expected.
     func1 (b)   - Okay, b is a subclass of a.
+
+When a pointer or pointer to const is passed to Lua and the pointer is null
+(zero), LuaBridge will pass Lua a `nil` instead. When Lua passes a `nil`
+to C++ where a pointer is expected, a null (zero) is passed instead.
+Attempting to pass a null pointer to a C++ function expecting a reference
+results in `lua_error` being called.
 
 ## Shared Lifetime
 
