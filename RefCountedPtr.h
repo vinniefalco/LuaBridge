@@ -31,11 +31,10 @@
 #ifndef LUABRIDGE_REFCOUNTEDPTR_HEADER
 #define LUABRIDGE_REFCOUNTEDPTR_HEADER
 
-#include <stdint.h>
-
 #ifdef _MSC_VER
 # include <hash_map>
 #else
+# include <stdint.h>
 # include <ext/hash_map>
 #endif
 
