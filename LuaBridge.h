@@ -61,15 +61,6 @@
   <img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
   </a><br>
 
-<table>
-  <tr><td>
-    Heading 1<table><tr><td>
-      Subheading 1</td></tr><tr><td>
-      Subheading 2</td></tr></table>
-  </td></tr>
-  <tr><td>Heading 2</td></tr>
-</table>
-
   # LuaBridge 1.0.2
 
   [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
@@ -530,7 +521,10 @@
   - `T` or `T const`: Passed by value (a copy), with _Lua lifetime_.
 
   When a pointer or pointer to const is passed to Lua and the pointer is null
-  (zero), LuaBridge will pass Lua a `nil` instead.
+  (zero), LuaBridge will pass Lua a `nil` instead. When Lua passes a `nil`
+  to C++ where a pointer is expected, a null (zero) is passed instead.
+  Attempting to pass a null pointer to a C++ function expecting a reference
+  results in `lua_error` being called.
 
   ### C++ Lifetime
 

@@ -4,15 +4,6 @@
 
 # LuaBridge 1.0.2
 
-<table>
-  <tr><td>
-    Heading 1<table><tr><td>
-      Subheading 1</td></tr><tr><td>
-      Subheading 2</td></tr></table>
-  </td></tr>
-  <tr><td>Heading 2</td></tr>
-</table>
-
 [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
 functions, and classes available to [Lua][5]: A powerful, fast, lightweight,
 embeddable scripting language. LuaBridge has been tested and works with Lua
@@ -22,10 +13,15 @@ from 5.1.0 and later.
 LuaBridge offers the following features:
 
 - Nothing to compile, just include one header file!
+
 - Simple, light, and nothing else needed (like Boost).
+
 - Supports different object lifetime management models.
+
 - Convenient, type-safe access to the Lua stack.
+
 - Automatic function parameter type binding.
+
 - Does not require C++11.
 
 LuaBridge is distributed as a single header file. You simply add 
@@ -308,17 +304,17 @@ be re-declared and will function normally in Lua. If a class has a base class
 that is **not** registered with Lua, there is no need to declare it as a
 subclass.
 
-### Class Property Proxies
+### Property Member Proxies
 
 Sometimes when registering a class which comes from a third party library, the
 data is not exposed in a way that can be expressed as a pointer to member,
 there are no get or set functions, or the get and set functons do not have the
-right function signature. LuaBridge handles this by supporting _property
-member proxies_. This is a flat function which takes as its first parameter
-a pointer to the class which is closed for modification. This is easily
-understood with the following example:
+right function signature. Since the class declaration is closed for changes,
+LuaBridge provides allows a _property member proxy_. This is a pair of get
+and set flat functions which take as their first parameter a pointer to
+the object. This is easily understood with the following example:
 
-    // External structure, can't be changed
+    // Third party declaration, can't be changed
     struct Vec 
     {
       float coord [3];
@@ -346,7 +342,7 @@ To do this, first we add a "helper" class:
 
 This helper class is only used to provide property member proxies. `Vec`
 continues to be used in the C++ code as it was before. Now we can register
-our class like this:
+the `Vec` class with property member proxies for `x`, `y`, and `z`:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -466,7 +462,10 @@ An object of a registered class `T` may be passed to Lua as:
 - `T` or `T const`: Passed by value (a copy), with _Lua lifetime_.
 
 When a pointer or pointer to const is passed to Lua and the pointer is null
-(zero), LuaBridge will pass Lua a `nil` instead.
+(zero), LuaBridge will pass Lua a `nil` instead. When Lua passes a `nil`
+to C++ where a pointer is expected, a null (zero) is passed instead.
+Attempting to pass a null pointer to a C++ function expecting a reference
+results in `lua_error` being called.
 
 ### C++ Lifetime
 
