@@ -3258,6 +3258,52 @@ private:
 private:
   //============================================================================
   /**
+    Error reporting.
+  */
+  static int luaError (lua_State* L, std::string message)
+  {
+    assert (lua_isstring (L, lua_upvalueindex (1)));
+    std::string s;
+
+    // Get information on the caller's caller to format the message,
+    // so the error appears to originate from the Lua source.
+    lua_Debug ar;
+    int result = lua_getstack (L, 2, &ar);
+    if (result != 0)
+    {
+      lua_getinfo (L, "Sl", &ar);
+      s = ar.short_src;
+      if (ar.currentline != -1)
+      {
+        // poor mans int to string to avoid <strstrream>.
+        lua_pushnumber (L, ar.currentline);
+        s = s + ":" + lua_tostring (L, -1) + ": ";
+        lua_pop (L, 1);
+      }
+    }
+
+    s = s + message;
+
+    return luaL_error (L, s.c_str ());
+  }
+  
+  //----------------------------------------------------------------------------
+  /**
+    lua_CFunction to report an error writing to a read-only value.
+
+    The name of the variable is in the first upvalue.
+  */
+  static int readOnlyError (lua_State* L)
+  {
+    std::string s;
+    
+    s = s + "'" + lua_tostring (L, lua_upvalueindex (1)) + "' is read-only";
+
+    return luaL_error (L, s.c_str ());
+  }
+  
+  //============================================================================
+  /**
     __index metamethod for a namespace or class static members.
 
     This handles:
@@ -3371,40 +3417,6 @@ private:
     return result;
   }
 
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to report an error writing to a read-only value.
-
-    The name of the variable is in the first upvalue.
-  */
-  static int readOnlyError (lua_State* L)
-  {
-    assert (lua_isstring (L, lua_upvalueindex (1)));
-    std::string s;
-
-    // Get information on the caller's caller to format the message,
-    // so the error appears to originate from the Lua source.
-    lua_Debug ar;
-    int result = lua_getstack (L, 2, &ar);
-    if (result != 0)
-    {
-      lua_getinfo (L, "Sl", &ar);
-      s = ar.short_src;
-      if (ar.currentline != -1)
-      {
-        // poor mans int to string to avoid <strstrream>.
-        lua_pushnumber (L, ar.currentline);
-        s = s + ":" + lua_tostring (L, -1) + ": ";
-        lua_pop (L, 1);
-      }
-    }
-
-    s = s + "'" + lua_tostring (L, lua_upvalueindex (1))
-          + "' is read-only";
-
-    return luaL_error (L, s.c_str ());
-  }
-  
   //----------------------------------------------------------------------------
   /**
     lua_CFunction to get a variable.
@@ -3616,7 +3628,13 @@ private:
 
 private:
   //============================================================================
-
+  //
+  // ClassBase
+  //
+  //============================================================================
+  /**
+    Factored base to reduce template instantiations.
+  */
   class ClassBase
   {
   private:
@@ -3644,8 +3662,8 @@ private:
     {
       int result = 0;
 
+      assert (lua_isuserdata (L, 1));               // warn on security bypass
       lua_getmetatable (L, 1);                      // get metatable for object
-
       for (;;)
       {
         lua_pushvalue (L, 2);                       // push key arg2
@@ -3663,8 +3681,6 @@ private:
         else
         {
           lua_pop (L, 2);
-
-          // We only put cfunctions into the metatable.
           throw std::logic_error ("not a cfunction");
         }
 
@@ -3948,9 +3964,12 @@ private:
     {
       pop (m_stackSize);
     }
-
   };
 
+  //============================================================================
+  //
+  // Class
+  //
   //============================================================================
   /**
     Provides a class registration in a lua_State.
@@ -4421,7 +4440,13 @@ private:
     }
   };
 
-protected:
+private:
+  //============================================================================
+  //
+  // Namespace (Cont.)
+  //
+  //============================================================================
+
   //----------------------------------------------------------------------------
   /**
     Opens the global namespace.
@@ -4432,6 +4457,46 @@ protected:
   {
     lua_getglobal (L, "_G");
     ++m_stackSize;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    Opens a namespace for registrations.
+
+    The namespace is created if it doesn't already exist. The parent
+    namespace is at the top of the Lua stack.
+  */
+  Namespace (char const* name, Namespace const* parent)
+    : L (parent->L)
+    , m_stackSize (0)
+  {
+    m_stackSize = parent->m_stackSize + 1;
+    parent->m_stackSize = 0;
+
+    assert (lua_istable (L, -1));
+    rawgetfield (L, -1, name);
+    if (lua_isnil (L, -1))
+    {
+      lua_pop (L, 1);
+
+      lua_newtable (L);
+      lua_pushvalue (L, -1);
+      lua_setmetatable (L, -2);
+      lua_pushcfunction (L, &indexMetaMethod);
+      rawsetfield (L, -2, "__index");
+      lua_pushcfunction (L, &newindexMetaMethod);
+      rawsetfield (L, -2, "__newindex");
+      lua_newtable (L);
+      rawsetfield (L, -2, "__propget");
+      lua_newtable (L);
+      rawsetfield (L, -2, "__propset");
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -3, name);
+#if 0
+      lua_pushcfunction (L, &tostringMetaMethod);
+      rawsetfield (L, -2, "__tostring");
+#endif
+    }
   }
 
   //----------------------------------------------------------------------------
@@ -4465,60 +4530,13 @@ protected:
     child->pop (3);
   }
 
-  //----------------------------------------------------------------------------
-  /**
-    Opens a namespace for registrations.
-
-    The namespace is created if it doesn't already exist. The parent
-    namespace is at the top of the Lua stack.
-  */
-  Namespace (char const* name, Namespace const* parent)
-    : L (parent->L)
-    , m_stackSize (0)
-  {
-    m_stackSize = parent->m_stackSize + 1;
-    parent->m_stackSize = 0;
-
-    assert (lua_istable (L, -1));
-    rawgetfield (L, -1, name);
-    if (lua_isnil (L, -1))
-    {
-      lua_pop (L, 1);
-
-      lua_newtable (L);
-
-      lua_pushvalue (L, -1);
-      lua_setmetatable (L, -2);
-
-#if 0
-      lua_pushcfunction (L, &tostringMetaMethod);
-      rawsetfield (L, -2, "__tostring");
-#endif
-
-      lua_pushcfunction (L, &indexMetaMethod);
-      rawsetfield (L, -2, "__index");
-
-      lua_pushcfunction (L, &newindexMetaMethod);
-      rawsetfield (L, -2, "__newindex");
-
-      lua_newtable (L);
-      rawsetfield (L, -2, "__propget");
-
-      lua_newtable (L);
-      rawsetfield (L, -2, "__propset");
-
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -3, name);
-    }
-  }
-
 public:
   //----------------------------------------------------------------------------
   /**
     Copy Constructor.
 
-    Ownership of the stack is transferred to the new object. This happens
-    when the compiler emits temporaries to hold these objects while chaining
+    Ownership of the stack is transferred to the new object. This happens when
+    the compiler emits temporaries to hold these objects while chaining
     registrations across namespaces.
   */
   Namespace (Namespace const& other) : L (other.L)
@@ -4643,6 +4661,7 @@ public:
   Namespace& addFunction (char const* name, FP const fp)
   {
     assert (lua_istable (L, -1));
+
     new (lua_newuserdata (L, sizeof (fp))) FP (fp);
     lua_pushcclosure (L, &CallFunction <FP>::call, 1);
     rawsetfield (L, -2, name);
@@ -4658,6 +4677,7 @@ public:
   {
     lua_pushcfunction (L, fp);
     rawsetfield (L, -2, name);
+
     return *this;
   }
 
