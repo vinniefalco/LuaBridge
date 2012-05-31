@@ -13,15 +13,10 @@ from 5.1.0 and later.
 LuaBridge offers the following features:
 
 - Nothing to compile, just include one header file!
-
 - Simple, light, and nothing else needed (like Boost).
-
 - Supports different object lifetime management models.
-
 - Convenient, type-safe access to the Lua stack.
-
 - Automatic function parameter type binding.
-
 - Does not require C++11.
 
 LuaBridge is distributed as a single header file. You simply add 
