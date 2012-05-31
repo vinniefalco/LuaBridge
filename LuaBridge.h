@@ -338,14 +338,14 @@
             .addStaticCFunction ("staticCFunc", &A::staticCFunc)
             .addData ("data", &A::dataMember)
             .addProperty ("prop", &A::getProperty, &A::setProperty)
-            .addMethod ("func1", &A::func1)
-            .addMethod ("virtualFunc", &A::virtualFunc)
+            .addFunction ("func1", &A::func1)
+            .addFunction ("virtualFunc", &A::virtualFunc)
             .addCFunction ("cfunc", &A::cfunc)
           .endClass ()
           .deriveClass <B, A> ("B")
             .addData ("data", &B::dataMember2)
-            .addMethod ("func1", &B::func1)
-            .addMethod ("func2", &B::func2)
+            .addFunction ("func1", &B::func1)
+            .addFunction ("func2", &B::func2)
           .endClass ()
         .endClass ();
 
@@ -4298,7 +4298,7 @@ private:
       Add or replace a member function.
     */
     template <class MemFn>
-    Class <T>& addMethod (char const* name, MemFn mf)
+    Class <T>& addFunction (char const* name, MemFn mf)
     {
       CallMemberFunctionHelper <MemFn, FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
       return *this;
