@@ -861,6 +861,12 @@
 namespace luabridge
 {
 
+/**
+  Since the throw specification is part of a function signature, the FuncTraits
+  family of templates needs to be specialized for both types. The THROWSPEC
+  macro controls whether we use the 'throw ()' form, or 'noexcept' (if C++11
+  is available) to distinguish the functions.
+*/
 #if defined (__APPLE_CPP__) || defined(__APPLE_CC__) || defined (__GNUC__)
 // Do not define THROWSPEC since the Xcode and gcc  compilers do not
 // distinguish the throw specification in the function signature.
@@ -873,16 +879,64 @@ namespace luabridge
   Templates for extracting type information.
 
   These templates are used for extracting information about types used in
-  various ways
+  various ways.
 */
 
-/**
-  Since the throw specification is part of a function signature, the FuncTraits
-  family of templates needs to be specialized for both types. The THROWSPEC
-  macro controls whether we use the 'throw ()' form, or 'noexcept' (if C++11
-  is available) to distinguish the functions.
-*/
-//#define THROWSPEC throw ()
+//==============================================================================
+
+template <typename T>
+struct TypeInfo
+{
+  typedef T Type;
+  static bool const is_const     = false;
+  static bool const is_pointer   = false;
+  static bool const is_reference = false;
+};
+
+template <typename T>
+struct TypeInfo <T const>
+{
+  typedef T Type;
+  static bool const is_const     = true;
+  static bool const is_pointer   = false;
+  static bool const is_reference = false;
+};
+
+template <typename T>
+struct TypeInfo <T*>
+{
+  typedef T Type;
+  static bool const is_const     = false;
+  static bool const is_pointer   = true;
+  static bool const is_reference = false;
+};
+
+template <typename T>
+struct TypeInfo <T const*>
+{
+  typedef T Type;
+  static bool const is_const     = true;
+  static bool const is_pointer   = true;
+  static bool const is_reference = false;
+};
+
+template <typename T>
+struct TypeInfo <T&>
+{
+  typedef T Type;
+  static bool const is_const     = false;
+  static bool const is_pointer   = false;
+  static bool const is_reference = true;
+};
+
+template <typename T>
+struct TypeInfo <T const&>
+{
+  typedef T Type;
+  static bool const is_const     = true;
+  static bool const is_pointer   = false;
+  static bool const is_reference = true;
+};
 
 //==============================================================================
 //
