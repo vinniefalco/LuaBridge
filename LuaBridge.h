@@ -3118,12 +3118,18 @@ struct Stack <char const*>
 {
   static inline void push (lua_State* L, char const* str)
   {
-    lua_pushstring (L, str);
+    if (str)
+      lua_pushstring (L, str);
+    else
+      lua_pushnil (L);
   }
 
   static inline char const* get (lua_State* L, int index)
   {
-    return luaL_checkstring (L, index);
+    if (lua_isnil (L, index))
+      return 0;
+    else
+      return luaL_checkstring (L, index);
   }
 };
 
