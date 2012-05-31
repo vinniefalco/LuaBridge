@@ -291,8 +291,7 @@
   ended using `endClass`. Once registered, a class can later be re-opened for
   more registrations using `beginClass`. However, `deriveClass` should only be
   used once. To add more registrations to an already registered derived class,
-  use `beginClass`. We use the word _method_ as an unambiguous synonym for
-  _member function_ - static or otherwise. These declarations:
+  use `beginClass`. These declarations:
 
       struct A {
         static int staticData;
@@ -334,7 +333,7 @@
           .beginClass <A> ("A")
             .addStaticData ("staticData", &A::staticData)
             .addStaticProperty ("staticProperty", &A::staticProperty)
-            .addStaticMethod ("staticFunc", &A::staticFunc)
+            .addStaticFunction ("staticFunc", &A::staticFunc)
             .addStaticCFunction ("staticCFunc", &A::staticCFunc)
             .addData ("data", &A::dataMember)
             .addProperty ("prop", &A::getProperty, &A::setProperty)
@@ -4126,7 +4125,7 @@ private:
       Add or replace a static member function.
     */
     template <class FP>
-    Class <T>& addStaticMethod (char const* name, FP const fp)
+    Class <T>& addStaticFunction (char const* name, FP const fp)
     {
       new (lua_newuserdata (L, sizeof (fp))) FP (fp);
       lua_pushcclosure (L, &CallFunction <FP>::call, 1);
