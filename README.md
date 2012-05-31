@@ -13,10 +13,15 @@ from 5.1.0 and later.
 LuaBridge offers the following features:
 
 - Nothing to compile, just include one header file!
+
 - Simple, light, and nothing else needed (like Boost).
+
 - Supports different object lifetime management models.
+
 - Convenient, type-safe access to the Lua stack.
+
 - Automatic function parameter type binding.
+
 - Does not require C++11.
 
 LuaBridge is distributed as a single header file. You simply add 
@@ -27,12 +32,12 @@ A few additional header files provide optional features. Like the main header
 file, these are simply used via `#include`. No additional source files need
 to be compiled.
 
-C++ concepts like variables and classes are made available to Lua through
-a process called _registration_. Because Lua is weakly typed, the resulting
-structure is not rigid. The API is based on C++ template metaprogramming.
-It contains template code to automatically generate at compile-time the
-various Lua C API calls necessary to export your program's classes and
-functions to the Lua environment.
+C++ concepts like variables and classes are made available to Lua through a
+process called _registration_. Because Lua is weakly typed, the resulting
+structure is not rigid. The API is based on C++ template metaprogramming. It
+contains template code to automatically generate at compile-time the various
+Lua C API calls necessary to export your program's classes and functions to
+the Lua environment.
 
 ### Version
 
@@ -66,22 +71,20 @@ for registering the two classes:
 
 There are five types of objects that LuaBridge can register:
 
-- **Data**: Global variables, static class data members, and class data
-            members.
+- **Data**: Global variables, data members, and static data members.
 
-- **Functions**: Regular functions, static class members, and class member
+- **Functions**: Global functions, member functions, and static member
                   functions.
 
-- **CFunctions**: A regular function, static class member function, or class
-                  member function that uses the `lua_CFunction` calling
-                  convention.
+- **CFunctions**: A regular function, member function, or static member
+                  function that uses the `lua_CFunction` calling convention.
 
 - **Namespaces**: A namespace is simply a table containing registrations of
                   functions, data, properties, and other namespaces.
 
-- **Properties**: Global properties, static class properties, and class member
-                  properties. These appear like data to Lua, but are
-                  implemented using get and set functions on the C++ side.
+- **Properties**: Global properties, property members, and static property
+                  members. These appear like data to Lua, but are implemented
+                  using get and set functions on the C++ side.
 
 Both data and properties can be marked as _read-only_ at the time of
 registration. This is different from `const`; the values of these objects can
@@ -229,8 +232,7 @@ A class registration is opened using either `beginClass` or `deriveClass` and
 ended using `endClass`. Once registered, a class can later be re-opened for
 more registrations using `beginClass`. However, `deriveClass` should only be
 used once. To add more registrations to an already registered derived class,
-use `beginClass`. We use the word _method_ as an unambiguous synonym for
-_member function_ - static or otherwise. These declarations:
+use `beginClass`. These declarations:
 
     struct A {
       static int staticData;
@@ -272,18 +274,18 @@ Are registered using:
         .beginClass <A> ("A")
           .addStaticData ("staticData", &A::staticData)
           .addStaticProperty ("staticProperty", &A::staticProperty)
-          .addStaticMethod ("staticFunc", &A::staticFunc)
+          .addStaticFunction ("staticFunc", &A::staticFunc)
           .addStaticCFunction ("staticCFunc", &A::staticCFunc)
           .addData ("data", &A::dataMember)
           .addProperty ("prop", &A::getProperty, &A::setProperty)
-          .addMethod ("func1", &A::func1)
-          .addMethod ("virtualFunc", &A::virtualFunc)
+          .addFunction ("func1", &A::func1)
+          .addFunction ("virtualFunc", &A::virtualFunc)
           .addCFunction ("cfunc", &A::cfunc)
         .endClass ()
         .deriveClass <B, A> ("B")
           .addData ("data", &B::dataMember2)
-          .addMethod ("func1", &B::func1)
-          .addMethod ("func2", &B::func2)
+          .addFunction ("func1", &B::func1)
+          .addFunction ("func2", &B::func2)
         .endClass ()
       .endClass ();
 
