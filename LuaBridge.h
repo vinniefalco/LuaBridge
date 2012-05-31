@@ -2556,8 +2556,11 @@ namespace Detail
     template <class T>
     static inline T* get (lua_State* L, int index, bool canBeConst)
     {
-      return static_cast <T*> (getClass (L, index,
-        ClassInfo <T>::getClassKey (), canBeConst)->getPointer ());
+      if (lua_isnil (L, index))
+        return 0;
+      else
+        return static_cast <T*> (getClass (L, index,
+          ClassInfo <T>::getClassKey (), canBeConst)->getPointer ());
     }
   };
 
@@ -2701,7 +2704,10 @@ namespace Detail
     template <class T>
     static inline void push (lua_State* const L, T* const p)
     {
-      push (L, p, ClassInfo <T>::getClassKey ());
+      if (p)
+        push (L, p, ClassInfo <T>::getClassKey ());
+      else
+        lua_pushnil (L);
     }
 
     /** Push const pointer to object.
@@ -2709,7 +2715,10 @@ namespace Detail
     template <class T>
     static inline void push (lua_State* const L, T const* const p)
     {
-      push (L, p, ClassInfo <T>::getConstKey ());
+      if (p)
+        push (L, p, ClassInfo <T>::getConstKey ());
+      else
+        lua_pushnil (L);
     }
   };
 
@@ -2969,7 +2978,10 @@ struct Stack <T&>
 
   static T& get (lua_State* L, int index)
   {
-    return *Detail::Userdata::get <T> (L, index, false);
+    T* const t = Detail::Userdata::get <T> (L, index, false);
+    if (!t)
+      luaL_error (L, "nil passed to reference");
+    return *t;
   }
 };
 
@@ -2984,7 +2996,10 @@ struct Stack <T const&>
 
   static T const& get (lua_State* L, int index)
   {
-    return *Detail::Userdata::get <T> (L, index, true);
+    T const* const t = Detail::Userdata::get <T> (L, index, true);
+    if (!t)
+      luaL_error (L, "nil passed to reference");
+    return *t;
   }
 };
 
