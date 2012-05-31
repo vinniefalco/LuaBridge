@@ -4687,26 +4687,6 @@ public:
 
 //==============================================================================
 /**
-  Push objects onto the Lua stack.
-*/
-template <class T>
-inline void push (lua_State* L, T t)
-{
-  Stack <T>::push (L, t);
-}
-
-/**
-  Set a global value in the lua_State.
-*/
-template <class T>
-inline void setglobal (lua_State* L, T t, char const* name)
-{
-  push (L, t);
-  lua_setglobal (L, name);
-}
-
-//==============================================================================
-/**
   Retrieve the global namespace.
 
   It is recommended to put your namespace inside the global namespace, and then
@@ -4720,7 +4700,28 @@ inline Namespace getGlobalNamespace (lua_State* L)
 
 //------------------------------------------------------------------------------
 /**
-  Control metatable hiding setting.
+  Push objects onto the Lua stack.
+*/
+template <class T>
+inline void push (lua_State* L, T t)
+{
+  Stack <T>::push (L, t);
+}
+
+//------------------------------------------------------------------------------
+/**
+  Set a global value in the lua_State.
+*/
+template <class T>
+inline void setglobal (lua_State* L, T t, char const* name)
+{
+  push (L, t);
+  lua_setglobal (L, name);
+}
+
+//------------------------------------------------------------------------------
+/**
+  Change whether or not metatables are hidden (on by default).
 */
 inline void setHideMetatables (bool shouldHide)
 {
