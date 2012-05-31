@@ -1,0 +1,12 @@
+
+
+2012-05-30  Version 1.0.1
+
+  * Backward compatibility with Lua 5.1.x
+
+2012-05-29  Version 1.0
+
+  * Explicit lifetime management models
+  * Generalized containers
+  * Single header distribution
+
