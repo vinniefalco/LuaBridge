@@ -4316,7 +4316,7 @@ private:
       assert (lua_istable (L, -1));
       new (lua_newuserdata (L, sizeof (mfp))) MFP (mfp);
       lua_pushcclosure (L, &CallMemberCFunction <T>::call, 1);
-      rawsetfield (L, -2, name);
+      rawsetfield (L, -3, name); // class table
 
       return *this;
     }
@@ -4331,7 +4331,9 @@ private:
       assert (lua_istable (L, -1));
       new (lua_newuserdata (L, sizeof (mfp))) MFP (mfp);
       lua_pushcclosure (L, &CallMemberCFunction <T>::callConst, 1);
-      rawsetfield (L, -2, name);
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -5, name); // const table
+      rawsetfield (L, -3, name); // class table
 
       return *this;
     }
