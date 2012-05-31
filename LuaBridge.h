@@ -4238,14 +4238,14 @@ private:
     /**
       Add or replace a property member.
     */
-    template <class GT, class ST>
-    Class <T>& addProperty (char const* name, GT (T::* get) () const, void (T::* set) (ST))
+    template <class TG, class TS>
+    Class <T>& addProperty (char const* name, TG (T::* get) () const, void (T::* set) (TS))
     {
       // Add to __propget in class and const tables.
       {
         rawgetfield (L, -2, "__propget");
         rawgetfield (L, -4, "__propget");
-        typedef GT (T::*get_t) () const;
+        typedef TG (T::*get_t) () const;
         new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
         lua_pushcclosure (L, &CallMemberFunction <get_t>::callConst, 1);
         lua_pushvalue (L, -1);
@@ -4258,7 +4258,7 @@ private:
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        typedef void (T::* set_t) (ST);
+        typedef void (T::* set_t) (TS);
         new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
         lua_pushcclosure (L, &CallMemberFunction <set_t>::call, 1);
         rawsetfield (L, -2, name);
@@ -4269,13 +4269,13 @@ private:
     }
 
     // read-only
-    template <class GT>
-    Class <T>& addProperty (char const* name, GT (T::* get) () const)
+    template <class TG>
+    Class <T>& addProperty (char const* name, TG (T::* get) () const)
     {
       // Add to __propget in class and const tables.
       rawgetfield (L, -2, "__propget");
       rawgetfield (L, -4, "__propget");
-      typedef GT (T::*get_t) () const;
+      typedef TG (T::*get_t) () const;
       new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
       lua_pushcclosure (L, &CallMemberFunction <get_t>::callConst, 1);
       lua_pushvalue (L, -1);
@@ -4297,14 +4297,14 @@ private:
       Both the get and the set functions require a T const* and T* in the first
       argument respectively.
     */
-    template <class GT, class ST>
-    Class <T>& addProperty (char const* name, GT (*get) (T const*), void (*set) (T*, ST))
+    template <class TG, class TS>
+    Class <T>& addProperty (char const* name, TG (*get) (T const*), void (*set) (T*, TS))
     {
       // Add to __propget in class and const tables.
       {
         rawgetfield (L, -2, "__propget");
         rawgetfield (L, -4, "__propget");
-        typedef GT (*get_t) (T const*);
+        typedef TG (*get_t) (T const*);
         new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
         lua_pushcclosure (L, &CallFunction <get_t>::call, 1);
         lua_pushvalue (L, -1);
@@ -4318,7 +4318,7 @@ private:
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        typedef void (*set_t) (T*, ST);
+        typedef void (*set_t) (T*, TS);
         new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
         lua_pushcclosure (L, &CallFunction <set_t>::call, 1);
         rawsetfield (L, -2, name);
@@ -4329,13 +4329,13 @@ private:
     }
 
     // read-only
-    template <class GT, class ST>
-    Class <T>& addProperty (char const* name, GT (*get) (T const*))
+    template <class TG, class TS>
+    Class <T>& addProperty (char const* name, TG (*get) (T const*))
     {
       // Add to __propget in class and const tables.
       rawgetfield (L, -2, "__propget");
       rawgetfield (L, -4, "__propget");
-      typedef GT (*get_t) (T const*);
+      typedef TG (*get_t) (T const*);
       new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
       lua_pushcclosure (L, &CallFunction <get_t>::call, 1);
       lua_pushvalue (L, -1);
@@ -4605,15 +4605,15 @@ public:
 
     If the set function is omitted or null, the property is read-only.
   */
-  template <class GT, class ST>
-  Namespace& addProperty (char const* name, GT (*get) (), void (*set)(ST) = 0)
+  template <class TG, class TS>
+  Namespace& addProperty (char const* name, TG (*get) (), void (*set)(TS) = 0)
   {
     assert (lua_istable (L, -1));
 
     rawgetfield (L, -1, "__propget");
     assert (lua_istable (L, -1));
     lua_pushlightuserdata (L, get);
-    lua_pushcclosure (L, &CallFunction <GT (*) (void)>::call, 1);
+    lua_pushcclosure (L, &CallFunction <TG (*) (void)>::call, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
 
@@ -4622,7 +4622,7 @@ public:
     if (set != 0)
     {
       lua_pushlightuserdata (L, set);
-      lua_pushcclosure (L, &CallFunction <void (*) (ST)>::call, 1);
+      lua_pushcclosure (L, &CallFunction <void (*) (TS)>::call, 1);
     }
     else
     {
