@@ -69,13 +69,17 @@ for registering the two classes:
 
 ## Registration
 
-There are four types of objects that LuaBridge can register:
+There are five types of objects that LuaBridge can register:
 
 - **Data**: Global variables, static class data members, and class data
             members.
 
 - **Functions**: Regular functions, static class members, and class member
-                  functions
+                  functions.
+
+- **CFunctions**: A regular function, static class member function, or class
+                  member function that uses the `lua_CFunction` calling
+                  convention.
 
 - **Namespaces**: A namespace is simply a table containing registrations of
                   functions, data, properties, and other namespaces.
@@ -126,16 +130,15 @@ we can make more registrations. Given:
 
 The results are accessible to Lua as `test`, `test.detail`, and
 `test.utility`. Here we introduce the `endNamespace` function; it returns an
-object representing the original enclosing namespace. All LuaBridge functions which 
-create registrations return an object upon which subsequent registrations can
-be made, allowing for an unlimited number of registrations to be chained
-together using the dot operator `.`. Adding two objects with the same name, in
-the same namespace, results in undefined behavior (although LuaBridge will
-silently accept it).
+object representing the original enclosing namespace. All LuaBridge functions
+which  create registrations return an object upon which subsequent
+registrations can be made, allowing for an unlimited number of registrations
+to be chained together using the dot operator `.`. Adding two objects with the
+same name, in the same namespace, results in undefined behavior (although
+LuaBridge will silently accept it).
 
-A namespace can be re-opened later to add
-more functions. This lets you split up the registration between different
-source files. These are equivalent:
+A namespace can be re-opened later to add more functions. This lets you split
+up the registration between different source files. These are equivalent:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -156,15 +159,16 @@ and
       .endNamespace ();
 
 
-### Data, Properties, and Functions
+### Data, Properties, Functions, and CFunctions.
 
 These are registered into a namespace using `addVariable`, `addProperty`,
-and `addFunction`. When registered functions are called by scripts, LuaBridge
-automatically takes care of the conversion of arguments into the appropriate
-data type when doing so is possible. This automated system works for the
-function's return value, and up to 8 parameters although more can be added by
-extending the templates. Pointers, references, and objects of class type as
-parameters are treated specially, and explained later. If we have:
+`addFunction`, and `addCFunction`. When registered functions are called by
+scripts, LuaBridge automatically takes care of the conversion of arguments
+into the appropriate data type when doing so is possible. This automated
+system works for the function's return value, and up to 8 parameters although
+more can be added by extending the templates. Pointers, references, and
+objects of class type as parameters are treated specially, and explained
+later. If we have:
 
     int globalVar;
     static float staticVar;
@@ -175,8 +179,9 @@ parameters are treated specially, and explained later. If we have:
 
     int foo () { return 42; }
     void bar (char const*) { }
+    int cFunc (lua_State* L) { return 0; }
 
-These are registered with:
+  These are registered with:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -186,6 +191,7 @@ These are registered with:
         .addProperty ("prop2", getString)            // read only
         .addFunction ("foo", foo)
         .addFunction ("bar", bar)
+        .addCFunction ("cfunc", cFunc)
       .endNamespace ();
 
 Variables can be marked _read-only_ by passing `false` in the second optional
@@ -200,6 +206,7 @@ After the registrations above, the following Lua identifiers are valid:
     test.prop2  -- a read-only lua_String property
     test.foo    -- a function returning a lua_Number
     test.bar    -- a function taking a lua_String as a parameter
+    test.cfunc  -- a function with a variable argument list and multi-return
 
 Note that `test.prop1` and `test.prop2` both refer to the same value. However,
 since `test.prop2` is read-only, assignment does not work. These Lua
@@ -238,6 +245,8 @@ _member function_ - static or otherwise. These declarations:
       static void setStaticProperty (float f) { staticProperty = f; }
       static void staticFunc () { }
 
+      static int staticCFunc () { return 0; }
+
       std::string dataMember;
 
       char dataProperty;
@@ -246,6 +255,8 @@ _member function_ - static or otherwise. These declarations:
 
       void func1 () { }
       virtual void virtualFunc () { }
+
+      int cfunc (lua_State* L) { return 0; }
     };
 
     struct B : public A {
@@ -267,10 +278,12 @@ Are registered using:
           .addStaticData ("staticData", &A::staticData)
           .addStaticProperty ("staticProperty", &A::staticProperty)
           .addStaticMethod ("staticFunc", &A::staticFunc)
+          .addStaticCFunction ("staticCFunc", &A::staticCFunc)
           .addData ("data", &A::dataMember)
           .addProperty ("prop", &A::getProperty, &A::setProperty)
           .addMethod ("func1", &A::func1)
           .addMethod ("virtualFunc", &A::virtualFunc)
+          .addCFunction ("cfunc", &A::cfunc)
         .endClass ()
         .deriveClass <B, A> ("B")
           .addData ("data", &B::dataMember2)
@@ -722,7 +735,7 @@ security system has these components:
   cannot access. The global environment does not expose metatables
 
 - Metatables created by LuaBridge are tagged with a lightuserdata key which
-  is unique in the process. Other libraries cannot forge a Luabridge
+  is unique in the process. Other libraries cannot forge a LuaBridge
   metatable.
 
 This security system can be easily bypassed if scripts are given access to
