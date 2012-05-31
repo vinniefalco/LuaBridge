@@ -3986,10 +3986,21 @@ private:
   private:
     //--------------------------------------------------------------------------
     /**
+      __gc metamethod for a class.
+    */
+    static int gcMetaMethod (lua_State* L)
+    {
+      Detail::Userdata* ud = Detail::Userdata::getExact <T> (L, 1);
+      ud->~Userdata ();
+      return 0;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
       lua_CFunction to get a class data member.
     */
     template <typename U>
-    static int propgetProxy (lua_State* L)
+    static int getProperty (lua_State* L)
     {
       T const* const t = Detail::Userdata::get <T> (L, 1, true);
       U T::** mp = static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -4005,7 +4016,7 @@ private:
             data member is in upvalue 2.
     */
     template <typename U>
-    static int propsetProxy (lua_State* L)
+    static int setProperty (lua_State* L)
     {
       T* const t = Detail::Userdata::get <T> (L, 1, false);
       U T::** mp = static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -4013,18 +4024,7 @@ private:
       return 0;
     }
 
-    //--------------------------------------------------------------------------
-    /**
-      __gc metamethod for a class.
-    */
-    static int gcMetaMethod (lua_State* L)
-    {
-      Detail::Userdata* ud = Detail::Userdata::getExact <T> (L, 1);
-      ud->~Userdata ();
-      return 0;
-    }
-
-  public:
+ public:
     //==========================================================================
     /**
       Register a new class or add to an existing class registration.
@@ -4232,7 +4232,7 @@ private:
         rawgetfield (L, -2, "__propget");
         rawgetfield (L, -4, "__propget");
         new (lua_newuserdata (L, sizeof (mp_t))) mp_t (mp);
-        lua_pushcclosure (L, &propgetProxy <U>, 1);
+        lua_pushcclosure (L, &getProperty <U>, 1);
         lua_pushvalue (L, -1);
         rawsetfield (L, -4, name);
         rawsetfield (L, -2, name);
