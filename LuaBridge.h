@@ -2325,6 +2325,18 @@ namespace Detail
   */
   class Userdata
   {
+  protected:
+    void* m_p; // subclasses must set this
+
+    //--------------------------------------------------------------------------
+    /**
+      Get an untyped pointer to the contained class.
+    */
+    inline void* const getPointer ()
+    {
+      return m_p;
+    }
+
   private:
     //--------------------------------------------------------------------------
     /**
@@ -2525,12 +2537,6 @@ namespace Detail
       return ud;
     }
 
-    //--------------------------------------------------------------------------
-    /**
-      Get an untyped pointer to the contained class.
-    */
-    virtual void* getPointer () = 0;
-
   public:
     virtual ~Userdata () { }
 
@@ -2594,16 +2600,12 @@ namespace Detail
     */
     UserdataValue ()
     {
+      m_p = getObject ();
     }
 
     ~UserdataValue ()
     {
       getObject ()->~T ();
-    }
-
-    void* getPointer ()
-    {
-      return &m_storage [0];
     }
 
   public:
@@ -2646,14 +2648,7 @@ namespace Detail
     UserdataPtr (UserdataPtr const&);
     UserdataPtr operator= (UserdataPtr const&);
 
-    void* const m_p;
-
   private:
-    void* getPointer ()
-    {
-      return m_p;
-    }
-
     /** Push non-const pointer to object using metatable key.
     */
     static void push (lua_State* L, void* const p, void const* const key)
@@ -2691,8 +2686,10 @@ namespace Detail
       }
     }
 
-    explicit UserdataPtr (void* const p) : m_p (p)
+    explicit UserdataPtr (void* const p)
     {
+      m_p = p;
+
       // Can't construct with a null pointer!
       //
       assert (m_p != 0);
@@ -2746,12 +2743,6 @@ namespace Detail
     {
     }
 
-    void* getPointer ()
-    {
-      return const_cast <void*> (reinterpret_cast <void const*> (
-        (ContainerTraits <C>::get (m_c))));
-    }
-
   public:
     /**
       Construct from a container to the class or a derived class.
@@ -2759,6 +2750,8 @@ namespace Detail
     template <class U>
     explicit UserdataShared (U const& u) : m_c (u)
     {
+      m_p = const_cast <void*> (reinterpret_cast <void const*> (
+          (ContainerTraits <C>::get (m_c))));
     }
 
     /**
@@ -2767,6 +2760,8 @@ namespace Detail
     template <class U>
     explicit UserdataShared (U* u) : m_c (u)
     {
+      m_p = const_cast <void*> (reinterpret_cast <void const*> (
+          (ContainerTraits <C>::get (m_c))));
     }
   };
 
