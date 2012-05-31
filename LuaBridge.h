@@ -2142,6 +2142,7 @@ inline void lua_rawsetp (lua_State *L, int idx, void const* p)
 }
 #endif
 
+//------------------------------------------------------------------------------
 /**
   Get a table value, bypassing metamethods.
 */  
@@ -2170,6 +2171,42 @@ inline void rawsetfield (lua_State* const L, int index, char const* const key)
 
 namespace Detail
 {
+  //----------------------------------------------------------------------------
+  /**
+    Control security options.
+  */
+  class Security
+  {
+  public:
+    static bool hideMetatables ()
+    {
+      return getSettings().hideMetatables;
+    }
+
+    static void setHideMetatables (bool shouldHide)
+    {
+      getSettings().hideMetatables = shouldHide;
+    }
+
+  private:
+    struct Settings
+    {
+      Settings ()
+        : hideMetatables (true)
+      {
+      }
+
+      bool hideMetatables;
+    };
+
+    static Settings& getSettings ()
+    {
+      static Settings settings;
+      return settings;
+    }
+  };
+
+  //----------------------------------------------------------------------------
   struct TypeTraits
   {
     //--------------------------------------------------------------------------
@@ -3757,8 +3794,12 @@ private:
       rawsetfield (L, -2, "__newindex");
       lua_newtable (L);
       rawsetfield (L, -2, "__propget");
-      lua_pushboolean (L, 0);
-      rawsetfield (L, -2, "__metatable");
+      
+      if (Detail::Security::hideMetatables ())
+      {
+        lua_pushnil (L);
+        rawsetfield (L, -2, "__metatable");
+      }
     }
 
     //--------------------------------------------------------------------------
@@ -3784,13 +3825,18 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
-      lua_pushboolean (L, 0);
-      rawsetfield (L, -2, "__metatable");
+
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__const"); // point to const table
 
       lua_pushvalue (L, -1);
       rawsetfield (L, -3, "__class"); // point const table to class table
+
+      if (Detail::Security::hideMetatables ())
+      {
+        lua_pushnil (L);
+        rawsetfield (L, -2, "__metatable");
+      }
     }
 
     //--------------------------------------------------------------------------
@@ -3824,10 +3870,15 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
-      lua_pushboolean (L, 0);
-      rawsetfield (L, -2, "__metatable");
+
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__class"); // point to class table
+
+      if (Detail::Security::hideMetatables ())
+      {
+        lua_pushnil (L);
+        rawsetfield (L, -2, "__metatable");
+      }
     }
 
     //==========================================================================
@@ -4665,6 +4716,15 @@ inline void setglobal (lua_State* L, T t, char const* name)
 inline Namespace getGlobalNamespace (lua_State* L)
 {
   return Namespace::getGlobalNamespace (L);
+}
+
+//------------------------------------------------------------------------------
+/**
+  Control metatable hiding setting.
+*/
+inline void setHideMetatables (bool shouldHide)
+{
+  Detail::Security::setHideMetatables (shouldHide);
 }
 
 }
