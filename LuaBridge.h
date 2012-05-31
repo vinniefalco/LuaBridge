@@ -61,6 +61,15 @@
   <img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
   </a><br>
 
+<table>
+  <tr><td>
+    Heading 1<table><tr><td>
+      Subheading 1</td></tr><tr><td>
+      Subheading 2</td></tr></table>
+  </td></tr>
+  <tr><td>Heading 2</td></tr>
+</table>
+
   # LuaBridge 1.0.2
 
   [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
@@ -363,17 +372,17 @@
   that is **not** registered with Lua, there is no need to declare it as a
   subclass.
 
-  ### Class Property Proxies
+  ### Property Member Proxies
 
   Sometimes when registering a class which comes from a third party library, the
   data is not exposed in a way that can be expressed as a pointer to member,
   there are no get or set functions, or the get and set functons do not have the
-  right function signature. LuaBridge handles this by supporting _property
-  member proxies_. This is a flat function which takes as its first parameter
-  a pointer to the class which is closed for modification. This is easily
-  understood with the following example:
+  right function signature. Since the class declaration is closed for changes,
+  LuaBridge provides allows a _property member proxy_. This is a pair of get
+  and set flat functions which take as their first parameter a pointer to
+  the object. This is easily understood with the following example:
 
-      // External structure, can't be changed
+      // Third party declaration, can't be changed
       struct Vec 
       {
         float coord [3];
@@ -401,7 +410,7 @@
 
   This helper class is only used to provide property member proxies. `Vec`
   continues to be used in the C++ code as it was before. Now we can register
-  our class like this:
+  the `Vec` class with property member proxies for `x`, `y`, and `z`:
 
       getGlobalNamespace (L)
         .beginNamespace ("test")

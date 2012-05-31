@@ -4,6 +4,15 @@
 
 # LuaBridge 1.0.2
 
+<table>
+  <tr><td>
+    Heading 1<table><tr><td>
+      Subheading 1</td></tr><tr><td>
+      Subheading 2</td></tr></table>
+  </td></tr>
+  <tr><td>Heading 2</td></tr>
+</table>
+
 [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
 functions, and classes available to [Lua][5]: A powerful, fast, lightweight,
 embeddable scripting language. LuaBridge has been tested and works with Lua
