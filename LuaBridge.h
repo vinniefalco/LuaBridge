@@ -1071,7 +1071,7 @@ struct FuncTraits <R (*) (), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef None Params;
-  static R call (DeclType fp, TypeListValues <Params> const&)
+  static R call (DeclType fp, TypeListValues <Params>)
   {
     return fp ();
   }
@@ -1084,7 +1084,7 @@ struct FuncTraits <R (*) (P1), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd);
   }
@@ -1097,7 +1097,7 @@ struct FuncTraits <R (*) (P1, P2), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd);
   }
@@ -1110,7 +1110,7 @@ struct FuncTraits <R (*) (P1, P2, P3), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1123,7 +1123,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1136,7 +1136,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1150,7 +1150,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,  TypeList <P6> > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1164,7 +1164,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1179,7 +1179,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1213,7 +1213,7 @@ struct FuncTraits <R (T::*) (P1), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd);
   }
@@ -1228,7 +1228,7 @@ struct FuncTraits <R (T::*) (P1, P2), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
   }
@@ -1243,7 +1243,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1258,7 +1258,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1273,7 +1273,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1289,7 +1289,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1305,7 +1305,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1322,7 +1322,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1356,7 +1356,7 @@ struct FuncTraits <R (T::*) (P1) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd);
   }
@@ -1372,7 +1372,7 @@ struct FuncTraits <R (T::*) (P1, P2) const, D>
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
   static R call (T const* const obj, R (T::*fp) (P1, P2) const,
-    TypeListValues <Params> const& tvl)
+    TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
   }
@@ -1387,7 +1387,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1402,7 +1402,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1417,7 +1417,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1433,7 +1433,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1449,7 +1449,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1466,7 +1466,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1498,7 +1498,7 @@ struct FuncTraits <R (*) (P1) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd);
   }
@@ -1511,7 +1511,7 @@ struct FuncTraits <R (*) (P1, P2) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd);
   }
@@ -1524,7 +1524,7 @@ struct FuncTraits <R (*) (P1, P2, P3) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1537,7 +1537,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1550,7 +1550,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1564,7 +1564,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,  TypeList <P6> > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1578,7 +1578,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1593,7 +1593,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1627,7 +1627,7 @@ struct FuncTraits <R (T::*) (P1) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd);
   }
@@ -1642,7 +1642,7 @@ struct FuncTraits <R (T::*) (P1, P2) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
   }
@@ -1657,7 +1657,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1672,7 +1672,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1687,7 +1687,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1703,7 +1703,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1719,7 +1719,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1736,7 +1736,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1771,7 +1771,7 @@ struct FuncTraits <R (T::*) (P1) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd);
   }
@@ -1786,7 +1786,7 @@ struct FuncTraits <R (T::*) (P1, P2) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
   }
@@ -1801,7 +1801,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1816,7 +1816,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1831,7 +1831,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1847,7 +1847,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1863,7 +1863,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1880,7 +1880,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
