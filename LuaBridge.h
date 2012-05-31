@@ -3206,7 +3206,7 @@ private:
   int mutable m_stackSize;
 
 private:
-  //----------------------------------------------------------------------------
+  //============================================================================
   /**
     __index metamethod for a namespace or class static members.
 
@@ -3362,7 +3362,7 @@ private:
     This is used for global variables or class static data members.
   */
   template <class T>
-  static int vargetProxy (lua_State* L)
+  static int getVariable (lua_State* L)
   {
     assert (lua_islightuserdata (L, lua_upvalueindex (1)));
     T const* const data = static_cast <T const*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3378,7 +3378,7 @@ private:
     This is used for global variables or class static data members.
   */
   template <class T>
-  static int varsetProxy (lua_State* L)
+  static int setVariable (lua_State* L)
   {
     assert (lua_islightuserdata (L, lua_upvalueindex (1)));
     T* const data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3396,10 +3396,10 @@ private:
   */
   template <class Func,
             class ReturnType = typename FuncTraits <Func>::ReturnType>
-  struct functionProxy
+  struct CallFunction
   {
     typedef typename FuncTraits <Func>::Params Params;
-    static int f (lua_State* L)
+    static int call (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
       Func const& fp = *static_cast <Func const*> (
@@ -3420,10 +3420,10 @@ private:
     and class static properties.
   */
   template <class Func>
-  struct functionProxy <Func, void>
+  struct CallFunction <Func, void>
   {
     typedef typename FuncTraits <Func>::Params Params;
-    static int f (lua_State* L)
+    static int call (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
       Func const& fp = *static_cast <Func const*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3437,21 +3437,15 @@ private:
   //============================================================================
   /**
     lua_CFunction to call a class member function with a return value.
-
-    The argument list contains the 'this' pointer followed by the method
-    arguments.
-
-    @note The expected class name is in upvalue 1, and the member function
-          pointer is in upvalue 2.
   */
   template <class MemFn,
             class ReturnType = typename FuncTraits <MemFn>::ReturnType>
-  struct methodProxy
+  struct CallMember
   {
     typedef typename FuncTraits <MemFn>::ClassType T;
     typedef typename FuncTraits <MemFn>::Params Params;
 
-    static int callMethod (lua_State* L)
+    static int call (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
       T* const t = Detail::Userdata::get <T> (L, 1, false);
@@ -3461,7 +3455,7 @@ private:
       return 1;
     }
 
-    static int callConstMethod (lua_State* L)
+    static int callConst (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
       T const* const t = Detail::Userdata::get <T> (L, 1, true);
@@ -3475,20 +3469,14 @@ private:
   //----------------------------------------------------------------------------
   /**
     lua_CFunction to call a class member function with no return value.
-
-    The argument list contains the 'this' pointer followed by the method
-    arguments.
-
-    @note The expected class name is in upvalue 1, and the member function
-          pointer is in upvalue 2.
   */
   template <class MemFn>
-  struct methodProxy <MemFn, void>
+  struct CallMember <MemFn, void>
   {
     typedef typename FuncTraits <MemFn>::ClassType T;
     typedef typename FuncTraits <MemFn>::Params Params;
 
-    static int callMethod (lua_State* L)
+    static int call (lua_State* L)
     {
       T* const t = Detail::Userdata::get <T> (L, 1, false);
       MemFn const fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3497,7 +3485,7 @@ private:
       return 0;
     }
 
-    static int callConstMethod (lua_State* L)
+    static int callConst (lua_State* L)
     {
       T const* const t = Detail::Userdata::get <T> (L, 1, true);
       MemFn const fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3509,32 +3497,28 @@ private:
 
   //----------------------------------------------------------------------------
 
-  /**
-    Create a proxy for a const member function.
-  */
+  // SFINAE Helpers
+
   template <class MemFn, bool isConst>
-  struct MethodHelper
+  struct CallMemberHelper
   {
     static void add (lua_State* L, char const* name, MemFn mf)
     {
       new (lua_newuserdata (L, sizeof (MemFn))) MemFn (mf);
-      lua_pushcclosure (L, &methodProxy <MemFn>::callConstMethod, 1);
+      lua_pushcclosure (L, &CallMember <MemFn>::callConst, 1);
       lua_pushvalue (L, -1);
       rawsetfield (L, -5, name); // const table
       rawsetfield (L, -3, name); // class table
     }
   };
 
-  /**
-    Create a proxy for a non-const member function.
-  */
   template <class MemFn>
-  struct MethodHelper <MemFn, false>
+  struct CallMemberHelper <MemFn, false>
   {
     static void add (lua_State* L, char const* name, MemFn mf)
     {
       new (lua_newuserdata (L, sizeof (MemFn))) MemFn (mf);
-      lua_pushcclosure (L, &methodProxy <MemFn>::callMethod, 1);
+      lua_pushcclosure (L, &CallMember <MemFn>::call, 1);
       rawsetfield (L, -3, name); // class table
     }
   };
@@ -4041,7 +4025,7 @@ private:
       rawgetfield (L, -1, "__propget");
       assert (lua_istable (L, -1));
       lua_pushlightuserdata (L, pu);
-      lua_pushcclosure (L, &vargetProxy <U>, 1);
+      lua_pushcclosure (L, &getVariable <U>, 1);
       rawsetfield (L, -2, name);
       lua_pop (L, 1);
 
@@ -4050,7 +4034,7 @@ private:
       if (isWritable)
       {
         lua_pushlightuserdata (L, pu);
-        lua_pushcclosure (L, &varsetProxy <U>, 1);
+        lua_pushcclosure (L, &setVariable <U>, 1);
       }
       else
       {
@@ -4080,7 +4064,7 @@ private:
       rawgetfield (L, -1, "__propget");
       assert (lua_istable (L, -1));
       new (lua_newuserdata (L, sizeof (get))) get_t (get);
-      lua_pushcclosure (L, &functionProxy <U (*) (void)>::f, 1);
+      lua_pushcclosure (L, &CallFunction <U (*) (void)>::call, 1);
       rawsetfield (L, -2, name);
       lua_pop (L, 1);
 
@@ -4089,7 +4073,7 @@ private:
       if (set != 0)
       {
         new (lua_newuserdata (L, sizeof (set))) set_t (set);
-        lua_pushcclosure (L, &functionProxy <void (*) (U)>::f, 1);
+        lua_pushcclosure (L, &CallFunction <void (*) (U)>::call, 1);
       }
       else
       {
@@ -4110,7 +4094,7 @@ private:
     Class <T>& addStaticMethod (char const* name, FP const fp)
     {
       new (lua_newuserdata (L, sizeof (fp))) FP (fp);
-      lua_pushcclosure (L, &functionProxy <FP>::f, 1);
+      lua_pushcclosure (L, &CallFunction <FP>::call, 1);
       rawsetfield (L, -2, name);
 
       return *this;
@@ -4164,7 +4148,7 @@ private:
         rawgetfield (L, -4, "__propget");
         typedef GT (T::*get_t) () const;
         new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
-        lua_pushcclosure (L, &methodProxy <get_t>::callConstMethod, 1);
+        lua_pushcclosure (L, &CallMember <get_t>::callConst, 1);
         lua_pushvalue (L, -1);
         rawsetfield (L, -4, name);
         rawsetfield (L, -2, name);
@@ -4177,7 +4161,7 @@ private:
         assert (lua_istable (L, -1));
         typedef void (T::* set_t) (ST);
         new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
-        lua_pushcclosure (L, &methodProxy <set_t>::callMethod, 1);
+        lua_pushcclosure (L, &CallMember <set_t>::call, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
@@ -4194,7 +4178,7 @@ private:
       rawgetfield (L, -4, "__propget");
       typedef GT (T::*get_t) () const;
       new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
-      lua_pushcclosure (L, &methodProxy <get_t>::callConstMethod, 1);
+      lua_pushcclosure (L, &CallMember <get_t>::callConst, 1);
       lua_pushvalue (L, -1);
       rawsetfield (L, -4, name);
       rawsetfield (L, -2, name);
@@ -4223,7 +4207,7 @@ private:
         rawgetfield (L, -4, "__propget");
         typedef GT (*get_t) (T const*);
         new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
-        lua_pushcclosure (L, &functionProxy <get_t>::f, 1);
+        lua_pushcclosure (L, &CallFunction <get_t>::call, 1);
         lua_pushvalue (L, -1);
         rawsetfield (L, -4, name);
         rawsetfield (L, -2, name);
@@ -4237,7 +4221,7 @@ private:
         assert (lua_istable (L, -1));
         typedef void (*set_t) (T*, ST);
         new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
-        lua_pushcclosure (L, &functionProxy <set_t>::f, 1);
+        lua_pushcclosure (L, &CallFunction <set_t>::call, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
@@ -4254,7 +4238,7 @@ private:
       rawgetfield (L, -4, "__propget");
       typedef GT (*get_t) (T const*);
       new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
-      lua_pushcclosure (L, &functionProxy <get_t>::f, 1);
+      lua_pushcclosure (L, &CallFunction <get_t>::call, 1);
       lua_pushvalue (L, -1);
       rawsetfield (L, -4, name);
       rawsetfield (L, -2, name);
@@ -4270,7 +4254,7 @@ private:
     template <class MemFn>
     Class <T>& addMethod (char const* name, MemFn mf)
     {
-      MethodHelper <MemFn, FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
+      CallMemberHelper <MemFn, FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
       return *this;
     }
 
@@ -4462,7 +4446,7 @@ public:
     rawgetfield (L, -1, "__propget");
     assert (lua_istable (L, -1));
     lua_pushlightuserdata (L, pt);
-    lua_pushcclosure (L, &vargetProxy <T>, 1);
+    lua_pushcclosure (L, &getVariable <T>, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
 
@@ -4471,7 +4455,7 @@ public:
     if (isWritable)
     {
       lua_pushlightuserdata (L, pt);
-      lua_pushcclosure (L, &varsetProxy <T>, 1);
+      lua_pushcclosure (L, &setVariable <T>, 1);
     }
     else
     {
@@ -4498,7 +4482,7 @@ public:
     rawgetfield (L, -1, "__propget");
     assert (lua_istable (L, -1));
     lua_pushlightuserdata (L, get);
-    lua_pushcclosure (L, &functionProxy <GT (*) (void)>::f, 1);
+    lua_pushcclosure (L, &CallFunction <GT (*) (void)>::call, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
 
@@ -4507,7 +4491,7 @@ public:
     if (set != 0)
     {
       lua_pushlightuserdata (L, set);
-      lua_pushcclosure (L, &functionProxy <void (*) (ST)>::f, 1);
+      lua_pushcclosure (L, &CallFunction <void (*) (ST)>::call, 1);
     }
     else
     {
@@ -4529,7 +4513,7 @@ public:
   {
     assert (lua_istable (L, -1));
     new (lua_newuserdata (L, sizeof (fp))) FP (fp);
-    lua_pushcclosure (L, &functionProxy <FP>::f, 1);
+    lua_pushcclosure (L, &CallFunction <FP>::call, 1);
     rawsetfield (L, -2, name);
 
     return *this;
