@@ -1,3 +1,5 @@
+Version 1.0.2
+
   * Convert null pointers to and from nil
   * Small performance increase in class pointer extraction
 
