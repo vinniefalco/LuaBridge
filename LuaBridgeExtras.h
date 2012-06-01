@@ -218,7 +218,7 @@ public:
     m_ref.push ();
   }
 
-  lua_State* L ()
+  lua_State* L () const
   {
     return m_ref.L ();
   }
