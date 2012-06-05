@@ -1,0 +1,20 @@
+Version 1.0.2
+
+  * Option to hide metatables selectable at runtime, default to true.
+  * addStaticMethod () renamed to addStaticFunction () for consistency.
+  * addMethod () renamed to addFunction() for consistency.
+  * addCFunction () registrations.
+  * Convert null pointers to and from nil.
+  * Small performance increase in class pointer extraction.
+
+2012-05-30  Version 1.0.1
+
+  * Backward compatibility with Lua 5.1.x.
+
+2012-05-29  Version 1.0
+
+  * Explicit lifetime management models.
+  * Generalized containers.
+  * Single header distribution.
+
+
