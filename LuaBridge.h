@@ -880,7 +880,7 @@ namespace luabridge
   macro controls whether we use the 'throw ()' form, or 'noexcept' (if C++11
   is available) to distinguish the functions.
 */
-#if defined (__APPLE_CPP__) || defined(__APPLE_CC__) || defined (__GNUC__)
+#if defined (__APPLE_CPP__) || defined(__APPLE_CC__) || defined(__clang__) || defined(__GNUC__)
 // Do not define THROWSPEC since the Xcode and gcc  compilers do not
 // distinguish the throw specification in the function signature.
 #else
@@ -4245,7 +4245,7 @@ private:
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
         new (lua_newuserdata (L, sizeof (mp_t))) mp_t (mp);
-        lua_pushcclosure (L, &propsetProxy <U>, 1);
+        lua_pushcclosure (L, &setProperty <U>, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
