@@ -61,7 +61,7 @@
   <img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
   </a><br>
 
-  # LuaBridge 1.0.1
+  # LuaBridge 1.0.2
 
   [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
   functions, and classes available to [Lua][5]: A powerful, fast, lightweight,
@@ -91,12 +91,12 @@
   file, these are simply used via `#include`. No additional source files need
   to be compiled.
 
-  C++ concepts like variables and classes are made available to Lua through
-  a process called _registration_. Because Lua is weakly typed, the resulting
-  structure is not rigid. The API is based on C++ template metaprogramming.
-  It contains template code to automatically generate at compile-time the
-  various Lua C API calls necessary to export your program's classes and
-  functions to the Lua environment.
+  C++ concepts like variables and classes are made available to Lua through a
+  process called _registration_. Because Lua is weakly typed, the resulting
+  structure is not rigid. The API is based on C++ template metaprogramming. It
+  contains template code to automatically generate at compile-time the various
+  Lua C API calls necessary to export your program's classes and functions to
+  the Lua environment.
 
   ### Version
 
@@ -128,20 +128,22 @@
 
   ## Registration
 
-  There are four types of objects that LuaBridge can register:
+  There are five types of objects that LuaBridge can register:
 
-  - **Data**: Global variables, static class data members, and class data
-              members.
+  - **Data**: Global variables, data members, and static data members.
 
-  - **Functions**: Regular functions, static class members, and class member
-                   functions
+  - **Functions**: Global functions, member functions, and static member
+                   functions.
+
+  - **CFunctions**: A regular function, member function, or static member
+                    function that uses the `lua_CFunction` calling convention.
 
   - **Namespaces**: A namespace is simply a table containing registrations of
                     functions, data, properties, and other namespaces.
 
-  - **Properties**: Global properties, static class properties, and class member
-                    properties. These appear like data to Lua, but are
-                    implemented using get and set functions on the C++ side.
+  - **Properties**: Global properties, property members, and static property
+                    members. These appear like data to Lua, but are implemented
+                    using get and set functions on the C++ side.
 
   Both data and properties can be marked as _read-only_ at the time of
   registration. This is different from `const`; the values of these objects can
@@ -185,16 +187,15 @@
 
   The results are accessible to Lua as `test`, `test.detail`, and
   `test.utility`. Here we introduce the `endNamespace` function; it returns an
-  object representing the original enclosing namespace. All LuaBridge functions which 
-  create registrations return an object upon which subsequent registrations can
-  be made, allowing for an unlimited number of registrations to be chained
-  together using the dot operator `.`. Adding two objects with the same name, in
-  the same namespace, results in undefined behavior (although LuaBridge will
-  silently accept it).
+  object representing the original enclosing namespace. All LuaBridge functions
+  which  create registrations return an object upon which subsequent
+  registrations can be made, allowing for an unlimited number of registrations
+  to be chained together using the dot operator `.`. Adding two objects with the
+  same name, in the same namespace, results in undefined behavior (although
+  LuaBridge will silently accept it).
 
-  A namespace can be re-opened later to add
-  more functions. This lets you split up the registration between different
-  source files. These are equivalent:
+  A namespace can be re-opened later to add more functions. This lets you split
+  up the registration between different source files. These are equivalent:
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
@@ -215,15 +216,16 @@
         .endNamespace ();
 
 
-  ### Data, Properties, and Functions
+  ### Data, Properties, Functions, and CFunctions.
 
   These are registered into a namespace using `addVariable`, `addProperty`,
-  and `addFunction`. When registered functions are called by scripts, LuaBridge
-  automatically takes care of the conversion of arguments into the appropriate
-  data type when doing so is possible. This automated system works for the
-  function's return value, and up to 8 parameters although more can be added by
-  extending the templates. Pointers, references, and objects of class type as
-  parameters are treated specially, and explained later. If we have:
+  `addFunction`, and `addCFunction`. When registered functions are called by
+  scripts, LuaBridge automatically takes care of the conversion of arguments
+  into the appropriate data type when doing so is possible. This automated
+  system works for the function's return value, and up to 8 parameters although
+  more can be added by extending the templates. Pointers, references, and
+  objects of class type as parameters are treated specially, and explained
+  later. If we have:
 
       int globalVar;
       static float staticVar;
@@ -234,8 +236,9 @@
 
       int foo () { return 42; }
       void bar (char const*) { }
+      int cFunc (lua_State* L) { return 0; }
 
-  These are registered with:
+    These are registered with:
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
@@ -245,6 +248,7 @@
           .addProperty ("prop2", getString)            // read only
           .addFunction ("foo", foo)
           .addFunction ("bar", bar)
+          .addCFunction ("cfunc", cFunc)
         .endNamespace ();
 
   Variables can be marked _read-only_ by passing `false` in the second optional
@@ -259,6 +263,7 @@
       test.prop2  -- a read-only lua_String property
       test.foo    -- a function returning a lua_Number
       test.bar    -- a function taking a lua_String as a parameter
+      test.cfunc  -- a function with a variable argument list and multi-return
 
   Note that `test.prop1` and `test.prop2` both refer to the same value. However,
   since `test.prop2` is read-only, assignment does not work. These Lua
@@ -286,8 +291,7 @@
   ended using `endClass`. Once registered, a class can later be re-opened for
   more registrations using `beginClass`. However, `deriveClass` should only be
   used once. To add more registrations to an already registered derived class,
-  use `beginClass`. We use the word _method_ as an unambiguous synonym for
-  _member function_ - static or otherwise. These declarations:
+  use `beginClass`. These declarations:
 
       struct A {
         static int staticData;
@@ -297,6 +301,8 @@
         static void setStaticProperty (float f) { staticProperty = f; }
         static void staticFunc () { }
 
+        static int staticCFunc () { return 0; }
+
         std::string dataMember;
 
         char dataProperty;
@@ -305,6 +311,8 @@
 
         void func1 () { }
         virtual void virtualFunc () { }
+
+        int cfunc (lua_State* L) { return 0; }
       };
 
       struct B : public A {
@@ -325,16 +333,18 @@
           .beginClass <A> ("A")
             .addStaticData ("staticData", &A::staticData)
             .addStaticProperty ("staticProperty", &A::staticProperty)
-            .addStaticMethod ("staticFunc", &A::staticFunc)
+            .addStaticFunction ("staticFunc", &A::staticFunc)
+            .addStaticCFunction ("staticCFunc", &A::staticCFunc)
             .addData ("data", &A::dataMember)
             .addProperty ("prop", &A::getProperty, &A::setProperty)
-            .addMethod ("func1", &A::func1)
-            .addMethod ("virtualFunc", &A::virtualFunc)
+            .addFunction ("func1", &A::func1)
+            .addFunction ("virtualFunc", &A::virtualFunc)
+            .addCFunction ("cfunc", &A::cfunc)
           .endClass ()
           .deriveClass <B, A> ("B")
             .addData ("data", &B::dataMember2)
-            .addMethod ("func1", &B::func1)
-            .addMethod ("func2", &B::func2)
+            .addFunction ("func1", &B::func1)
+            .addFunction ("func2", &B::func2)
           .endClass ()
         .endClass ();
 
@@ -353,17 +363,17 @@
   that is **not** registered with Lua, there is no need to declare it as a
   subclass.
 
-  ### Class Property Proxies
+  ### Property Member Proxies
 
   Sometimes when registering a class which comes from a third party library, the
   data is not exposed in a way that can be expressed as a pointer to member,
   there are no get or set functions, or the get and set functons do not have the
-  right function signature. LuaBridge handles this by supporting _property
-  member proxies_. This is a flat function which takes as its first parameter
-  a pointer to the class which is closed for modification. This is easily
-  understood with the following example:
+  right function signature. Since the class declaration is closed for changes,
+  LuaBridge provides allows a _property member proxy_. This is a pair of get
+  and set flat functions which take as their first parameter a pointer to
+  the object. This is easily understood with the following example:
 
-      // External structure, can't be changed
+      // Third party declaration, can't be changed
       struct Vec 
       {
         float coord [3];
@@ -391,7 +401,7 @@
 
   This helper class is only used to provide property member proxies. `Vec`
   continues to be used in the C++ code as it was before. Now we can register
-  our class like this:
+  the `Vec` class with property member proxies for `x`, `y`, and `z`:
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
@@ -510,9 +520,6 @@
   - `T const*` or `T const&`: Passed by const reference, with _C++ lifetime_.
   - `T` or `T const`: Passed by value (a copy), with _Lua lifetime_.
 
-  When a pointer or pointer to const is passed to Lua and the pointer is null
-  (zero), LuaBridge will pass Lua a `nil` instead.
-
   ### C++ Lifetime
 
   The creation and deletion of objects with _C++ lifetime_ is controlled by
@@ -624,6 +631,12 @@
       func6 (b)   - Passes a pointer to b.
       func6 (a)   - Error: Pointer to B expected.
       func1 (b)   - Okay, b is a subclass of a.
+
+  When a pointer or pointer to const is passed to Lua and the pointer is null
+  (zero), LuaBridge will pass Lua a `nil` instead. When Lua passes a `nil`
+  to C++ where a pointer is expected, a null (zero) is passed instead.
+  Attempting to pass a null pointer to a C++ function expecting a reference
+  results in `lua_error` being called.
 
   ## Shared Lifetime
 
@@ -861,9 +874,15 @@
 namespace luabridge
 {
 
-#if defined (__APPLE_CPP__) || defined(__APPLE_CC__)
-// Do not define THROWSPEC since the Xcode compilers do not distinguish
-// the throw specification in the function signature.
+/**
+  Since the throw specification is part of a function signature, the FuncTraits
+  family of templates needs to be specialized for both types. The THROWSPEC
+  macro controls whether we use the 'throw ()' form, or 'noexcept' (if C++11
+  is available) to distinguish the functions.
+*/
+#if defined (__APPLE_CPP__) || defined(__APPLE_CC__) || defined(__clang__) || defined(__GNUC__)
+// Do not define THROWSPEC since the Xcode and gcc  compilers do not
+// distinguish the throw specification in the function signature.
 #else
 #define THROWSPEC throw()
 #endif
@@ -873,16 +892,64 @@ namespace luabridge
   Templates for extracting type information.
 
   These templates are used for extracting information about types used in
-  various ways
+  various ways.
 */
 
-/**
-  Since the throw specification is part of a function signature, the FuncTraits
-  family of templates needs to be specialized for both types. The THROWSPEC
-  macro controls whether we use the 'throw ()' form, or 'noexcept' (if C++11
-  is available) to distinguish the functions.
-*/
-//#define THROWSPEC throw ()
+//==============================================================================
+
+template <typename T>
+struct TypeInfo
+{
+  typedef T Type;
+  static bool const is_const     = false;
+  static bool const is_pointer   = false;
+  static bool const is_reference = false;
+};
+
+template <typename T>
+struct TypeInfo <T const>
+{
+  typedef T Type;
+  static bool const is_const     = true;
+  static bool const is_pointer   = false;
+  static bool const is_reference = false;
+};
+
+template <typename T>
+struct TypeInfo <T*>
+{
+  typedef T Type;
+  static bool const is_const     = false;
+  static bool const is_pointer   = true;
+  static bool const is_reference = false;
+};
+
+template <typename T>
+struct TypeInfo <T const*>
+{
+  typedef T Type;
+  static bool const is_const     = true;
+  static bool const is_pointer   = true;
+  static bool const is_reference = false;
+};
+
+template <typename T>
+struct TypeInfo <T&>
+{
+  typedef T Type;
+  static bool const is_const     = false;
+  static bool const is_pointer   = false;
+  static bool const is_reference = true;
+};
+
+template <typename T>
+struct TypeInfo <T const&>
+{
+  typedef T Type;
+  static bool const is_const     = true;
+  static bool const is_pointer   = false;
+  static bool const is_reference = true;
+};
 
 //==============================================================================
 //
@@ -1017,7 +1084,7 @@ struct FuncTraits <R (*) (), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef None Params;
-  static R call (DeclType fp, TypeListValues <Params> const&)
+  static R call (DeclType fp, TypeListValues <Params>)
   {
     return fp ();
   }
@@ -1030,7 +1097,7 @@ struct FuncTraits <R (*) (P1), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd);
   }
@@ -1043,7 +1110,7 @@ struct FuncTraits <R (*) (P1, P2), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd);
   }
@@ -1056,7 +1123,7 @@ struct FuncTraits <R (*) (P1, P2, P3), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1069,7 +1136,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1082,7 +1149,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1096,7 +1163,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,  TypeList <P6> > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1110,7 +1177,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1125,7 +1192,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1159,7 +1226,7 @@ struct FuncTraits <R (T::*) (P1), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd);
   }
@@ -1174,7 +1241,7 @@ struct FuncTraits <R (T::*) (P1, P2), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
   }
@@ -1189,7 +1256,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1204,7 +1271,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1219,7 +1286,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1235,7 +1302,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1251,7 +1318,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1268,7 +1335,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8), D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1302,7 +1369,7 @@ struct FuncTraits <R (T::*) (P1) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd);
   }
@@ -1318,7 +1385,7 @@ struct FuncTraits <R (T::*) (P1, P2) const, D>
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
   static R call (T const* const obj, R (T::*fp) (P1, P2) const,
-    TypeListValues <Params> const& tvl)
+    TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
   }
@@ -1333,7 +1400,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1348,7 +1415,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1363,7 +1430,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1379,7 +1446,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1395,7 +1462,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1412,7 +1479,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1444,7 +1511,7 @@ struct FuncTraits <R (*) (P1) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd);
   }
@@ -1457,7 +1524,7 @@ struct FuncTraits <R (*) (P1, P2) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd);
   }
@@ -1470,7 +1537,7 @@ struct FuncTraits <R (*) (P1, P2, P3) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1483,7 +1550,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1496,7 +1563,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1510,7 +1577,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,  TypeList <P6> > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1524,7 +1591,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1539,7 +1606,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (DeclType fp, TypeListValues <Params> tvl)
   {
     return fp (tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1573,7 +1640,7 @@ struct FuncTraits <R (T::*) (P1) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd);
   }
@@ -1588,7 +1655,7 @@ struct FuncTraits <R (T::*) (P1, P2) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
   }
@@ -1603,7 +1670,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1618,7 +1685,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1633,7 +1700,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1649,7 +1716,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1665,7 +1732,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1682,7 +1749,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1717,7 +1784,7 @@ struct FuncTraits <R (T::*) (P1) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd);
   }
@@ -1732,7 +1799,7 @@ struct FuncTraits <R (T::*) (P1, P2) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd);
   }
@@ -1747,7 +1814,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -1762,7 +1829,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -1777,7 +1844,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -1793,7 +1860,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -1809,7 +1876,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -1826,7 +1893,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T const* const obj, DeclType fp, TypeListValues <Params> const& tvl)
+  static R call (T const* const obj, DeclType fp, TypeListValues <Params> tvl)
   {
     return (obj->*fp)(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -2075,6 +2142,7 @@ inline void lua_rawsetp (lua_State *L, int idx, void const* p)
 }
 #endif
 
+//------------------------------------------------------------------------------
 /**
   Get a table value, bypassing metamethods.
 */  
@@ -2103,6 +2171,42 @@ inline void rawsetfield (lua_State* const L, int index, char const* const key)
 
 namespace Detail
 {
+  //----------------------------------------------------------------------------
+  /**
+    Control security options.
+  */
+  class Security
+  {
+  public:
+    static bool hideMetatables ()
+    {
+      return getSettings().hideMetatables;
+    }
+
+    static void setHideMetatables (bool shouldHide)
+    {
+      getSettings().hideMetatables = shouldHide;
+    }
+
+  private:
+    struct Settings
+    {
+      Settings ()
+        : hideMetatables (true)
+      {
+      }
+
+      bool hideMetatables;
+    };
+
+    static Settings& getSettings ()
+    {
+      static Settings settings;
+      return settings;
+    }
+  };
+
+  //----------------------------------------------------------------------------
   struct TypeTraits
   {
     //--------------------------------------------------------------------------
@@ -2271,6 +2375,18 @@ namespace Detail
   */
   class Userdata
   {
+  protected:
+    void* m_p; // subclasses must set this
+
+    //--------------------------------------------------------------------------
+    /**
+      Get an untyped pointer to the contained class.
+    */
+    inline void* const getPointer ()
+    {
+      return m_p;
+    }
+
   private:
     //--------------------------------------------------------------------------
     /**
@@ -2371,10 +2487,10 @@ namespace Detail
       first so that the error message is informative.
     */
     static Userdata* const getClass (
-      lua_State* L, int narg, void const* const baseClassKey, bool const canBeConst)
+      lua_State* L, int const index, void const* const baseClassKey, bool const canBeConst)
     {
+      assert (index > 0);
       Userdata* ud = 0;
-      int const index = lua_absindex (L, narg);
 
       bool mismatch = false;
       char const* got = 0;
@@ -2383,17 +2499,64 @@ namespace Detail
       assert (lua_istable (L, -1));
 
       // Make sure we have a userdata.
-      if (!mismatch && !lua_isuserdata (L, index))
-        mismatch = true;
-
-      // Make sure it's metatable is ours.
-      if (!mismatch)
+      if (lua_isuserdata (L, index))
       {
+        // Make sure it's metatable is ours.
         lua_getmetatable (L, index);
         lua_rawgetp (L, -1, getIdentityKey ());
         if (lua_isboolean (L, -1))
         {
           lua_pop (L, 1);
+
+          // If __const is present, object is NOT const.
+          rawgetfield (L, -1, "__const");
+          assert (lua_istable (L, -1) || lua_isnil (L, -1));
+          bool const isConst = lua_isnil (L, -1);
+          lua_pop (L, 1);
+
+          // Replace the class table with the const table if needed.
+          if (isConst)
+          {
+            rawgetfield (L, -2, "__const");
+            assert (lua_istable (L, -1));
+            lua_replace (L, -3);
+          }
+
+          for (;;)
+          {
+            if (lua_rawequal (L, -1, -2))
+            {
+              lua_pop (L, 2);
+
+              // Match, now check const-ness.
+              if (isConst && !canBeConst)
+              {
+                luaL_argerror (L, index, "cannot be const");
+              }
+              else
+              {
+                ud = static_cast <Userdata*> (lua_touserdata (L, index));
+                break;
+              }
+            }
+            else
+            {
+              // Replace current metatable with it's base class.
+              rawgetfield (L, -1, "__parent");
+              lua_remove (L, -2);
+
+              if (lua_isnil (L, -1))
+              {
+                // Mismatch, but its one of ours so get a type name.
+                rawgetfield (L, -2, "__type");
+                lua_insert (L, -4);
+                lua_pop (L, 2);
+                got = lua_tostring (L, -2);
+                mismatch = true;
+                break;
+              }
+            }
+          }
         }
         else
         {
@@ -2401,61 +2564,9 @@ namespace Detail
           mismatch = true;
         }      
       }
-
-      if (!mismatch)
+      else
       {
-        // If __const is present, object is NOT const.
-        rawgetfield (L, -1, "__const");
-        assert (lua_istable (L, -1) || lua_isnil (L, -1));
-        bool const isConst = lua_isnil (L, -1);
-        lua_pop (L, 1);
-
-        // Replace the class table with the const table if needed.
-        if (isConst)
-        {
-          rawgetfield (L, -2, "__const");
-          assert (lua_istable (L, -1));
-          lua_replace (L, -3);
-        }
-
-        for (;;)
-        {
-          if (lua_rawequal (L, -1, -2))
-          {
-            lua_pop (L, 2);
-
-            // Match, now check const-ness.
-            if (isConst && !canBeConst)
-            {
-              if (narg > 0)
-                luaL_argerror (L, narg, "cannot be const");
-              else
-                luaL_error (L, "cannot be const");
-            }
-            else
-            {
-              ud = static_cast <Userdata*> (lua_touserdata (L, index));
-              break;
-            }
-          }
-          else
-          {
-            // Replace current metatable with it's base class.
-            rawgetfield (L, -1, "__parent");
-            lua_remove (L, -2);
-
-            if (lua_isnil (L, -1))
-            {
-              // Mismatch, but its one of ours so get a type name.
-              rawgetfield (L, -2, "__type");
-              lua_insert (L, -4);
-              lua_pop (L, 2);
-              got = lua_tostring (L, -2);
-              mismatch = true;
-              break;
-            }
-          }
-        }
+        mismatch = true;
       }
 
       if (mismatch)
@@ -2470,20 +2581,11 @@ namespace Detail
         char const* const msg = lua_pushfstring (
           L, "%s expected, got %s", expected, got);
 
-        if (narg > 0)
-          luaL_argerror (L, narg, msg);
-        else
-          lua_error (L);
+        luaL_argerror (L, index, msg);
       }
 
       return ud;
     }
-
-    //--------------------------------------------------------------------------
-    /**
-      Get an untyped pointer to the contained class.
-    */
-    virtual void* getPointer () = 0;
 
   public:
     virtual ~Userdata () { }
@@ -2510,8 +2612,11 @@ namespace Detail
     template <class T>
     static inline T* get (lua_State* L, int index, bool canBeConst)
     {
-      return static_cast <T*> (getClass (L, index,
-        ClassInfo <T>::getClassKey (), canBeConst)->getPointer ());
+      if (lua_isnil (L, index))
+        return 0;
+      else
+        return static_cast <T*> (getClass (L, index,
+          ClassInfo <T>::getClassKey (), canBeConst)->getPointer ());
     }
   };
 
@@ -2545,16 +2650,12 @@ namespace Detail
     */
     UserdataValue ()
     {
+      m_p = getObject ();
     }
 
     ~UserdataValue ()
     {
       getObject ()->~T ();
-    }
-
-    void* getPointer ()
-    {
-      return &m_storage [0];
     }
 
   public:
@@ -2597,14 +2698,7 @@ namespace Detail
     UserdataPtr (UserdataPtr const&);
     UserdataPtr operator= (UserdataPtr const&);
 
-    void* const m_p;
-
   private:
-    void* getPointer ()
-    {
-      return m_p;
-    }
-
     /** Push non-const pointer to object using metatable key.
     */
     static void push (lua_State* L, void* const p, void const* const key)
@@ -2642,8 +2736,10 @@ namespace Detail
       }
     }
 
-    explicit UserdataPtr (void* const p) : m_p (p)
+    explicit UserdataPtr (void* const p)
     {
+      m_p = p;
+
       // Can't construct with a null pointer!
       //
       assert (m_p != 0);
@@ -2655,7 +2751,10 @@ namespace Detail
     template <class T>
     static inline void push (lua_State* const L, T* const p)
     {
-      push (L, p, ClassInfo <T>::getClassKey ());
+      if (p)
+        push (L, p, ClassInfo <T>::getClassKey ());
+      else
+        lua_pushnil (L);
     }
 
     /** Push const pointer to object.
@@ -2663,7 +2762,10 @@ namespace Detail
     template <class T>
     static inline void push (lua_State* const L, T const* const p)
     {
-      push (L, p, ClassInfo <T>::getConstKey ());
+      if (p)
+        push (L, p, ClassInfo <T>::getConstKey ());
+      else
+        lua_pushnil (L);
     }
   };
 
@@ -2691,12 +2793,6 @@ namespace Detail
     {
     }
 
-    void* getPointer ()
-    {
-      return const_cast <void*> (reinterpret_cast <void const*> (
-        (ContainerTraits <C>::get (m_c))));
-    }
-
   public:
     /**
       Construct from a container to the class or a derived class.
@@ -2704,6 +2800,8 @@ namespace Detail
     template <class U>
     explicit UserdataShared (U const& u) : m_c (u)
     {
+      m_p = const_cast <void*> (reinterpret_cast <void const*> (
+          (ContainerTraits <C>::get (m_c))));
     }
 
     /**
@@ -2712,6 +2810,8 @@ namespace Detail
     template <class U>
     explicit UserdataShared (U* u) : m_c (u)
     {
+      m_p = const_cast <void*> (reinterpret_cast <void const*> (
+          (ContainerTraits <C>::get (m_c))));
     }
   };
 
@@ -2923,7 +3023,10 @@ struct Stack <T&>
 
   static T& get (lua_State* L, int index)
   {
-    return *Detail::Userdata::get <T> (L, index, false);
+    T* const t = Detail::Userdata::get <T> (L, index, false);
+    if (!t)
+      luaL_error (L, "nil passed to reference");
+    return *t;
   }
 };
 
@@ -2938,7 +3041,10 @@ struct Stack <T const&>
 
   static T const& get (lua_State* L, int index)
   {
-    return *Detail::Userdata::get <T> (L, index, true);
+    T const* const t = Detail::Userdata::get <T> (L, index, true);
+    if (!t)
+      luaL_error (L, "nil passed to reference");
+    return *t;
   }
 };
 
@@ -3062,12 +3168,18 @@ struct Stack <char const*>
 {
   static inline void push (lua_State* L, char const* str)
   {
-    lua_pushstring (L, str);
+    if (str)
+      lua_pushstring (L, str);
+    else
+      lua_pushnil (L);
   }
 
   static inline char const* get (lua_State* L, int index)
   {
-    return luaL_checkstring (L, index);
+    if (lua_isnil (L, index))
+      return 0;
+    else
+      return luaL_checkstring (L, index);
   }
 };
 
@@ -3144,7 +3256,53 @@ private:
   int mutable m_stackSize;
 
 private:
+  //============================================================================
+  /**
+    Error reporting.
+  */
+  static int luaError (lua_State* L, std::string message)
+  {
+    assert (lua_isstring (L, lua_upvalueindex (1)));
+    std::string s;
+
+    // Get information on the caller's caller to format the message,
+    // so the error appears to originate from the Lua source.
+    lua_Debug ar;
+    int result = lua_getstack (L, 2, &ar);
+    if (result != 0)
+    {
+      lua_getinfo (L, "Sl", &ar);
+      s = ar.short_src;
+      if (ar.currentline != -1)
+      {
+        // poor mans int to string to avoid <strstrream>.
+        lua_pushnumber (L, ar.currentline);
+        s = s + ":" + lua_tostring (L, -1) + ": ";
+        lua_pop (L, 1);
+      }
+    }
+
+    s = s + message;
+
+    return luaL_error (L, s.c_str ());
+  }
+  
   //----------------------------------------------------------------------------
+  /**
+    lua_CFunction to report an error writing to a read-only value.
+
+    The name of the variable is in the first upvalue.
+  */
+  static int readOnlyError (lua_State* L)
+  {
+    std::string s;
+    
+    s = s + "'" + lua_tostring (L, lua_upvalueindex (1)) + "' is read-only";
+
+    return luaL_error (L, s.c_str ());
+  }
+  
+  //============================================================================
   /**
     __index metamethod for a namespace or class static members.
 
@@ -3261,46 +3419,12 @@ private:
 
   //----------------------------------------------------------------------------
   /**
-    lua_CFunction to report an error writing to a read-only value.
-
-    The name of the variable is in the first upvalue.
-  */
-  static int readOnlyError (lua_State* L)
-  {
-    assert (lua_isstring (L, lua_upvalueindex (1)));
-    std::string s;
-
-    // Get information on the caller's caller to format the message,
-    // so the error appears to originate from the Lua source.
-    lua_Debug ar;
-    int result = lua_getstack (L, 2, &ar);
-    if (result != 0)
-    {
-      lua_getinfo (L, "Sl", &ar);
-      s = ar.short_src;
-      if (ar.currentline != -1)
-      {
-        // poor mans int to string to avoid <strstrream>.
-        lua_pushnumber (L, ar.currentline);
-        s = s + ":" + lua_tostring (L, -1) + ": ";
-        lua_pop (L, 1);
-      }
-    }
-
-    s = s + "'" + lua_tostring (L, lua_upvalueindex (1))
-          + "' is read-only";
-
-    return luaL_error (L, s.c_str ());
-  }
-  
-  //----------------------------------------------------------------------------
-  /**
     lua_CFunction to get a variable.
 
     This is used for global variables or class static data members.
   */
   template <class T>
-  static int vargetProxy (lua_State* L)
+  static int getVariable (lua_State* L)
   {
     assert (lua_islightuserdata (L, lua_upvalueindex (1)));
     T const* const data = static_cast <T const*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3316,7 +3440,7 @@ private:
     This is used for global variables or class static data members.
   */
   template <class T>
-  static int varsetProxy (lua_State* L)
+  static int setVariable (lua_State* L)
   {
     assert (lua_islightuserdata (L, lua_upvalueindex (1)));
     T* const data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3334,10 +3458,10 @@ private:
   */
   template <class Func,
             class ReturnType = typename FuncTraits <Func>::ReturnType>
-  struct functionProxy
+  struct CallFunction
   {
     typedef typename FuncTraits <Func>::Params Params;
-    static int f (lua_State* L)
+    static int call (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
       Func const& fp = *static_cast <Func const*> (
@@ -3358,10 +3482,10 @@ private:
     and class static properties.
   */
   template <class Func>
-  struct functionProxy <Func, void>
+  struct CallFunction <Func, void>
   {
     typedef typename FuncTraits <Func>::Params Params;
-    static int f (lua_State* L)
+    static int call (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
       Func const& fp = *static_cast <Func const*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3375,21 +3499,15 @@ private:
   //============================================================================
   /**
     lua_CFunction to call a class member function with a return value.
-
-    The argument list contains the 'this' pointer followed by the method
-    arguments.
-
-    @note The expected class name is in upvalue 1, and the member function
-          pointer is in upvalue 2.
   */
   template <class MemFn,
             class ReturnType = typename FuncTraits <MemFn>::ReturnType>
-  struct methodProxy
+  struct CallMemberFunction
   {
     typedef typename FuncTraits <MemFn>::ClassType T;
     typedef typename FuncTraits <MemFn>::Params Params;
 
-    static int callMethod (lua_State* L)
+    static int call (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
       T* const t = Detail::Userdata::get <T> (L, 1, false);
@@ -3399,7 +3517,7 @@ private:
       return 1;
     }
 
-    static int callConstMethod (lua_State* L)
+    static int callConst (lua_State* L)
     {
       assert (lua_isuserdata (L, lua_upvalueindex (1)));
       T const* const t = Detail::Userdata::get <T> (L, 1, true);
@@ -3413,20 +3531,14 @@ private:
   //----------------------------------------------------------------------------
   /**
     lua_CFunction to call a class member function with no return value.
-
-    The argument list contains the 'this' pointer followed by the method
-    arguments.
-
-    @note The expected class name is in upvalue 1, and the member function
-          pointer is in upvalue 2.
   */
   template <class MemFn>
-  struct methodProxy <MemFn, void>
+  struct CallMemberFunction <MemFn, void>
   {
     typedef typename FuncTraits <MemFn>::ClassType T;
     typedef typename FuncTraits <MemFn>::Params Params;
 
-    static int callMethod (lua_State* L)
+    static int call (lua_State* L)
     {
       T* const t = Detail::Userdata::get <T> (L, 1, false);
       MemFn const fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3435,7 +3547,7 @@ private:
       return 0;
     }
 
-    static int callConstMethod (lua_State* L)
+    static int callConst (lua_State* L)
     {
       T const* const t = Detail::Userdata::get <T> (L, 1, true);
       MemFn const fp = *static_cast <MemFn*> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3446,33 +3558,53 @@ private:
   };
 
   //----------------------------------------------------------------------------
-
   /**
-    Create a proxy for a const member function.
+    lua_CFunction to call a class member lua_CFunction
   */
+  template <class T>
+  struct CallMemberCFunction
+  {
+    static int call (lua_State* L)
+    {
+      typedef int (T::*MFP)(lua_State* L);
+      T* const t = Detail::Userdata::get <T> (L, 1, false);
+      MFP const mfp = *static_cast <MFP*> (lua_touserdata (L, lua_upvalueindex (1)));
+      return (t->*mfp) (L);
+    }
+
+    static int callConst (lua_State* L)
+    {
+      typedef int (T::*MFP)(lua_State* L);
+      T const* const t = Detail::Userdata::get <T> (L, 1, true);
+      MFP const mfp = *static_cast <MFP*> (lua_touserdata (L, lua_upvalueindex (1)));
+      return (t->*mfp) (L);
+    }
+  };
+
+  //----------------------------------------------------------------------------
+
+  // SFINAE Helpers
+
   template <class MemFn, bool isConst>
-  struct MethodHelper
+  struct CallMemberFunctionHelper
   {
     static void add (lua_State* L, char const* name, MemFn mf)
     {
       new (lua_newuserdata (L, sizeof (MemFn))) MemFn (mf);
-      lua_pushcclosure (L, &methodProxy <MemFn>::callConstMethod, 1);
+      lua_pushcclosure (L, &CallMemberFunction <MemFn>::callConst, 1);
       lua_pushvalue (L, -1);
       rawsetfield (L, -5, name); // const table
       rawsetfield (L, -3, name); // class table
     }
   };
 
-  /**
-    Create a proxy for a non-const member function.
-  */
   template <class MemFn>
-  struct MethodHelper <MemFn, false>
+  struct CallMemberFunctionHelper <MemFn, false>
   {
     static void add (lua_State* L, char const* name, MemFn mf)
     {
       new (lua_newuserdata (L, sizeof (MemFn))) MemFn (mf);
-      lua_pushcclosure (L, &methodProxy <MemFn>::callMethod, 1);
+      lua_pushcclosure (L, &CallMemberFunction <MemFn>::call, 1);
       rawsetfield (L, -3, name); // class table
     }
   };
@@ -3496,7 +3628,13 @@ private:
 
 private:
   //============================================================================
-
+  //
+  // ClassBase
+  //
+  //============================================================================
+  /**
+    Factored base to reduce template instantiations.
+  */
   class ClassBase
   {
   private:
@@ -3524,8 +3662,8 @@ private:
     {
       int result = 0;
 
+      assert (lua_isuserdata (L, 1));               // warn on security bypass
       lua_getmetatable (L, 1);                      // get metatable for object
-
       for (;;)
       {
         lua_pushvalue (L, 2);                       // push key arg2
@@ -3543,8 +3681,6 @@ private:
         else
         {
           lua_pop (L, 2);
-
-          // We only put cfunctions into the metatable.
           throw std::logic_error ("not a cfunction");
         }
 
@@ -3674,8 +3810,12 @@ private:
       rawsetfield (L, -2, "__newindex");
       lua_newtable (L);
       rawsetfield (L, -2, "__propget");
-      lua_pushboolean (L, 0);
-      rawsetfield (L, -2, "__metatable");
+      
+      if (Detail::Security::hideMetatables ())
+      {
+        lua_pushnil (L);
+        rawsetfield (L, -2, "__metatable");
+      }
     }
 
     //--------------------------------------------------------------------------
@@ -3701,13 +3841,18 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
-      lua_pushboolean (L, 0);
-      rawsetfield (L, -2, "__metatable");
+
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__const"); // point to const table
 
       lua_pushvalue (L, -1);
       rawsetfield (L, -3, "__class"); // point const table to class table
+
+      if (Detail::Security::hideMetatables ())
+      {
+        lua_pushnil (L);
+        rawsetfield (L, -2, "__metatable");
+      }
     }
 
     //--------------------------------------------------------------------------
@@ -3741,10 +3886,15 @@ private:
       rawsetfield (L, -2, "__propget");
       lua_newtable (L);
       rawsetfield (L, -2, "__propset");
-      lua_pushboolean (L, 0);
-      rawsetfield (L, -2, "__metatable");
+
       lua_pushvalue (L, -2);
       rawsetfield (L, -2, "__class"); // point to class table
+
+      if (Detail::Security::hideMetatables ())
+      {
+        lua_pushnil (L);
+        rawsetfield (L, -2, "__metatable");
+      }
     }
 
     //==========================================================================
@@ -3814,9 +3964,12 @@ private:
     {
       pop (m_stackSize);
     }
-
   };
 
+  //============================================================================
+  //
+  // Class
+  //
   //============================================================================
   /**
     Provides a class registration in a lua_State.
@@ -3833,10 +3986,21 @@ private:
   private:
     //--------------------------------------------------------------------------
     /**
+      __gc metamethod for a class.
+    */
+    static int gcMetaMethod (lua_State* L)
+    {
+      Detail::Userdata* ud = Detail::Userdata::getExact <T> (L, 1);
+      ud->~Userdata ();
+      return 0;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
       lua_CFunction to get a class data member.
     */
     template <typename U>
-    static int propgetProxy (lua_State* L)
+    static int getProperty (lua_State* L)
     {
       T const* const t = Detail::Userdata::get <T> (L, 1, true);
       U T::** mp = static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3852,7 +4016,7 @@ private:
             data member is in upvalue 2.
     */
     template <typename U>
-    static int propsetProxy (lua_State* L)
+    static int setProperty (lua_State* L)
     {
       T* const t = Detail::Userdata::get <T> (L, 1, false);
       U T::** mp = static_cast <U T::**> (lua_touserdata (L, lua_upvalueindex (1)));
@@ -3860,18 +4024,7 @@ private:
       return 0;
     }
 
-    //--------------------------------------------------------------------------
-    /**
-      __gc metamethod for a class.
-    */
-    static int gcMetaMethod (lua_State* L)
-    {
-      Detail::Userdata* ud = Detail::Userdata::getExact <T> (L, 1);
-      ud->~Userdata ();
-      return 0;
-    }
-
-  public:
+ public:
     //==========================================================================
     /**
       Register a new class or add to an existing class registration.
@@ -3979,7 +4132,7 @@ private:
       rawgetfield (L, -1, "__propget");
       assert (lua_istable (L, -1));
       lua_pushlightuserdata (L, pu);
-      lua_pushcclosure (L, &vargetProxy <U>, 1);
+      lua_pushcclosure (L, &getVariable <U>, 1);
       rawsetfield (L, -2, name);
       lua_pop (L, 1);
 
@@ -3988,7 +4141,7 @@ private:
       if (isWritable)
       {
         lua_pushlightuserdata (L, pu);
-        lua_pushcclosure (L, &varsetProxy <U>, 1);
+        lua_pushcclosure (L, &setVariable <U>, 1);
       }
       else
       {
@@ -4018,7 +4171,7 @@ private:
       rawgetfield (L, -1, "__propget");
       assert (lua_istable (L, -1));
       new (lua_newuserdata (L, sizeof (get))) get_t (get);
-      lua_pushcclosure (L, &functionProxy <U (*) (void)>::f, 1);
+      lua_pushcclosure (L, &CallFunction <U (*) (void)>::call, 1);
       rawsetfield (L, -2, name);
       lua_pop (L, 1);
 
@@ -4027,7 +4180,7 @@ private:
       if (set != 0)
       {
         new (lua_newuserdata (L, sizeof (set))) set_t (set);
-        lua_pushcclosure (L, &functionProxy <void (*) (U)>::f, 1);
+        lua_pushcclosure (L, &CallFunction <void (*) (U)>::call, 1);
       }
       else
       {
@@ -4045,12 +4198,23 @@ private:
       Add or replace a static member function.
     */
     template <class FP>
-    Class <T>& addStaticMethod (char const* name, FP const fp)
+    Class <T>& addStaticFunction (char const* name, FP const fp)
     {
       new (lua_newuserdata (L, sizeof (fp))) FP (fp);
-      lua_pushcclosure (L, &functionProxy <FP>::f, 1);
+      lua_pushcclosure (L, &CallFunction <FP>::call, 1);
       rawsetfield (L, -2, name);
 
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add or replace a lua_CFunction.
+    */
+    Class <T>& addStaticCFunction (char const* name, int (*const fp)(lua_State*))
+    {
+      lua_pushcfunction (L, fp);
+      rawsetfield (L, -2, name);
       return *this;
     }
 
@@ -4068,7 +4232,7 @@ private:
         rawgetfield (L, -2, "__propget");
         rawgetfield (L, -4, "__propget");
         new (lua_newuserdata (L, sizeof (mp_t))) mp_t (mp);
-        lua_pushcclosure (L, &propgetProxy <U>, 1);
+        lua_pushcclosure (L, &getProperty <U>, 1);
         lua_pushvalue (L, -1);
         rawsetfield (L, -4, name);
         rawsetfield (L, -2, name);
@@ -4081,7 +4245,7 @@ private:
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
         new (lua_newuserdata (L, sizeof (mp_t))) mp_t (mp);
-        lua_pushcclosure (L, &propsetProxy <U>, 1);
+        lua_pushcclosure (L, &setProperty <U>, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
@@ -4093,16 +4257,16 @@ private:
     /**
       Add or replace a property member.
     */
-    template <class GT, class ST>
-    Class <T>& addProperty (char const* name, GT (T::* get) () const, void (T::* set) (ST))
+    template <class TG, class TS>
+    Class <T>& addProperty (char const* name, TG (T::* get) () const, void (T::* set) (TS))
     {
       // Add to __propget in class and const tables.
       {
         rawgetfield (L, -2, "__propget");
         rawgetfield (L, -4, "__propget");
-        typedef GT (T::*get_t) () const;
+        typedef TG (T::*get_t) () const;
         new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
-        lua_pushcclosure (L, &methodProxy <get_t>::callConstMethod, 1);
+        lua_pushcclosure (L, &CallMemberFunction <get_t>::callConst, 1);
         lua_pushvalue (L, -1);
         rawsetfield (L, -4, name);
         rawsetfield (L, -2, name);
@@ -4113,9 +4277,9 @@ private:
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        typedef void (T::* set_t) (ST);
+        typedef void (T::* set_t) (TS);
         new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
-        lua_pushcclosure (L, &methodProxy <set_t>::callMethod, 1);
+        lua_pushcclosure (L, &CallMemberFunction <set_t>::call, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
@@ -4124,15 +4288,15 @@ private:
     }
 
     // read-only
-    template <class GT>
-    Class <T>& addProperty (char const* name, GT (T::* get) () const)
+    template <class TG>
+    Class <T>& addProperty (char const* name, TG (T::* get) () const)
     {
       // Add to __propget in class and const tables.
       rawgetfield (L, -2, "__propget");
       rawgetfield (L, -4, "__propget");
-      typedef GT (T::*get_t) () const;
+      typedef TG (T::*get_t) () const;
       new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
-      lua_pushcclosure (L, &methodProxy <get_t>::callConstMethod, 1);
+      lua_pushcclosure (L, &CallMemberFunction <get_t>::callConst, 1);
       lua_pushvalue (L, -1);
       rawsetfield (L, -4, name);
       rawsetfield (L, -2, name);
@@ -4152,16 +4316,16 @@ private:
       Both the get and the set functions require a T const* and T* in the first
       argument respectively.
     */
-    template <class GT, class ST>
-    Class <T>& addProperty (char const* name, GT (*get) (T const*), void (*set) (T*, ST))
+    template <class TG, class TS>
+    Class <T>& addProperty (char const* name, TG (*get) (T const*), void (*set) (T*, TS))
     {
       // Add to __propget in class and const tables.
       {
         rawgetfield (L, -2, "__propget");
         rawgetfield (L, -4, "__propget");
-        typedef GT (*get_t) (T const*);
+        typedef TG (*get_t) (T const*);
         new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
-        lua_pushcclosure (L, &functionProxy <get_t>::f, 1);
+        lua_pushcclosure (L, &CallFunction <get_t>::call, 1);
         lua_pushvalue (L, -1);
         rawsetfield (L, -4, name);
         rawsetfield (L, -2, name);
@@ -4173,9 +4337,9 @@ private:
         // Add to __propset in class table.
         rawgetfield (L, -2, "__propset");
         assert (lua_istable (L, -1));
-        typedef void (*set_t) (T*, ST);
+        typedef void (*set_t) (T*, TS);
         new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
-        lua_pushcclosure (L, &functionProxy <set_t>::f, 1);
+        lua_pushcclosure (L, &CallFunction <set_t>::call, 1);
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
@@ -4184,15 +4348,15 @@ private:
     }
 
     // read-only
-    template <class GT, class ST>
-    Class <T>& addProperty (char const* name, GT (*get) (T const*))
+    template <class TG, class TS>
+    Class <T>& addProperty (char const* name, TG (*get) (T const*))
     {
       // Add to __propget in class and const tables.
       rawgetfield (L, -2, "__propget");
       rawgetfield (L, -4, "__propget");
-      typedef GT (*get_t) (T const*);
+      typedef TG (*get_t) (T const*);
       new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
-      lua_pushcclosure (L, &functionProxy <get_t>::f, 1);
+      lua_pushcclosure (L, &CallFunction <get_t>::call, 1);
       lua_pushvalue (L, -1);
       rawsetfield (L, -4, name);
       rawsetfield (L, -2, name);
@@ -4206,9 +4370,41 @@ private:
       Add or replace a member function.
     */
     template <class MemFn>
-    Class <T>& addMethod (char const* name, MemFn mf)
+    Class <T>& addFunction (char const* name, MemFn mf)
     {
-      MethodHelper <MemFn, FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
+      CallMemberFunctionHelper <MemFn, FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add or replace a member lua_CFunction.
+    */
+    Class <T>& addCFunction (char const* name, int (T::*mfp)(lua_State*))
+    {
+      typedef int (T::*MFP)(lua_State*);
+      assert (lua_istable (L, -1));
+      new (lua_newuserdata (L, sizeof (mfp))) MFP (mfp);
+      lua_pushcclosure (L, &CallMemberCFunction <T>::call, 1);
+      rawsetfield (L, -3, name); // class table
+
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add or replace a const member lua_CFunction.
+    */
+    Class <T>& addCFunction (char const* name, int (T::*mfp)(lua_State*) const)
+    {
+      typedef int (T::*MFP)(lua_State*) const;
+      assert (lua_istable (L, -1));
+      new (lua_newuserdata (L, sizeof (mfp))) MFP (mfp);
+      lua_pushcclosure (L, &CallMemberCFunction <T>::callConst, 1);
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -5, name); // const table
+      rawsetfield (L, -3, name); // class table
+
       return *this;
     }
 
@@ -4244,7 +4440,13 @@ private:
     }
   };
 
-protected:
+private:
+  //============================================================================
+  //
+  // Namespace (Cont.)
+  //
+  //============================================================================
+
   //----------------------------------------------------------------------------
   /**
     Opens the global namespace.
@@ -4255,6 +4457,46 @@ protected:
   {
     lua_getglobal (L, "_G");
     ++m_stackSize;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    Opens a namespace for registrations.
+
+    The namespace is created if it doesn't already exist. The parent
+    namespace is at the top of the Lua stack.
+  */
+  Namespace (char const* name, Namespace const* parent)
+    : L (parent->L)
+    , m_stackSize (0)
+  {
+    m_stackSize = parent->m_stackSize + 1;
+    parent->m_stackSize = 0;
+
+    assert (lua_istable (L, -1));
+    rawgetfield (L, -1, name);
+    if (lua_isnil (L, -1))
+    {
+      lua_pop (L, 1);
+
+      lua_newtable (L);
+      lua_pushvalue (L, -1);
+      lua_setmetatable (L, -2);
+      lua_pushcfunction (L, &indexMetaMethod);
+      rawsetfield (L, -2, "__index");
+      lua_pushcfunction (L, &newindexMetaMethod);
+      rawsetfield (L, -2, "__newindex");
+      lua_newtable (L);
+      rawsetfield (L, -2, "__propget");
+      lua_newtable (L);
+      rawsetfield (L, -2, "__propset");
+      lua_pushvalue (L, -1);
+      rawsetfield (L, -3, name);
+#if 0
+      lua_pushcfunction (L, &tostringMetaMethod);
+      rawsetfield (L, -2, "__tostring");
+#endif
+    }
   }
 
   //----------------------------------------------------------------------------
@@ -4288,60 +4530,13 @@ protected:
     child->pop (3);
   }
 
-  //----------------------------------------------------------------------------
-  /**
-    Opens a namespace for registrations.
-
-    The namespace is created if it doesn't already exist. The parent
-    namespace is at the top of the Lua stack.
-  */
-  Namespace (char const* name, Namespace const* parent)
-    : L (parent->L)
-    , m_stackSize (0)
-  {
-    m_stackSize = parent->m_stackSize + 1;
-    parent->m_stackSize = 0;
-
-    assert (lua_istable (L, -1));
-    rawgetfield (L, -1, name);
-    if (lua_isnil (L, -1))
-    {
-      lua_pop (L, 1);
-
-      lua_newtable (L);
-
-      lua_pushvalue (L, -1);
-      lua_setmetatable (L, -2);
-
-#if 0
-      lua_pushcfunction (L, &tostringMetaMethod);
-      rawsetfield (L, -2, "__tostring");
-#endif
-
-      lua_pushcfunction (L, &indexMetaMethod);
-      rawsetfield (L, -2, "__index");
-
-      lua_pushcfunction (L, &newindexMetaMethod);
-      rawsetfield (L, -2, "__newindex");
-
-      lua_newtable (L);
-      rawsetfield (L, -2, "__propget");
-
-      lua_newtable (L);
-      rawsetfield (L, -2, "__propset");
-
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -3, name);
-    }
-  }
-
 public:
   //----------------------------------------------------------------------------
   /**
     Copy Constructor.
 
-    Ownership of the stack is transferred to the new object. This happens
-    when the compiler emits temporaries to hold these objects while chaining
+    Ownership of the stack is transferred to the new object. This happens when
+    the compiler emits temporaries to hold these objects while chaining
     registrations across namespaces.
   */
   Namespace (Namespace const& other) : L (other.L)
@@ -4400,7 +4595,7 @@ public:
     rawgetfield (L, -1, "__propget");
     assert (lua_istable (L, -1));
     lua_pushlightuserdata (L, pt);
-    lua_pushcclosure (L, &vargetProxy <T>, 1);
+    lua_pushcclosure (L, &getVariable <T>, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
 
@@ -4409,7 +4604,7 @@ public:
     if (isWritable)
     {
       lua_pushlightuserdata (L, pt);
-      lua_pushcclosure (L, &varsetProxy <T>, 1);
+      lua_pushcclosure (L, &setVariable <T>, 1);
     }
     else
     {
@@ -4428,15 +4623,15 @@ public:
 
     If the set function is omitted or null, the property is read-only.
   */
-  template <class GT, class ST>
-  Namespace& addProperty (char const* name, GT (*get) (), void (*set)(ST) = 0)
+  template <class TG, class TS>
+  Namespace& addProperty (char const* name, TG (*get) (), void (*set)(TS) = 0)
   {
     assert (lua_istable (L, -1));
 
     rawgetfield (L, -1, "__propget");
     assert (lua_istable (L, -1));
     lua_pushlightuserdata (L, get);
-    lua_pushcclosure (L, &functionProxy <GT (*) (void)>::f, 1);
+    lua_pushcclosure (L, &CallFunction <TG (*) (void)>::call, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
 
@@ -4445,7 +4640,7 @@ public:
     if (set != 0)
     {
       lua_pushlightuserdata (L, set);
-      lua_pushcclosure (L, &functionProxy <void (*) (ST)>::f, 1);
+      lua_pushcclosure (L, &CallFunction <void (*) (TS)>::call, 1);
     }
     else
     {
@@ -4466,8 +4661,21 @@ public:
   Namespace& addFunction (char const* name, FP const fp)
   {
     assert (lua_istable (L, -1));
+
     new (lua_newuserdata (L, sizeof (fp))) FP (fp);
-    lua_pushcclosure (L, &functionProxy <FP>::f, 1);
+    lua_pushcclosure (L, &CallFunction <FP>::call, 1);
+    rawsetfield (L, -2, name);
+
+    return *this;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+    Add or replace a lua_CFunction.
+  */
+  Namespace& addCFunction (char const* name, int (*const fp)(lua_State*))
+  {
+    lua_pushcfunction (L, fp);
     rawsetfield (L, -2, name);
 
     return *this;
@@ -4499,6 +4707,19 @@ public:
 
 //==============================================================================
 /**
+  Retrieve the global namespace.
+
+  It is recommended to put your namespace inside the global namespace, and then
+  add your classes and functions to it, rather than adding many classes and
+  functions directly to the global namespace.
+*/
+inline Namespace getGlobalNamespace (lua_State* L)
+{
+  return Namespace::getGlobalNamespace (L);
+}
+
+//------------------------------------------------------------------------------
+/**
   Push objects onto the Lua stack.
 */
 template <class T>
@@ -4507,6 +4728,7 @@ inline void push (lua_State* L, T t)
   Stack <T>::push (L, t);
 }
 
+//------------------------------------------------------------------------------
 /**
   Set a global value in the lua_State.
 */
@@ -4517,17 +4739,13 @@ inline void setglobal (lua_State* L, T t, char const* name)
   lua_setglobal (L, name);
 }
 
-//==============================================================================
+//------------------------------------------------------------------------------
 /**
-  Retrieve the global namespace.
-
-  It is recommended to put your namespace inside the global namespace, and then
-  add your classes and functions to it, rather than adding many classes and
-  functions directly to the global namespace.
+  Change whether or not metatables are hidden (on by default).
 */
-inline Namespace getGlobalNamespace (lua_State* L)
+inline void setHideMetatables (bool shouldHide)
 {
-  return Namespace::getGlobalNamespace (L);
+  Detail::Security::setHideMetatables (shouldHide);
 }
 
 }

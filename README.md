@@ -2,7 +2,7 @@
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
 </a><br>
 
-# LuaBridge 1.0.1
+# LuaBridge 1.0.2
 
 [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
 functions, and classes available to [Lua][5]: A powerful, fast, lightweight,
@@ -32,12 +32,12 @@ A few additional header files provide optional features. Like the main header
 file, these are simply used via `#include`. No additional source files need
 to be compiled.
 
-C++ concepts like variables and classes are made available to Lua through
-a process called _registration_. Because Lua is weakly typed, the resulting
-structure is not rigid. The API is based on C++ template metaprogramming.
-It contains template code to automatically generate at compile-time the
-various Lua C API calls necessary to export your program's classes and
-functions to the Lua environment.
+C++ concepts like variables and classes are made available to Lua through a
+process called _registration_. Because Lua is weakly typed, the resulting
+structure is not rigid. The API is based on C++ template metaprogramming. It
+contains template code to automatically generate at compile-time the various
+Lua C API calls necessary to export your program's classes and functions to
+the Lua environment.
 
 ### Version
 
@@ -69,20 +69,22 @@ for registering the two classes:
 
 ## Registration
 
-There are four types of objects that LuaBridge can register:
+There are five types of objects that LuaBridge can register:
 
-- **Data**: Global variables, static class data members, and class data
-            members.
+- **Data**: Global variables, data members, and static data members.
 
-- **Functions**: Regular functions, static class members, and class member
-                  functions
+- **Functions**: Global functions, member functions, and static member
+                  functions.
+
+- **CFunctions**: A regular function, member function, or static member
+                  function that uses the `lua_CFunction` calling convention.
 
 - **Namespaces**: A namespace is simply a table containing registrations of
                   functions, data, properties, and other namespaces.
 
-- **Properties**: Global properties, static class properties, and class member
-                  properties. These appear like data to Lua, but are
-                  implemented using get and set functions on the C++ side.
+- **Properties**: Global properties, property members, and static property
+                  members. These appear like data to Lua, but are implemented
+                  using get and set functions on the C++ side.
 
 Both data and properties can be marked as _read-only_ at the time of
 registration. This is different from `const`; the values of these objects can
@@ -126,16 +128,15 @@ we can make more registrations. Given:
 
 The results are accessible to Lua as `test`, `test.detail`, and
 `test.utility`. Here we introduce the `endNamespace` function; it returns an
-object representing the original enclosing namespace. All LuaBridge functions which 
-create registrations return an object upon which subsequent registrations can
-be made, allowing for an unlimited number of registrations to be chained
-together using the dot operator `.`. Adding two objects with the same name, in
-the same namespace, results in undefined behavior (although LuaBridge will
-silently accept it).
+object representing the original enclosing namespace. All LuaBridge functions
+which  create registrations return an object upon which subsequent
+registrations can be made, allowing for an unlimited number of registrations
+to be chained together using the dot operator `.`. Adding two objects with the
+same name, in the same namespace, results in undefined behavior (although
+LuaBridge will silently accept it).
 
-A namespace can be re-opened later to add
-more functions. This lets you split up the registration between different
-source files. These are equivalent:
+A namespace can be re-opened later to add more functions. This lets you split
+up the registration between different source files. These are equivalent:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -156,15 +157,16 @@ and
       .endNamespace ();
 
 
-### Data, Properties, and Functions
+### Data, Properties, Functions, and CFunctions.
 
 These are registered into a namespace using `addVariable`, `addProperty`,
-and `addFunction`. When registered functions are called by scripts, LuaBridge
-automatically takes care of the conversion of arguments into the appropriate
-data type when doing so is possible. This automated system works for the
-function's return value, and up to 8 parameters although more can be added by
-extending the templates. Pointers, references, and objects of class type as
-parameters are treated specially, and explained later. If we have:
+`addFunction`, and `addCFunction`. When registered functions are called by
+scripts, LuaBridge automatically takes care of the conversion of arguments
+into the appropriate data type when doing so is possible. This automated
+system works for the function's return value, and up to 8 parameters although
+more can be added by extending the templates. Pointers, references, and
+objects of class type as parameters are treated specially, and explained
+later. If we have:
 
     int globalVar;
     static float staticVar;
@@ -175,8 +177,9 @@ parameters are treated specially, and explained later. If we have:
 
     int foo () { return 42; }
     void bar (char const*) { }
+    int cFunc (lua_State* L) { return 0; }
 
-These are registered with:
+  These are registered with:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -186,6 +189,7 @@ These are registered with:
         .addProperty ("prop2", getString)            // read only
         .addFunction ("foo", foo)
         .addFunction ("bar", bar)
+        .addCFunction ("cfunc", cFunc)
       .endNamespace ();
 
 Variables can be marked _read-only_ by passing `false` in the second optional
@@ -200,6 +204,7 @@ After the registrations above, the following Lua identifiers are valid:
     test.prop2  -- a read-only lua_String property
     test.foo    -- a function returning a lua_Number
     test.bar    -- a function taking a lua_String as a parameter
+    test.cfunc  -- a function with a variable argument list and multi-return
 
 Note that `test.prop1` and `test.prop2` both refer to the same value. However,
 since `test.prop2` is read-only, assignment does not work. These Lua
@@ -227,8 +232,7 @@ A class registration is opened using either `beginClass` or `deriveClass` and
 ended using `endClass`. Once registered, a class can later be re-opened for
 more registrations using `beginClass`. However, `deriveClass` should only be
 used once. To add more registrations to an already registered derived class,
-use `beginClass`. We use the word _method_ as an unambiguous synonym for
-_member function_ - static or otherwise. These declarations:
+use `beginClass`. These declarations:
 
     struct A {
       static int staticData;
@@ -238,6 +242,8 @@ _member function_ - static or otherwise. These declarations:
       static void setStaticProperty (float f) { staticProperty = f; }
       static void staticFunc () { }
 
+      static int staticCFunc () { return 0; }
+
       std::string dataMember;
 
       char dataProperty;
@@ -246,6 +252,8 @@ _member function_ - static or otherwise. These declarations:
 
       void func1 () { }
       virtual void virtualFunc () { }
+
+      int cfunc (lua_State* L) { return 0; }
     };
 
     struct B : public A {
@@ -266,16 +274,18 @@ Are registered using:
         .beginClass <A> ("A")
           .addStaticData ("staticData", &A::staticData)
           .addStaticProperty ("staticProperty", &A::staticProperty)
-          .addStaticMethod ("staticFunc", &A::staticFunc)
+          .addStaticFunction ("staticFunc", &A::staticFunc)
+          .addStaticCFunction ("staticCFunc", &A::staticCFunc)
           .addData ("data", &A::dataMember)
           .addProperty ("prop", &A::getProperty, &A::setProperty)
-          .addMethod ("func1", &A::func1)
-          .addMethod ("virtualFunc", &A::virtualFunc)
+          .addFunction ("func1", &A::func1)
+          .addFunction ("virtualFunc", &A::virtualFunc)
+          .addCFunction ("cfunc", &A::cfunc)
         .endClass ()
         .deriveClass <B, A> ("B")
           .addData ("data", &B::dataMember2)
-          .addMethod ("func1", &B::func1)
-          .addMethod ("func2", &B::func2)
+          .addFunction ("func1", &B::func1)
+          .addFunction ("func2", &B::func2)
         .endClass ()
       .endClass ();
 
@@ -294,17 +304,17 @@ be re-declared and will function normally in Lua. If a class has a base class
 that is **not** registered with Lua, there is no need to declare it as a
 subclass.
 
-### Class Property Proxies
+### Property Member Proxies
 
 Sometimes when registering a class which comes from a third party library, the
 data is not exposed in a way that can be expressed as a pointer to member,
 there are no get or set functions, or the get and set functons do not have the
-right function signature. LuaBridge handles this by supporting _property
-member proxies_. This is a flat function which takes as its first parameter
-a pointer to the class which is closed for modification. This is easily
-understood with the following example:
+right function signature. Since the class declaration is closed for changes,
+LuaBridge provides allows a _property member proxy_. This is a pair of get
+and set flat functions which take as their first parameter a pointer to
+the object. This is easily understood with the following example:
 
-    // External structure, can't be changed
+    // Third party declaration, can't be changed
     struct Vec 
     {
       float coord [3];
@@ -332,7 +342,7 @@ To do this, first we add a "helper" class:
 
 This helper class is only used to provide property member proxies. `Vec`
 continues to be used in the C++ code as it was before. Now we can register
-our class like this:
+the `Vec` class with property member proxies for `x`, `y`, and `z`:
 
     getGlobalNamespace (L)
       .beginNamespace ("test")
@@ -451,9 +461,6 @@ An object of a registered class `T` may be passed to Lua as:
 - `T const*` or `T const&`: Passed by const reference, with _C++ lifetime_.
 - `T` or `T const`: Passed by value (a copy), with _Lua lifetime_.
 
-When a pointer or pointer to const is passed to Lua and the pointer is null
-(zero), LuaBridge will pass Lua a `nil` instead.
-
 ### C++ Lifetime
 
 The creation and deletion of objects with _C++ lifetime_ is controlled by
@@ -565,6 +572,12 @@ These Lua statements hold:
     func6 (b)   - Passes a pointer to b.
     func6 (a)   - Error: Pointer to B expected.
     func1 (b)   - Okay, b is a subclass of a.
+
+When a pointer or pointer to const is passed to Lua and the pointer is null
+(zero), LuaBridge will pass Lua a `nil` instead. When Lua passes a `nil`
+to C++ where a pointer is expected, a null (zero) is passed instead.
+Attempting to pass a null pointer to a C++ function expecting a reference
+results in `lua_error` being called.
 
 ## Shared Lifetime
 
@@ -722,7 +735,7 @@ security system has these components:
   cannot access. The global environment does not expose metatables
 
 - Metatables created by LuaBridge are tagged with a lightuserdata key which
-  is unique in the process. Other libraries cannot forge a Luabridge
+  is unique in the process. Other libraries cannot forge a LuaBridge
   metatable.
 
 This security system can be easily bypassed if scripts are given access to
