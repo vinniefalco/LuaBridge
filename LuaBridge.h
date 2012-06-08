@@ -123,7 +123,7 @@
   for registering the two classes:
   
   <a href="https://github.com/vinniefalco/LuaBridgeDemo">
-  <img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot.png">
+  <img src="https://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot.png">
   </a><br>
 
   ## Registration
