@@ -64,7 +64,7 @@ This is what the GUI application looks like, along with the C++ code snippet
 for registering the two classes:
   
 <a href="https://github.com/vinniefalco/LuaBridgeDemo">
-<img src="https://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot1.0.2.png">
+<img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot1.0.2.png">
 </a><br>
 
 ## Registration
