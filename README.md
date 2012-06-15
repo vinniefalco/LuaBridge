@@ -2,7 +2,7 @@
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
 </a><br>
 
-# LuaBridge 1.0.2
+# LuaBridge 1.0.3
 
 [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
 functions, and classes available to [Lua][5]: A powerful, fast, lightweight,
