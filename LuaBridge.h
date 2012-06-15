@@ -2829,11 +2829,18 @@ namespace Detail
 
     static void push (lua_State* L, C const& c)
     {
-      new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
-      lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
-      // If this goes off it means the class T is unregistered!
-      assert (lua_istable (L, -1));
-      lua_setmetatable (L, -2);
+      if (ContainerTraits <C>::get (c) != 0)
+      {
+        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
+        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ());
+        // If this goes off it means the class T is unregistered!
+        assert (lua_istable (L, -1));
+        lua_setmetatable (L, -2);
+      }
+      else
+      {
+        lua_pushnil (L);
+      }
     }
 
     static void push (lua_State* L, T* const t)
@@ -2862,11 +2869,18 @@ namespace Detail
 
     static void push (lua_State* L, C const& c)
     {
-      new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
-      lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
-      // If this goes off it means the class T is unregistered!
-      assert (lua_istable (L, -1));
-      lua_setmetatable (L, -2);
+      if (ContainerTraits <C>::get (c) != 0)
+      {
+        new (lua_newuserdata (L, sizeof (UserdataShared <C>))) UserdataShared <C> (c);
+        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
+        // If this goes off it means the class T is unregistered!
+        assert (lua_istable (L, -1));
+        lua_setmetatable (L, -2);
+      }
+      else
+      {
+        lua_pushnil (L);
+      }
     }
 
     static void push (lua_State* L, T* const t)
