@@ -2313,7 +2313,7 @@ namespace Detail
     has a metatable, and the metatable has a value for a lightuserdata key
     with this identity pointer address, that LuaBridge created the userdata.
   */
-  static inline void* const getIdentityKey ()
+  static inline void* getIdentityKey ()
   {
     static char value;
     return &value;
@@ -2337,7 +2337,7 @@ namespace Detail
       The static table holds the static data members, static properties, and
       static member functions for a class.
     */
-    static void const* const getStaticKey ()
+    static void const* getStaticKey ()
     {
       static char value;
       return &value;
@@ -2350,7 +2350,7 @@ namespace Detail
       of a class. Read-only data and properties, and const member functions are
       also placed here (to save a lookup in the const table).
     */
-    static void const* const getClassKey ()
+    static void const* getClassKey ()
     {
       static char value;
       return &value;
@@ -2362,7 +2362,7 @@ namespace Detail
       The const table holds read-only data members and properties, and const
       member functions of a class.
     */
-    static void const* const getConstKey ()
+    static void const* getConstKey ()
     {
       static char value;
       return &value;
@@ -2396,7 +2396,7 @@ namespace Detail
       const table, or else a Lua error is raised. This is used for the
       __gc metamethod.
     */
-    static Userdata* const getExactClass (lua_State* L, int narg, void const* const classKey)
+    static Userdata* getExactClass (lua_State* L, int narg, void const* const classKey)
     {
       Userdata* ud = 0;
       int const index = lua_absindex (L, narg);
@@ -2486,7 +2486,7 @@ namespace Detail
       the resulting Userdata represents to a const object. We do the type check
       first so that the error message is informative.
     */
-    static Userdata* const getClass (
+    static Userdata* getClass (
       lua_State* L, int const index, void const* const baseClassKey, bool const canBeConst)
     {
       assert (index > 0);
