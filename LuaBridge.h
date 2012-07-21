@@ -856,7 +856,7 @@
   BSD 3-Clause License. See the corresponding license file in those versions
   for more details.
 
-  [0]: mailto:vinnie.falco@gmail.com "Vinnie Falco (Email)"
+  [0]: vinnie.falco@gmail.com "Vinnie Falco (Email)"
   [1]: http://www.vinniefalco.com "Vinnie Falco"
   [2]: http://www.opensource.org/licenses/mit-license.html "The MIT License"
   [3]: https://github.com/vinniefalco/LuaBridge "LuaBridge"
