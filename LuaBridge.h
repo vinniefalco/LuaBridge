@@ -876,15 +876,16 @@ namespace luabridge
 
 /**
   Since the throw specification is part of a function signature, the FuncTraits
-  family of templates needs to be specialized for both types. The THROWSPEC
+  family of templates needs to be specialized for both types. The LUABRIDGE_THROWSPEC
   macro controls whether we use the 'throw ()' form, or 'noexcept' (if C++11
   is available) to distinguish the functions.
 */
-#if defined (__APPLE_CPP__) || defined(__APPLE_CC__) || defined(__clang__) || defined(__GNUC__)
-// Do not define THROWSPEC since the Xcode and gcc  compilers do not
+#if defined (__APPLE_CPP__) || defined(__APPLE_CC__) || defined(__clang__) || defined(__GNUC__) || \
+    (defined (_MSC_VER) && (_MSC_VER >= 1700))
+// Do not define LUABRIDGE_THROWSPEC since the Xcode and gcc  compilers do not
 // distinguish the throw specification in the function signature.
 #else
-#define THROWSPEC throw()
+#define LUABRIDGE_THROWSPEC throw()
 #endif
 
 //==============================================================================
@@ -1487,12 +1488,12 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const, D>
   }
 };
 
-#if defined (THROWSPEC)
+#if defined (LUABRIDGE_THROWSPEC)
 
 /* Ordinary function pointers. */
 
 template <typename R, typename D>
-struct FuncTraits <R (*) () THROWSPEC, D>
+struct FuncTraits <R (*) () LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = false;
   typedef D DeclType;
@@ -1505,7 +1506,7 @@ struct FuncTraits <R (*) () THROWSPEC, D>
 };
 
 template <typename R, typename P1, typename D>
-struct FuncTraits <R (*) (P1) THROWSPEC, D>
+struct FuncTraits <R (*) (P1) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = false;
   typedef D DeclType;
@@ -1518,7 +1519,7 @@ struct FuncTraits <R (*) (P1) THROWSPEC, D>
 };
 
 template <typename R, typename P1, typename P2, typename D>
-struct FuncTraits <R (*) (P1, P2) THROWSPEC, D>
+struct FuncTraits <R (*) (P1, P2) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = false;
   typedef D DeclType;
@@ -1531,7 +1532,7 @@ struct FuncTraits <R (*) (P1, P2) THROWSPEC, D>
 };
 
 template <typename R, typename P1, typename P2, typename P3, typename D>
-struct FuncTraits <R (*) (P1, P2, P3) THROWSPEC, D>
+struct FuncTraits <R (*) (P1, P2, P3) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = false;
   typedef D DeclType;
@@ -1544,7 +1545,7 @@ struct FuncTraits <R (*) (P1, P2, P3) THROWSPEC, D>
 };
 
 template <typename R, typename P1, typename P2, typename P3, typename P4, typename D>
-struct FuncTraits <R (*) (P1, P2, P3, P4) THROWSPEC, D>
+struct FuncTraits <R (*) (P1, P2, P3, P4) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = false;
   typedef D DeclType;
@@ -1557,7 +1558,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4) THROWSPEC, D>
 };
 
 template <typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename D>
-struct FuncTraits <R (*) (P1, P2, P3, P4, P5) THROWSPEC, D>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = false;
   typedef D DeclType;
@@ -1571,7 +1572,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5) THROWSPEC, D>
 };
 
 template <typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename D>
-struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6) THROWSPEC, D>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = false;
   typedef D DeclType;
@@ -1585,7 +1586,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6) THROWSPEC, D>
 };
 
 template <typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename D>
-struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC, D>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = false;
   typedef D DeclType;
@@ -1600,7 +1601,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC, D>
 };
 
 template <typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename D>
-struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC, D>
+struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = false;
   typedef D DeclType;
@@ -1617,7 +1618,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC, D>
 /* Non-const member function pointers. */
 
 template <class T, typename R, typename D>
-struct FuncTraits <R (T::*) () THROWSPEC, D>
+struct FuncTraits <R (T::*) () LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = false;
@@ -1632,7 +1633,7 @@ struct FuncTraits <R (T::*) () THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename D>
-struct FuncTraits <R (T::*) (P1) THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = false;
@@ -1647,7 +1648,7 @@ struct FuncTraits <R (T::*) (P1) THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename D>
-struct FuncTraits <R (T::*) (P1, P2) THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = false;
@@ -1662,7 +1663,7 @@ struct FuncTraits <R (T::*) (P1, P2) THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3) THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = false;
@@ -1677,7 +1678,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4) THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = false;
@@ -1692,7 +1693,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = false;
@@ -1708,7 +1709,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = false;
@@ -1724,7 +1725,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = false;
@@ -1741,7 +1742,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = false;
@@ -1760,7 +1761,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) THROWSPEC, D>
 /* Const member function pointers. */
 
 template <class T, typename R, typename D>
-struct FuncTraits <R (T::*) () const THROWSPEC, D>
+struct FuncTraits <R (T::*) () const LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = true;
@@ -1776,7 +1777,7 @@ struct FuncTraits <R (T::*) () const THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename D>
-struct FuncTraits <R (T::*) (P1) const THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1) const LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = true;
@@ -1791,7 +1792,7 @@ struct FuncTraits <R (T::*) (P1) const THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename D>
-struct FuncTraits <R (T::*) (P1, P2) const THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2) const LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = true;
@@ -1806,7 +1807,7 @@ struct FuncTraits <R (T::*) (P1, P2) const THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3) const THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3) const LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = true;
@@ -1821,7 +1822,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) const THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4) const THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4) const LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = true;
@@ -1836,7 +1837,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) const THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = true;
@@ -1852,7 +1853,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = true;
@@ -1868,7 +1869,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = true;
@@ -1885,7 +1886,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const THROWSPEC, D>
 };
 
 template <class T, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename D>
-struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const THROWSPEC, D>
+struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const LUABRIDGE_THROWSPEC, D>
 {
   static bool const isMemberFunction = true;
   static bool const isConstMemberFunction = true;
