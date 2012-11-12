@@ -1,3 +1,7 @@
+Version 1.0.3
+
+  * Pass nil to Lua when a null pointer is passed for objects with shared lifetime.
+
 Version 1.0.2
 
   * Option to hide metatables selectable at runtime, default to true.
