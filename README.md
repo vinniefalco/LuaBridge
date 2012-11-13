@@ -287,7 +287,7 @@ Are registered using:
           .addFunction ("func1", &B::func1)
           .addFunction ("func2", &B::func2)
         .endClass ()
-      .endClass ();
+      .endNameSpace ();
 
 Method registration works just like function registration.  Virtual methods
 work normally; no special syntax is needed. const methods are detected and
@@ -378,8 +378,8 @@ statements register constructors for the given classes:
         .endClass ()
         .beginClass <B> ("B")
           .addConstructor <void (*) (char const*, int)> ()
-        .endClass ();
-      .endNamespace ()
+        .endClass ()
+      .endNamespace ();
 
 Constructors added in this fashion are called from Lua using the fully
 qualified name of the class. This Lua code will create instances of `A` and
