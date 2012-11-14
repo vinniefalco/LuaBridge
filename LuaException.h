@@ -52,7 +52,7 @@ public:
 
   std::string getLuaError() { return luaError; }
   lua_State *getLuaState() { return mL; }
-  const char *what() const
+  const char *what() const throw ()
   {
     std::stringstream ss;
 
