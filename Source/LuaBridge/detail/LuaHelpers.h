@@ -77,4 +77,11 @@ inline void rawsetfield (lua_State* L, int index, char const* key)
   lua_rawset (L, index);
 }
 
+/** Returns true if the value is a full userdata (not light).
+*/
+inline bool isfulluserdata (lua_State* L, int index)
+{
+  return lua_isuserdata (L, index) && !lua_islightuserdata (L, index);
+}
+
 #endif
