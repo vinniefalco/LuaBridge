@@ -2528,8 +2528,8 @@ inline void setHideMetatables (bool shouldHide)
   Detail::Security::setHideMetatables (shouldHide);
 }
 
-}
+#include "LuaBridge.cpp"
 
-//==============================================================================
+}
 
 #endif
