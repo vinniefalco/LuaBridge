@@ -39,20 +39,20 @@
 namespace luabridge
 {
 
-#include "LuaHelpers.h"
+#include "detail/LuaHelpers.h"
 
-#include "TypeInfo.h"
-#include "TypeList.h"
-#include "FuncTraits.h"
-#include "Constructor.h"
-#include "Stack.h"
+#include "detail/TypeInfo.h"
+#include "detail/TypeList.h"
+#include "detail/FuncTraits.h"
+#include "detail/Constructor.h"
+#include "detail/Stack.h"
 
 class LuaRef;
 
-#include "LuaException.h"
-#include "LuaPop.h"
-#include "LuaVal.h"
-#include "LuaRef.h"
+#include "detail/LuaException.h"
+#include "detail/LuaPop.h"
+#include "detail/LuaVal.h"
+#include "detail/LuaRef.h"
 
 //------------------------------------------------------------------------------
 /**
@@ -2528,8 +2528,11 @@ inline void setHideMetatables (bool shouldHide)
   Detail::Security::setHideMetatables (shouldHide);
 }
 
-#include "LuaBridge.cpp"
+#include "detail/LuaBridge.cpp"
 
 }
+
+#include "detail/RefCountedObject.h"
+#include "detail/RefCountedPtr.h"
 
 #endif
