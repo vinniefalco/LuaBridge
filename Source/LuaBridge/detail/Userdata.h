@@ -26,9 +26,38 @@
 */
 //==============================================================================
 
-//============================================================================
+//==============================================================================
 /**
-  Interface to a class poiner retrievable from a userdata.
+  Return the identity pointer for our lightuserdata tokens.
+
+  LuaBridge metatables are tagged with a security "token." The token is a
+  lightuserdata created from the identity pointer, used as a key in the
+  metatable. The value is a boolean = true, although any value could have been
+  used.
+
+  Because of Lua's dynamic typing and our improvised system of imposing C++
+  class structure, there is the possibility that executing scripts may
+  knowingly or unknowingly cause invalid data to get passed to the C functions
+  created by LuaBridge. In particular, our security model addresses the
+  following:
+
+  Notes:
+    1. Scripts cannot create a userdata (ignoring the debug lib).
+    2. Scripts cannot create a lightuserdata (ignoring the debug lib).
+    3. Scripts cannot set the metatable on a userdata.
+    4. Our identity key is a unique pointer in the process.
+    5. Our metatables have a lightuserdata identity key / value pair.
+    6. Our metatables have "__metatable" set to a boolean = false.
+    7. Our lightuserdata is unique.
+*/
+static inline void* getIdentityKey ()
+{
+  static char value;
+  return &value;
+}
+
+/**
+  Interface to a class pointer retrievable from a userdata.
 */
 class Userdata
 {

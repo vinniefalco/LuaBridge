@@ -27,9 +27,6 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_LUAEXCEPTION_HEADER
-#define LUABRIDGE_LUAEXCEPTION_HEADER
-
 class LuaException : public std::runtime_error 
 {
   std::string luaError;
@@ -41,12 +38,12 @@ class LuaException : public std::runtime_error
 
 public:
   LuaException( lua_State *L, const char *str, const char *filename, long fileline ) 
-	  : std::runtime_error(str), file(filename), line(fileline)
+    : std::runtime_error(str), file(filename), line(fileline)
   {
-	  if( lua_gettop( L ) != 0 )
-		  if( lua_isstring( L, -1 ) )
-			  luaError = lua_tostring( L, -1 );
-	  mL = L;
+    if( lua_gettop( L ) != 0 )
+      if( lua_isstring( L, -1 ) )
+        luaError = lua_tostring( L, -1 );
+    mL = L;
   }
 
   std::string getLuaError() { return luaError; }
@@ -64,5 +61,3 @@ public:
 
   ~LuaException() throw () {}
 };
-
-#endif

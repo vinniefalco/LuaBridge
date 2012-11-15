@@ -29,18 +29,53 @@
 #ifndef LUABRIDGE_TYPEINFO_HEADER
 #define LUABRIDGE_TYPEINFO_HEADER
 
+//------------------------------------------------------------------------------
+/**
+    Container traits.
+
+    Unspecialized ContainerTraits has the isNotContainer typedef for SFINAE.
+    All user defined containers must supply an appropriate specialization for
+    ContinerTraits (without the typedef isNotContainer). The containers that
+    come with LuaBridge also come with the appropriate ContainerTraits
+    specialization. See the corresponding declaration for details.
+
+    A specialization of ContainerTraits for some generic type ContainerType
+    looks like this:
+
+        template <class T>
+        struct ContainerTraits <ContainerType <T> >
+        {
+          typedef typename T Type;
+
+          static T* get (ContainerType <T> const& c)
+          {
+            return c.get (); // Implementation-dependent on ContainerType
+          }
+        };
+*/
+template <class T>
+struct ContainerTraits
+{
+  typedef bool isNotContainer;
+};
+
+//------------------------------------------------------------------------------
+/**
+    Type traits.
+
+    Specializations return information about a type.
+*/
 struct TypeTraits
 {
-  //--------------------------------------------------------------------------
-  /**
-    Determine if type T is a container.
+  /** Determine if type T is a container.
 
-    To be considered a container, there must be a specialization of
-    ContainerTraits with the required fields.
+      To be considered a container, there must be a specialization of
+      ContainerTraits with the required fields.
   */
   template <typename T>
   class isContainer
   {
+  private:
     typedef char yes[1]; // sizeof (yes) == 1
     typedef char no [2]; // sizeof (no)  == 2
 
@@ -54,10 +89,9 @@ struct TypeTraits
     static const bool value = sizeof (test <ContainerTraits <T> >(0)) == sizeof (yes);
   };
 
-  //--------------------------------------------------------------------------
-  /**
-    Determine if T is const qualified.
+  /** Determine if T is const qualified.
   */
+  /** @{ */
   template <class T>
   struct isConst
   {
@@ -69,11 +103,11 @@ struct TypeTraits
   {
     static bool const value = true;
   };
+  /** @} */
 
-  //--------------------------------------------------------------------------
-  /**
-    Strip the const qualifier from T.
+  /** Remove the const qualifier from T.
   */
+  /** @{ */
   template <class T>
   struct removeConst
   {
@@ -85,66 +119,7 @@ struct TypeTraits
   {
     typedef T Type;
   };
-};
-
-/* TypeInfo SEEMS TO BE UNUSED
-*/
-/** Type extractor.
-
-    These templates extract information about types.
-*/
-template <typename T>
-struct TypeInfo
-{
-  typedef T Type;
-  static bool const is_const     = false;
-  static bool const is_pointer   = false;
-  static bool const is_reference = false;
-};
-
-template <typename T>
-struct TypeInfo <T const>
-{
-  typedef T Type;
-  static bool const is_const     = true;
-  static bool const is_pointer   = false;
-  static bool const is_reference = false;
-};
-
-template <typename T>
-struct TypeInfo <T*>
-{
-  typedef T Type;
-  static bool const is_const     = false;
-  static bool const is_pointer   = true;
-  static bool const is_reference = false;
-};
-
-template <typename T>
-struct TypeInfo <T const*>
-{
-  typedef T Type;
-  static bool const is_const     = true;
-  static bool const is_pointer   = true;
-  static bool const is_reference = false;
-};
-
-template <typename T>
-struct TypeInfo <T&>
-{
-  typedef T Type;
-  static bool const is_const     = false;
-  static bool const is_pointer   = false;
-  static bool const is_reference = true;
-};
-
-template <typename T>
-struct TypeInfo <T const&>
-{
-  typedef T Type;
-  static bool const is_const     = true;
-  static bool const is_pointer   = false;
-  static bool const is_reference = true;
+  /**@}*/
 };
 
 #endif

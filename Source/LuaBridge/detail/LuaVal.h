@@ -27,9 +27,6 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_LUAVAL_HEADER
-#define LUABRIDGE_LUAVAL_HEADER
-
 // Basic "ANY" class for representing Lua objects.
 // Used in calling Lua functions as parameters.
 
@@ -86,5 +83,3 @@ public:
 
   void push (lua_State* L);
 };
-
-#endif

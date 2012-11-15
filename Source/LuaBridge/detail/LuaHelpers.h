@@ -27,10 +27,8 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_LUAHELPERS_HEADER
-#define LUABRIDGE_LUAHELPERS_HEADER
-
 // These are for Lua versions prior to 5.2.0.
+//
 #if LUA_VERSION_NUM < 502
 inline int lua_absindex (lua_State* L, int idx)
 {
@@ -84,5 +82,3 @@ inline bool isfulluserdata (lua_State* L, int index)
 {
   return lua_isuserdata (L, index) && !lua_islightuserdata (L, index);
 }
-
-#endif

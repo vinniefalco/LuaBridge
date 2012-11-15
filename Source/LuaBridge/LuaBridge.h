@@ -41,12 +41,13 @@ namespace luabridge
 
 #include "detail/LuaHelpers.h"
 
-#include "detail/TypeInfo.h"
+#include "detail/TypeTraits.h"
 #include "detail/TypeList.h"
 #include "detail/FuncTraits.h"
 #include "detail/Constructor.h"
 #include "detail/Stack.h"
 #include "detail/ClassInfo.h"
+#include "detail/CFunctions.h"
 
 class LuaRef;
 
@@ -57,37 +58,7 @@ class LuaRef;
 
 //------------------------------------------------------------------------------
 /**
-  Container traits.
-
-  Unspecialized ContainerTraits has the isNotContainer typedef for SFINAE. All
-  user defined containers must supply an appropriate specialization for
-  ContinerTraits (without the typedef isNotContainer). The containers that come
-  with LuaBridge also come with the appropriate ContainerTraits specialization.
-  See the corresponding declaration for details.
-
-  A specialization of ContainerTraits for some generic type ContainerType
-  looks like this:
-
-  template <class T>
-  struct ContainerTraits <ContainerType <T> >
-  {
-    typedef typename T Type;
-
-    static T* get (ContainerType <T> const& c)
-    {
-      return c.get (); // Implementation-dependent on ContainerType
-    }
-  };
-*/
-template <class T>
-struct ContainerTraits
-{
-  typedef bool isNotContainer;
-};
-
-//----------------------------------------------------------------------------
-/**
-  Control security options.
+    security options.
 */
 class Security
 {
@@ -105,8 +76,7 @@ public:
 private:
   struct Settings
   {
-    Settings ()
-      : hideMetatables (true)
+    Settings () : hideMetatables (true)
     {
     }
 
@@ -119,36 +89,6 @@ private:
     return settings;
   }
 };
-
-//============================================================================
-/**
-  Return the identity pointer for our lightuserdata tokens.
-
-  LuaBridge metatables are tagged with a security "token." The token is a
-  lightuserdata created from the identity pointer, used as a key in the
-  metatable. The value is a boolean = true, although any value could have been
-  used.
-
-  Because of Lua's dynamic typing and our improvised system of imposing C++
-  class structure, there is the possibility that executing scripts may
-  knowingly or unknowingly cause invalid data to get passed to the C functions
-  created by LuaBridge. In particular, our security model addresses the
-  following:
-
-  Notes:
-    1. Scripts cannot create a userdata (ignoring the debug lib).
-    2. Scripts cannot create a lightuserdata (ignoring the debug lib).
-    3. Scripts cannot set the metatable on a userdata.
-    4. Our identity key is a unique pointer in the process.
-    5. Our metatables have a lightuserdata identity key / value pair.
-    6. Our metatables have "__metatable" set to a boolean = false.
-    7. Our lightuserdata is unique.
-*/
-static inline void* getIdentityKey ()
-{
-  static char value;
-  return &value;
-}
 
 #include "detail/Userdata.h"
 
@@ -326,201 +266,6 @@ private:
 
     return result;
   }
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to get a variable.
-
-    This is used for global variables or class static data members.
-  */
-  template <class T>
-  static int getVariable (lua_State* L)
-  {
-    assert (lua_islightuserdata (L, lua_upvalueindex (1)));
-    T const* const data = static_cast <T const*> (lua_touserdata (L, lua_upvalueindex (1)));
-    assert (data != 0);
-    Stack <T>::push (L, *data);
-    return 1;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to set a variable.
-
-    This is used for global variables or class static data members.
-  */
-  template <class T>
-  static int setVariable (lua_State* L)
-  {
-    assert (lua_islightuserdata (L, lua_upvalueindex (1)));
-    T* const data = static_cast <T*> (lua_touserdata (L, lua_upvalueindex (1)));
-    assert (data != 0);
-    *data = Stack <T>::get (L, 1);
-    return 0;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to call a function with a return value.
-
-    This is used for global functions, global properties, class static methods,
-    and class static properties.
-  */
-  template <class Func,
-            class ReturnType = typename FuncTraits <Func>::ReturnType>
-  struct CallFunction
-  {
-    typedef typename FuncTraits <Func>::Params Params;
-    static int call (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      Func const& fp = *static_cast <Func const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fp != 0);
-      ArgList <Params> args (L);
-      Stack <typename FuncTraits <Func>::ReturnType>::push (
-        L, FuncTraits <Func>::call (fp, args));
-      return 1;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to call a function with no return value.
-
-    This is used for global functions, global properties, class static methods,
-    and class static properties.
-  */
-  template <class Func>
-  struct CallFunction <Func, void>
-  {
-    typedef typename FuncTraits <Func>::Params Params;
-    static int call (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      Func const& fp = *static_cast <Func const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fp != 0);
-      ArgList <Params> args (L);
-      FuncTraits <Func>::call (fp, args);
-      return 0;
-    }
-  };
-
-  //============================================================================
-  /**
-    lua_CFunction to call a class member function with a return value.
-  */
-  template <class MemFn,
-            class ReturnType = typename FuncTraits <MemFn>::ReturnType>
-  struct CallMemberFunction
-  {
-    typedef typename FuncTraits <MemFn>::ClassType T;
-    typedef typename FuncTraits <MemFn>::Params Params;
-
-    static int call (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      T* const t = Userdata::get <T> (L, 1, false);
-      MemFn const& fp = *static_cast <MemFn const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      ArgList <Params, 2> args (L);
-      Stack <ReturnType>::push (L, FuncTraits <MemFn>::call (t, fp, args));
-      return 1;
-    }
-
-    static int callConst (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      T const* const t = Userdata::get <T> (L, 1, true);
-      MemFn const& fp = *static_cast <MemFn const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      ArgList <Params, 2> args(L);
-      Stack <ReturnType>::push (L, FuncTraits <MemFn>::call (t, fp, args));
-      return 1;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to call a class member function with no return value.
-  */
-  template <class MemFn>
-  struct CallMemberFunction <MemFn, void>
-  {
-    typedef typename FuncTraits <MemFn>::ClassType T;
-    typedef typename FuncTraits <MemFn>::Params Params;
-
-    static int call (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      T* const t = Userdata::get <T> (L, 1, false);
-      MemFn const& fp = *static_cast <MemFn const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      ArgList <Params, 2> args (L);
-      FuncTraits <MemFn>::call (t, fp, args);
-      return 0;
-    }
-
-    static int callConst (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      T const* const t = Userdata::get <T> (L, 1, true);
-      MemFn const& fp = *static_cast <MemFn const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      ArgList <Params, 2> args (L);
-      FuncTraits <MemFn>::call (t, fp, args);
-      return 0;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-    lua_CFunction to call a class member lua_CFunction
-  */
-  template <class T>
-  struct CallMemberCFunction
-  {
-    static int call (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      typedef int (T::*MFP)(lua_State* L);
-      T* const t = Userdata::get <T> (L, 1, false);
-      MFP const& mfp = *static_cast <MFP const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      return (t->*mfp) (L);
-    }
-
-    static int callConst (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      typedef int (T::*MFP)(lua_State* L);
-      T const* const t = Userdata::get <T> (L, 1, true);
-      MFP const& mfp = *static_cast <MFP const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      return (t->*mfp) (L);
-    }
-  };
-
-  //----------------------------------------------------------------------------
-
-  // SFINAE Helpers
-
-  template <class MemFn, bool isConst>
-  struct CallMemberFunctionHelper
-  {
-    static void add (lua_State* L, char const* name, MemFn mf)
-    {
-      new (lua_newuserdata (L, sizeof (MemFn))) MemFn (mf);
-      lua_pushcclosure (L, &CallMemberFunction <MemFn>::callConst, 1);
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -5, name); // const table
-      rawsetfield (L, -3, name); // class table
-    }
-  };
-
-  template <class MemFn>
-  struct CallMemberFunctionHelper <MemFn, false>
-  {
-    static void add (lua_State* L, char const* name, MemFn mf)
-    {
-      new (lua_newuserdata (L, sizeof (MemFn))) MemFn (mf);
-      lua_pushcclosure (L, &CallMemberFunction <MemFn>::call, 1);
-      rawsetfield (L, -3, name); // class table
-    }
-  };
 
   //----------------------------------------------------------------------------
   /**
@@ -1354,15 +1099,9 @@ private:
   };
 
 private:
-  //============================================================================
-  //
-  // Namespace (Cont.)
-  //
-  //============================================================================
-
   //----------------------------------------------------------------------------
   /**
-    Opens the global namespace.
+      Open the global namespace for registrations.
   */
   explicit Namespace (lua_State* L_)
     : L (L_)
@@ -1374,10 +1113,10 @@ private:
 
   //----------------------------------------------------------------------------
   /**
-    Opens a namespace for registrations.
+      Open a namespace for registrations.
 
-    The namespace is created if it doesn't already exist. The parent
-    namespace is at the top of the Lua stack.
+      The namespace is created if it doesn't already exist.
+      The parent namespace is at the top of the Lua stack.
   */
   Namespace (char const* name, Namespace const* parent)
     : L (parent->L)
@@ -1414,7 +1153,7 @@ private:
 
   //----------------------------------------------------------------------------
   /**
-    Creates a continued registration from a child namespace.
+      Creates a continued registration from a child namespace.
   */
   explicit Namespace (Namespace const* child)
     : L (child->L)
@@ -1432,7 +1171,7 @@ private:
 
   //----------------------------------------------------------------------------
   /**
-    Creates a continued registration from a child class.
+      Creates a continued registration from a child class.
   */
   explicit Namespace (ClassBase const* child)
     : L (child->L)
@@ -1446,11 +1185,11 @@ private:
 public:
   //----------------------------------------------------------------------------
   /**
-    Copy Constructor.
+      Copy Constructor.
 
-    Ownership of the stack is transferred to the new object. This happens when
-    the compiler emits temporaries to hold these objects while chaining
-    registrations across namespaces.
+      Ownership of the stack is transferred to the new object. This happens
+      when the compiler emits temporaries to hold these objects while chaining
+      registrations across namespaces.
   */
   Namespace (Namespace const& other) : L (other.L)
   {
@@ -1460,7 +1199,7 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Closes this namespace registration.
+      Closes this namespace registration.
   */
   ~Namespace ()
   {
@@ -1469,7 +1208,7 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Open the global namespace.
+      Open the global namespace.
   */
   static Namespace getGlobalNamespace (lua_State* L)
   {
@@ -1478,7 +1217,7 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Open a new or existing namespace for registrations.
+      Open a new or existing namespace for registrations.
   */
   Namespace beginNamespace (char const* name)
   {
@@ -1487,9 +1226,9 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Continue namespace registration in the parent.
+      Continue namespace registration in the parent.
 
-    Do not use this on the global namespace.
+      Do not use this on the global namespace.
   */
   Namespace endNamespace ()
   {
@@ -1498,10 +1237,10 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Add or replace a variable.
+      Add or replace a variable.
   */
   template <class T>
-  Namespace& addVariable (char const* const name, T* const pt, bool const isWritable = true)
+  Namespace& addVariable (char const* name, T* pt, bool isWritable = true)
   {
     assert (lua_istable (L, -1));
 
@@ -1532,9 +1271,9 @@ public:
   
   //----------------------------------------------------------------------------
   /**
-    Add or replace a property.
+      Add or replace a property.
 
-    If the set function is omitted or null, the property is read-only.
+      If the set function is omitted or null, the property is read-only.
   */
   template <class TG, class TS>
   Namespace& addProperty (char const* name, TG (*get) (), void (*set)(TS) = 0)
@@ -1568,7 +1307,7 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Add or replace a function.
+      Add or replace a free function.
   */
   template <class FP>
   Namespace& addFunction (char const* name, FP const fp)
@@ -1584,7 +1323,7 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Add or replace a lua_CFunction.
+      Add or replace a lua_CFunction.
   */
   Namespace& addCFunction (char const* name, int (*const fp)(lua_State*))
   {
@@ -1596,7 +1335,7 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Open a new or existing class for registrations.
+      Open a new or existing class for registrations.
   */
   template <class T>
   Class <T> beginClass (char const* name)
@@ -1606,10 +1345,10 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-    Derive a new class for registrations.
+      Derive a new class for registrations.
 
-    To continue registrations for the class later, use beginClass().
-    Do not call deriveClass() again.
+      To continue registrations for the class later, use beginClass().
+      Do not call deriveClass() again.
   */
   template <class T, class U>
   Class <T> deriveClass (char const* name)
@@ -1633,7 +1372,7 @@ inline Namespace getGlobalNamespace (lua_State* L)
 
 //------------------------------------------------------------------------------
 /**
-  Push objects onto the Lua stack.
+    Push an object onto the Lua stack.
 */
 template <class T>
 inline void push (lua_State* L, T t)

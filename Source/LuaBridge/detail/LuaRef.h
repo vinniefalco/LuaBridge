@@ -27,9 +27,6 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_LUAREF_HEADER
-#define LUABRIDGE_LUAREF_HEADER
-
 struct fromStack
 {
   lua_State *m_L;
@@ -504,5 +501,3 @@ public:
     return ref;
   }
 };
-
-#endif

@@ -3,6 +3,7 @@
   https://github.com/vinniefalco/LuaBridge
   
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2008, Nigel Atkinson <suprapilot+LuaCode@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -28,9 +29,6 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_LUAPOP_HEADER
-#define LUABRIDGE_LUAPOP_HEADER
-
 /** Cleans up the Lua stack.
 
     This is useful when exceptions can be thrown.
@@ -53,5 +51,3 @@ private:
   lua_State* m_L;
   int m_top;
 };
-
-#endif
