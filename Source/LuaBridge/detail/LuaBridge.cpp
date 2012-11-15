@@ -30,22 +30,19 @@
 // These have to be defined after LuaRef as one needs to know about the "push"
 // method and the others need the size of LuaRef.
 
-#if 0
-
-LuaVal::LuaVal (LuaRef* o)
+inline LuaVal::LuaVal (LuaRef* o)
   : m_type (LUA_TLIGHTUSERDATA)
 {
   m_object = new LuaRef (o);
 }
 
-LuaVal::~LuaVal ()
+inline LuaVal::~LuaVal ()
 {
   if (m_object)
     delete m_object;
 }
 
-LuaVal::LuaVal (LuaVal const& rhs)
-  : m_type (rhs.m_type)
+inline LuaVal::LuaVal (LuaVal const& rhs) : m_type (rhs.m_type)
 {
   switch (rhs.m_type)
   {
@@ -73,7 +70,7 @@ LuaVal::LuaVal (LuaVal const& rhs)
   }
 }
 
-void LuaVal::push (lua_State* L)
+inline void LuaVal::push (lua_State* L)
 {
   switch( m_type )
   {
@@ -102,7 +99,7 @@ void LuaVal::push (lua_State* L)
   }
 }
 
-std::ostream& operator<< (std::ostream &os, LuaRef& ref)
+inline std::ostream& operator<< (std::ostream &os, LuaRef& ref)
 {
   switch (ref.type ())
   {
@@ -129,5 +126,3 @@ std::ostream& operator<< (std::ostream &os, LuaRef& ref)
 
   return os;
 }
-
-#endif

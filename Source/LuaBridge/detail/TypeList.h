@@ -43,9 +43,6 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_TYPELIST_HEADER
-#define LUABRIDGE_TYPELIST_HEADER
-
 /**
   None type means void parameters or return value.
 */
@@ -147,4 +144,31 @@ struct TypeListValues <TypeList <Head const&, Tail> >
   }
 };
 
-#endif
+//==============================================================================
+/**
+  Subclass of a TypeListValues constructable from the Lua stack.
+*/
+
+template <typename List, int Start = 1>
+struct ArgList
+{
+};
+
+template <int Start>
+struct ArgList <None, Start> : public TypeListValues <None>
+{
+  ArgList (lua_State*)
+  {
+  }
+};
+
+template <typename Head, typename Tail, int Start>
+struct ArgList <TypeList <Head, Tail>, Start>
+  : public TypeListValues <TypeList <Head, Tail> >
+{
+  ArgList (lua_State* L)
+    : TypeListValues <TypeList <Head, Tail> > (Stack <Head>::get (L, Start),
+                                            ArgList <Tail, Start + 1> (L))
+  {
+  }
+};
