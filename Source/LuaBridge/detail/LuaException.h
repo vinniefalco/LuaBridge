@@ -33,6 +33,7 @@ class LuaException : public std::runtime_error
   std::string file;
   long line;
   lua_State *mL;
+  std::string mutable m_what;
 
   // Do we we need a copy constuctor? I think the default supplied one works.
 
@@ -56,7 +57,9 @@ public:
     ss << "*** " << luaError << " ***" << std::endl;
     ss << "*** In file: " << file << " Line: " << line << " ***" << std::endl;
 
-    return ss.str().c_str();
+    m_what = ss.str ();
+    
+    return m_what.c_str ();
   }
 
   ~LuaException() throw () {}
