@@ -785,8 +785,8 @@ suggestions, and/or proposed changes will be handled by the new maintainer.
 
 ## License
 
-Copyright (C) 2012, [Vinnie Falco][1] ([e-mail][0]) <br>
-Copyright (C) 2007, Nathan Reed <br>
+Copyright 2012, [Vinnie Falco][1] ([e-mail][0]) <br>
+Copyright 2007, Nathan Reed <br>
   
 Portions from The Loki Library: <br>
 Copyright (C) 2001 by Andrei Alexandrescu

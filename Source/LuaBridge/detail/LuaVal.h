@@ -2,7 +2,8 @@
 /*
   https://github.com/vinniefalco/LuaBridge
   
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2008, Nigel Atkinson <suprapilot+LuaCode@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -23,8 +24,6 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
-
-  This code incorporates ideas from Nigel Atkinson.
 */
 //==============================================================================
 
@@ -33,38 +32,59 @@
 
 // Basic "ANY" class for representing Lua objects.
 // Used in calling Lua functions as parameters.
+
+/** "Any" class to represent Lua types.
+*/
 class LuaVal
 {
-  int mType;
-  double d;
-  std::string str;
-  lua_CFunction func;
-  LuaRef *obj;
+  int m_type;
+  double m_doubleValue;
+  std::string m_stringValue;
+  lua_CFunction m_functionValue;
+  LuaRef *m_object;
 
 public:
-  LuaVal() : mType( LUA_TNIL ), obj(NULL)
-  {;}
+  LuaVal()
+    : m_type (LUA_TNIL)
+    , m_object (0)
+  {
+  }
 
-  LuaVal( double n ) : d( n ), mType( LUA_TNUMBER ), obj(NULL)
-  {;}
+  LuaVal (double n)
+    : m_doubleValue (n)
+    , m_type (LUA_TNUMBER)
+    , m_object (0)
+  {
+  }
 
-  LuaVal( std::string n ) : str( n ), mType( LUA_TSTRING ), obj(NULL)
-  {;}
+  LuaVal (std::string s)
+    : m_stringValue (s)
+    , m_type (LUA_TSTRING)
+    , m_object (0)
+  {
+  }
 
-  LuaVal( const char *n ) : str( n ), mType( LUA_TSTRING ), obj(NULL)
-  {;}
+  LuaVal (char const* s )
+    : m_stringValue (s)
+    , m_type (LUA_TSTRING)
+    , m_object (0)
+  {
+  }
 
-  LuaVal( lua_CFunction n ) : func( n ), mType( LUA_TFUNCTION ), obj(NULL)
-  {;}
+  LuaVal (lua_CFunction f)
+    : m_functionValue (f)
+    , m_type (LUA_TFUNCTION)
+    , m_object (0)
+  {
+  }
 
-  LuaVal( LuaRef *o );
+  LuaVal (LuaRef *o);
 	
-  ~LuaVal();
+  LuaVal (LuaVal const& lv);
 
-  // Copy 
-  LuaVal( const LuaVal &lv );
+  ~LuaVal ();
 
-  void push( lua_State *L );
+  void push (lua_State* L);
 };
 
 #endif

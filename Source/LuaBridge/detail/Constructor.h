@@ -2,7 +2,8 @@
 /*
   https://github.com/vinniefalco/LuaBridge
   
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2007, Nathan Reed
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 

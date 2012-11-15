@@ -1,9 +1,8 @@
 //==============================================================================
 /*
   https://github.com/vinniefalco/LuaBridge
-  https://github.com/vinniefalco/LuaBridgeDemo
 
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright 2004-11 by Raw Material Software Ltd.
 
   This is a derivative work used by permission from part of

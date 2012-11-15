@@ -2,8 +2,8 @@
 /*
   https://github.com/vinniefalco/LuaBridge
 
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright (C) 2007, Nathan Reed
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2008, Nigel Atkinson <suprapilot+LuaCode@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -27,3 +27,107 @@
 */
 //==============================================================================
 
+// These have to be defined after LuaRef as one needs to know about the "push"
+// method and the others need the size of LuaRef.
+
+#if 0
+
+LuaVal::LuaVal (LuaRef* o)
+  : m_type (LUA_TLIGHTUSERDATA)
+{
+  m_object = new LuaRef (o);
+}
+
+LuaVal::~LuaVal ()
+{
+  if (m_object)
+    delete m_object;
+}
+
+LuaVal::LuaVal (LuaVal const& rhs)
+  : m_type (rhs.m_type)
+{
+  switch (rhs.m_type)
+  {
+  case LUA_TNIL:
+    break;
+
+  case LUA_TNUMBER:
+    m_doubleValue = rhs.m_doubleValue;
+    break;
+
+  case LUA_TSTRING:
+    m_stringValue = rhs.m_stringValue;
+    break;
+
+  case LUA_TFUNCTION:
+    m_functionValue = rhs.m_functionValue;
+    break;
+
+  case LUA_TLIGHTUSERDATA:
+    m_object = new LuaRef (rhs.m_object);
+    break;
+
+  default:
+    throw std::runtime_error( "LuaVal to be copied got messed up somehow." );
+  }
+}
+
+void LuaVal::push (lua_State* L)
+{
+  switch( m_type )
+  {
+  case LUA_TNIL:
+    lua_pushnil (L);
+    break;
+
+  case LUA_TNUMBER:
+    lua_pushnumber (L, m_doubleValue);
+    break;
+
+  case LUA_TSTRING:
+    lua_pushstring (L, m_stringValue.c_str ());
+    break;
+
+  case LUA_TFUNCTION:
+    lua_pushcfunction (L, m_functionValue);
+    break;
+
+  case LUA_TLIGHTUSERDATA:
+    m_object->push ();
+    break;
+
+  default:
+    throw LuaException( L, "LuaVal got messed up somehow.", __FILE__, __LINE__ );
+  }
+}
+
+std::ostream& operator<< (std::ostream &os, LuaRef& ref)
+{
+  switch (ref.type ())
+  {
+  case LUA_TNIL:
+    os << "NIL";
+    break;
+
+  case LUA_TNUMBER:
+    os << (double) ref;
+    break;
+
+  case LUA_TSTRING:
+    os << std::string (ref);
+    break;
+
+  case LUA_TFUNCTION:
+    os << "function";
+    break;
+
+  case LUA_TLIGHTUSERDATA:
+    os << "A reference to another object";
+    break;
+  }
+
+  return os;
+}
+
+#endif

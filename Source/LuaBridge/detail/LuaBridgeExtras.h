@@ -3,7 +3,7 @@
   https://github.com/vinniefalco/LuaBridge
   https://github.com/vinniefalco/LuaBridgeDemo
   
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 

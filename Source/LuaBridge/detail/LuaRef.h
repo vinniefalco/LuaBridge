@@ -2,7 +2,8 @@
 /*
   https://github.com/vinniefalco/LuaBridge
   
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2008, Nigel Atkinson <suprapilot+LuaCode@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -23,8 +24,6 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
-
-  This code incorporates ideas from Nigel Atkinson.
 */
 //==============================================================================
 
