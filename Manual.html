@@ -1,0 +1,649 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>LuaBridge 2.0 Reference Manual</title>
+<link rel="stylesheet" type="text/css" href="manual.css">
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=iso-8859-1">
+
+<!--=========================================================================-->
+<!-- lua.css -->
+<STYLE TYPE="text/css">
+body {
+  color: #000000 ;
+  background-color: #FFFFFF ;
+  font-family: Helvetica, Arial, sans-serif ;
+  text-align: justify ;
+  margin-right: 30px ;
+  margin-left: 30px ;
+}
+
+h1, h2, h3, h4 {
+  font-family: Verdana, Geneva, sans-serif ;
+  font-weight: normal ;
+  font-style: italic ;
+}
+
+h2 {
+  padding-top: 0.4em ;
+  padding-bottom: 0.4em ;
+  padding-left: 1em ;
+  padding-right: 1em ;
+  background-color: #E0E0FF ;
+  border-radius: 8px ;
+}
+
+h3 {
+  padding-left: 0.5em ;
+  border-left: solid #E0E0FF 1em ;
+}
+
+table h3 {
+  padding-left: 0px ;
+  border-left: none ;
+}
+
+a:link {
+  color: #000080 ;
+  background-color: inherit ;
+  text-decoration: none ;
+}
+
+a:visited {
+  background-color: inherit ;
+  text-decoration: none ;
+}
+
+a:link:hover, a:visited:hover {
+  color: #000080 ;
+  background-color: #E0E0FF ;
+}
+
+a:link:active, a:visited:active {
+  color: #FF0000 ;
+}
+
+hr {
+  border: 0 ;
+  height: 1px ;
+  color: #a0a0a0 ;
+  background-color: #a0a0a0 ;
+}
+
+:target {
+  background-color: #F8F8F8 ;
+  padding: 8px ;
+  border: solid #a0a0a0 2px ;
+}
+
+.footer {
+  color: gray ;
+  font-size: small ;
+}
+
+input[type=text] {
+  border: solid #a0a0a0 2px ;
+  border-radius: 2em ;
+  -moz-border-radius: 2em ;
+  background-image: url('images/search.png') ;
+  background-repeat: no-repeat;
+  background-position: 4px center ;
+  padding-left: 20px ;
+  height: 2em ;
+}
+</STYLE>
+
+<!--=========================================================================-->
+<!-- manual.css -->
+<STYLE type=text/css>
+h3 code {
+  font-family: inherit ;
+  font-size: inherit ;
+}
+
+pre, code {
+  font-size: 12pt ;
+}
+
+span.apii {
+  float: right ;
+  font-family: inherit ;
+  font-style: normal ;
+  font-size: small ;
+  color: gray ;
+}
+
+p+h1, ul+h1 {
+  padding-top: 0.4em ;
+  padding-bottom: 0.4em ;
+  padding-left: 24px ;
+  margin-left: -24px ;
+  background-color: #E0E0FF ;
+  border-radius: 8px ;
+}
+</STYLE>
+
+<!--=========================================================================-->
+<STYLE type=text/css>
+ul {
+  list-style-type: none ;
+  list-style-position: outside ;
+}
+ul.bulleted {
+  list-style-type: disc ;
+} 
+</STYLE>
+</head>
+
+<!--=========================================================================-->
+<body>
+<HR>
+<H1>
+<A HREF="../../home.html"><IMG SRC="../../images/logo.gif" ALT="" BORDER=0></A>
+LuaBridge 2.0 Reference Manual
+</H1>
+
+<P>
+<A HREF="manual.html">start</A>
+&middot;
+<A HREF="#contents">contents</A>
+&middot;
+<A HREF="#index">index</A>
+&middot;
+<A HREF="../">other versions</A>
+<HR>
+<SMALL>
+Copyright &copy; 2011&ndash;2012 Lua.org, PUC-Rio.
+Freely available under the terms of the
+<A HREF="../../license.html">Lua license</A>.
+</SMALL>
+
+<H2><A NAME="contents">Contents</A></H2>
+<UL style="padding: 0">
+<LI><A HREF="manual.html#1">1 &ndash; Introduction</A>
+<UL>
+<LI><A HREF="manual.html#1.1">1.1 &ndash; Repository</A>
+</UL>
+<P>
+<LI><A HREF="manual.html#2">2 &ndash; Binding C++ to Lua</A>
+<UL>
+<LI><A HREF="manual.html#2.1">2.1 &ndash; Registration</A>
+<UL>
+<LI><A HREF="manual.html#2.1.1">2.1.1 &ndash; Namespaces</A>
+<LI><A HREF="manual.html#2.1.1">2.1.2 &ndash; Data, Properties, Functions, and CFunctions</A>
+</UL>
+<LI><A HREF="manual.html#2.2">2.2 &ndash; Class Objects</A>
+<LI><A HREF="manual.html#2.3">2.3 &ndash; Property Member Proxies</A>
+<LI><A HREF="manual.html#2.4">2.4 &ndash; Constructors</A>
+</UL>
+
+<!--========================================================================-->
+
+<h1>1 &ndash; <a name="1">Introduction</a></h1>
+
+  <p>
+  <a href="https://github.com/vinniefalco/LuaBridge">LuaBridge</a> is a
+  lightweight and dependency-free library for making C++ data, functions, and
+  classes available to <a href="http://wwww.lua.org">Lua</a>, a powerful, fast,
+  lightweight, embeddable scripting language. LuaBridge has been tested and
+  works with Lua revisions starting from 5.1.5, although it should work in any
+  version of Lua from 5.1.0 and later.
+
+  <p>
+  LuaBridge offers the following features:
+
+  <ul class="bulleted" title="Features">
+    <li>No Makefile, no .cpp files, just include one header!</li>
+    <li>Simple, light, and nothing else needed (like Boost).</li>
+    <li>No macros, settings, or configuration scripts needed.</li>
+    <li>Supports different object lifetime management models.</li>
+    <li>Convenient, type-safe access to the Lua stack.</li>
+    <li>Automatic function parameter type binding.</li>
+    <li>Easy access to Lua objects like tables and functions.</li>
+    <li>Written in a clear and easy to debug style.</li>
+    <li>Does not require C++11.</li>
+  </ul>
+
+  <p>
+  LuaBridge is distributed as a single header file. You simply add
+  <code>#include "LuaBridge.h"</code> where you want to bind your functions,
+  classes, and variables. There are no additional source files, no compilation
+  settings, and no Makefiles or IDE-specific project files. LuaBridge is easy
+  to integrate.
+
+  <p>
+  C++ concepts like variables and classes are made available to Lua through a
+  process called <em>registration</em>. Because Lua is weakly typed, the resulting
+  structure is not rigid. The API is based on C++ template metaprogramming. It
+  contains template code to automatically generate at compile-time the various
+  Lua C API calls necessary to export your program's classes and functions to
+  the Lua environment.
+
+<!--========================================================================-->
+
+<h2>1.1 &ndash; <a name="1.1">Repository</a></h2>
+
+  <p>
+  The official repository is located at
+  <a href="https://github.com/vinniefalco/LuaBridge">https://github.com/vinniefalco/LuaBridge</a>.
+  The branches are organized as follows:
+
+  <ul>
+    <li><b>master</b>: Tagged, stable release versions.
+    <li><b>release</b>: A temporarily created branch that holds a release candidate for review.
+    <li><b>develop</b>: Contains work in progress, possibly unfinished or with bugs.
+  </ul>
+
+  <p>
+  These repositories are also available:
+
+  <ul>
+    <li><b><a href="https://github.com/vinniefalco/LuaBridgeUnitTests">LuaBridgeUnitTests</a></b>
+      A stand alone command line application to exercise LuaBridge functionality.
+    <li><b><a href="https://github.com/vinniefalco/LuaBridgeDemo">LuaBridgeUnitDemo</a></b>
+      A stand alone GUI application that provides an interactive console.
+  </ul>
+
+<!--========================================================================-->
+
+<h1>2 &ndash; <a name="2">Binding C++ to Lua</a></h1>
+
+  <p>
+  When a C++ program embeds the Lua scripting language, there are two important
+  requirements. One is the binding of C++ to Lua. This is the process by which
+  the functions and data in the C++ program are exposed to the Lua code. The
+  other requirement is to expose Lua types and functions to C++. Each of these
+  requirements is handled by its own interface in LuaBridge. Here we will
+  describe the interface for binding C++ to Lua.
+
+<!--========================================================================-->
+
+<h2>2.1 &ndash; <a name="2.1">Registration</a></h2>
+
+  <p>
+  In order to expose C++ data and functions to Lua, each piece of exported
+  information must be <em>registered</em>. There are five types of objects that
+  LuaBridge can register:
+
+  <ul>
+    <li><b>Data</b>: Global or static variables, data members, and static data members.
+    <li><b>Functions</b>: Regular functions, member functions, and static member functions.
+    <li><b>CFunctions</b>: A regular function, member function, or static member function
+      that uses the <code>lua_CFunction</code> calling convention.
+    <li><b>Namespaces</b>: A Lua table that contains other registrations.
+    <li><b>Properties</b>: Global properties, property members, and static property
+      members. These appear like data to Lua, but are implemented in C++ using functions
+      to get and set the values.
+  </ul>
+
+  <p>
+  Both data and properties can be marked as <em>read-only</em> at the time of
+  registration. This is different from <code>const</code>; the values of these
+  objects can be modified on the C++ side, but Lua scripts cannot change them.
+  Code samples that follow are in C++ or Lua, depending on context. For brevity
+  of exposition code samples in C++ assume the traditional variable
+  <code>lua_State* L</code> is defined, and that a <code>using namespace luabridge</code>
+  using-directive is in effect.
+
+<!--========================================================================-->
+
+<h3>2.1.1 &ndash; <a name="2.1.1">Namespaces</a></h3>
+
+  All LuaBridge registrations take place in a <en>namespace</em>. When we refer
+  to a <em>namespace</em> we are always talking about a namespace in the Lua
+  sense, which is implemented using tables. The namespace need not correspond
+  to a C++ namespace; in fact no C++ namespaces need to exist at all unless you
+  want them to. LuaBridge namespaces are visible only to Lua scripts; they are
+  used as a logical grouping tool. To obtain access to the global namespace
+  we write:
+
+  <pre>
+      getGlobalNamespace (L);
+  </pre>
+
+  <p>
+  This returns an object on which further registrations can be performed. The
+  subsequent registrations will go into the global namespace, a practice which
+  is not recommended. Instead, we can add our own namespace by writing:
+
+  <pre>
+      getGlobalNamespace (L)
+        .beginNamespace ("test");
+  </pre>
+
+  <p>
+  This creates a table in <code>_G</code> called "test". Since we have not
+  performed any registrations, this table will be empty except for some
+  bookkeeping key/value pairs. LuaBridge reserves all identifiers that start
+  with a double underscore. So <code>__test</code> would be an invalid name
+  (although LuaBridge will silently accept it). Functions like
+  <code>beginNamespace</code> return the corresponding object on which we can
+  make more registrations. Given:
+
+  <pre>
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .beginNamespace ("detail")
+          .endNamespace ()
+          .beginNamespace ("utility")
+          .endNamespace ()
+        .endNamespace ();
+  </pre>
+
+  <p>
+  The results are accessible to Lua as <code>test</code>, <code>test.detail</code>,
+  and <code>test.utility</code>. Here we introduce the <code>endNamespace</code>
+  function; it returns an object representing the original enclosing namespace.
+  All LuaBridge functions which  create registrations return an object upon which
+  subsequent registrations can be made, allowing for an unlimited number of
+  registrations to be chained together using the dot operator. Adding two objects
+  with the same name, in the same namespace, results in undefined behavior
+  (although LuaBridge will silently accept it).
+
+  A namespace can be re-opened later to add more functions. This lets you split
+  up the registration between different source files. These are equivalent:
+
+  <pre>
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .addFunction ("foo", foo)
+        .endNamespace ();
+
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .addFunction ("bar", bar)
+        .endNamespace ();
+  </pre>
+
+  and
+
+  <pre>
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .addFunction ("foo", foo)
+          .addFunction ("bar", bar)
+        .endNamespace ();
+  </pre>
+
+<!--========================================================================-->
+
+<h3>2.1.2 &ndash; <a name="2.1.2">Data, Properties, Functions, and CFunctions</a></h3>
+
+  <p>
+  These are registered into a namespace using <code>addVariable</code>,
+  <code>addProperty</code>, <code>addFunction</code>, and <code>addCFunction</code>.
+  When registered functions are called by scripts, LuaBridge automatically takes
+  care of the conversion of arguments into the appropriate data type when doing
+  so is possible. This automated system works for the function's return value,
+  and up to 8 parameters although more can be added by extending the templates.
+  Pointers, references, and objects of class type as parameters are treated
+  specially, and explained later. If we have:
+
+  <pre>
+      int globalVar;
+      static float staticVar;
+
+      std::string stringProperty;
+      std::string getString () { return stringProperty; }
+      void setString (std::string s) { return s; }
+
+      int foo () { return 42; }
+      void bar (char const*) { }
+      int cFunc (lua_State* L) { return 0; }
+  </pre>
+
+  <p>
+  These are registered with:
+
+  <pre>
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .addVariable ("var1", &globalVar)
+          .addVariable ("var2", &staticVar, false)     // read-only
+          .addProperty ("prop1", getString, setString)
+          .addProperty ("prop2", getString)            // read only
+          .addFunction ("foo", foo)
+          .addFunction ("bar", bar)
+          .addCFunction ("cfunc", cFunc)
+        .endNamespace ();
+  </pre>
+
+  <p>
+  Variables can be marked <em>read-only</em> by passing <code>false</code> in
+  the second optional parameter. If the parameter is omitted, <em>true</em> is
+  used making the variable read/write. Properties are marked read-only by
+  omitting the set function. After the registrations above, the following Lua
+  identifiers are valid:
+
+  <pre>
+      test        -- a namespace
+      test.var1   -- a lua_Number variable
+      test.var2   -- a read-only lua_Number variable
+      test.prop1  -- a lua_String property
+      test.prop2  -- a read-only lua_String property
+      test.foo    -- a function returning a lua_Number
+      test.bar    -- a function taking a lua_String as a parameter
+      test.cfunc  -- a function with a variable argument list and multi-return
+  </pre>
+
+  <p>
+  Note that <code>test.prop1</code> and `test.prop2` both refer to the
+  same value. However, since <code>test.prop2</code> is read-only, assignment
+  attempts will generate a run-time error. These Lua statements have the stated effects:
+
+  <pre>
+      test.var1 = 5         -- okay
+      test.var2 = 6         -- error: var2 is not writable
+      test.prop1 = "Hello"  -- okay
+      test.prop1 = 68       -- okay, Lua converts the number to a string.
+      test.prop2 = "bar"    -- error: prop2 is not writable
+
+      test.foo ()           -- calls foo and discards the return value
+      test.var1 = foo ()    -- calls foo and stores the result in var1
+      test.bar ("Employee") -- calls bar with a string
+      test.bar (test)       -- error: bar expects a string not a table
+  </pre>
+
+  <p>
+  LuaBridge does not support overloaded functions nor is it likely to in the
+  future. Since Lua is dynamically typed, any system that tries to resolve a set
+  of parameters passed from a script will face considerable ambiguity when
+  trying to choose an appropriately matching C++ function signature.
+
+<!--========================================================================-->
+
+<h2>2.2 &ndash; <a name="2.2">Class Objects</a></h2>
+
+  A class registration is opened using either <code>beginClass</code> or
+  <code>deriveClass</code> and ended using <code>endClass</code>. Once
+  registered, a class can later be re-opened for more registrations using
+  <code>beginClass</code>. However, <code>deriveClass</code> should only be
+  used once. To add more registrations to an already registered derived class,
+  use <code>beginClass</code> on it. These declarations:
+
+  <pre>
+      struct A {
+        static int staticData;
+        static float staticProperty;
+          
+        static float getStaticProperty () { return staticProperty; }
+        static void setStaticProperty (float f) { staticProperty = f; }
+        static void staticFunc () { }
+
+        static int staticCFunc () { return 0; }
+
+        std::string dataMember;
+
+        char dataProperty;
+        char getProperty () const { return dataProperty; }
+        void setProperty (char v) { dataProperty = v; }
+
+        void func1 () { }
+        virtual void virtualFunc () { }
+
+        int cfunc (lua_State* L) { return 0; }
+      };
+
+      struct B : public A {
+        double dataMember2;
+
+        void func1 () { }
+        void func2 () { }
+        void virtualFunc () { }
+      };
+
+      int A::staticData;
+      float A::staticProperty;
+  </pre>
+
+  <p>
+  Are registered using:
+
+  <pre>
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .beginClass <A> ("A")
+            .addStaticData ("staticData", &A::staticData)
+            .addStaticProperty ("staticProperty", &A::staticProperty)
+            .addStaticFunction ("staticFunc", &A::staticFunc)
+            .addStaticCFunction ("staticCFunc", &A::staticCFunc)
+            .addData ("data", &A::dataMember)
+            .addProperty ("prop", &A::getProperty, &A::setProperty)
+            .addFunction ("func1", &A::func1)
+            .addFunction ("virtualFunc", &A::virtualFunc)
+            .addCFunction ("cfunc", &A::cfunc)
+          .endClass ()
+          .deriveClass <B, A> ("B")
+            .addData ("data", &B::dataMember2)
+            .addFunction ("func1", &B::func1)
+            .addFunction ("func2", &B::func2)
+          .endClass ()
+        .endNameSpace ();
+  </pre>
+
+  <p>
+  Method registration works just like function registration.  Virtual methods
+  work normally; no special syntax is needed. const methods are detected and
+  const-correctness is enforced, so if a function returns a const object (or
+  a container holding to a const object) to Lua, that reference to the object
+  will be considered const and only const methods can be called on it.
+  Destructors are registered automatically for each class.
+
+  <p>
+  As with regular variables and properties, class data and properties can be
+  marked read-only by passing false in the second parameter, or omitting the set
+  set function respectively. The `deriveClass` takes two template arguments: the
+  class to be registered, and its base class.  Inherited methods do not have to
+  be re-declared and will function normally in Lua. If a class has a base class
+  that is **not** registered with Lua, there is no need to declare it as a
+  subclass.
+
+<!--========================================================================-->
+
+<h2>2.3 &ndash; <a name="2.3">Property Member Proxies</a></h2>
+
+  <p>
+  Sometimes when registering a class which comes from a third party library, the
+  data is not exposed in a way that can be expressed as a pointer to member,
+  there are no get or set functions, or the get and set functons do not have the
+  right function signature. Since the class declaration is closed for changes,
+  LuaBridge allows for a <em>property member proxy</em>. This is a pair of get
+  and set flat functions which take as their first parameter a pointer to
+  the object. This is easily understood with the following example:
+
+  <pre>
+      // Third party declaration, can't be changed
+      struct Vec 
+      {
+        float coord [3];
+      };
+  </pre>
+
+  <p>
+  Taking the address of an array element, e.g. <code>&Vec::coord [0]</code>
+  results in an error instead of a pointer-to-member. The class is closed for
+  modifications, but we want to export Vec objects to Lua using the familiar
+  object notation. To do this, first we add a "helper" class:
+
+  <pre>
+      struct VecHelper
+      {
+        template <unsigned index>
+        static float get (Vec const* vec)
+        {
+          return vec->coord [index];
+        }
+
+        template <unsigned index>
+        static void set (Vec* vec, float value)
+        {
+          vec->coord [index] = value;
+        }
+      };
+  </pre>
+
+  <p>
+  This helper class is only used to provide property member proxies.
+  <code>Vec</code> continues to be used in the C++ code as it was before.
+  Now we can register the <code>Vec</code> class with property member proxies for
+  <code>x</code>, <code>y</code>, and <code>z</code>:
+
+  <pre>
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .beginClass <Vec> ("Vec")
+            .addProperty ("x", &amp;VecHelper::get <0>, &amp;VecHelper::set <0>)
+            .addProperty ("y", &amp;VecHelper::get <1>, &amp;VecHelper::set <1>)
+            .addProperty ("z", &amp;VecHelper::get <2>, &amp;VecHelper::set <2>)
+          .endClass ()
+        .endNamespace ();
+  </pre>
+
+<!--========================================================================-->
+
+<h2>2.4 &ndash; <a name="2.4">Constructors</a></h2>
+
+  <p>
+  A single constructor may be added for a class using <code>addConstructor</code>.
+  LuaBridge cannot automatically determine the number and types of constructor
+  parameters like it can for functions and methods, so you must provide them.
+  This is done by specifying the signature of the desired constructor function
+  as the first template parameter to <code>addConstructor</code>. The parameter
+  types will be extracted from this (the return type is ignored).  For example,
+  these statements register constructors for the given classes:
+
+  <pre>
+      struct A {
+        A ();
+      };
+
+      struct B {
+        explicit B (char const* s, int nChars);
+      };
+
+      getGlobalNamespace (L)
+        .beginNamespace ("test")
+          .beginClass <A> ("A")
+            .addConstructor <void (*) (void)> ()
+          .endClass ()
+          .beginClass &lt;B> ("B")
+            .addConstructor <void (*) (char const*, int)> ()
+          .endClass ()
+        .endNamespace ();
+  </pre>
+
+  <p>
+  Constructors added in this fashion are called from Lua using the fully
+  qualified name of the class. This Lua code will create instances of
+  <code>A</code> and <code>B</code>.
+
+  <pre>
+      a = test.A ()           -- Create a new A.
+      b = test.B ("hello", 5) -- Create a new B.
+      b = test.B ()           -- Error: expected string in argument 1
+  </pre>
+
+<!--========================================================================-->
+
+</body>
+</html>
+
