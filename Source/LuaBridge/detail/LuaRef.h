@@ -336,7 +336,7 @@ public:
       break;
 
     case LUA_TBOOLEAN:
-      os << cast <bool> () ? "true" : "false";
+      os << (cast <bool> () ? "true" : "false");
       break;
 
     case LUA_TSTRING:
