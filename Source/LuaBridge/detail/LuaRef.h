@@ -284,7 +284,6 @@ public:
   }
 
   /* VF: This function seems extraneous.
-  /*
   void createTable (const char *name )
   {
     createTable ();
