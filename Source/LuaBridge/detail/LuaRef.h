@@ -63,7 +63,7 @@ private:
     int m_ref;          // registry ref to the table
 
   public:
-    Proxy (lua_State *L, int ref, char const *key )
+    Proxy (lua_State *L, int ref, char const *key)
       : m_L (L), m_key (key), m_ref (ref)
     {
     }
@@ -113,44 +113,6 @@ private:
       Stack <U>::push (m_L, u);
       lua_setfield (m_L, -2, m_key.c_str ());
     }
-
-#if 0
-    double operator= (double value)
-    {
-      LuaPop p(m_L);
-      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
-      lua_pushnumber (m_L, value);
-      lua_setfield (m_L, -2, m_key.c_str ());
-      return value;
-    }
-
-    std::string & operator = (std::string & str )
-    {
-      operator = (str.c_str ());			// Just re-use the const char * code.
-
-      return str;
-    }
-
-    const char * operator = (const char *str )
-    {
-      LuaPop p(m_L);
-      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
-      lua_pushstring (m_L, str);
-      lua_setfield (m_L, -2, m_key.c_str ());
-
-      return str;
-    }
-
-    lua_CFunction operator = (lua_CFunction func )
-    {
-      LuaPop p(m_L);
-      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
-      lua_pushcfunction (m_L, func);
-      lua_setfield (m_L, -2, m_key.c_str ());
-
-      return func;
-    }
-#endif
 
     LuaRef & operator = (LuaRef &obj )
     {
@@ -330,6 +292,16 @@ public:
   {
     createTable ();
     store (name);
+  }
+  */
+
+  /*
+  template <class U>
+  Proxy operator[] (U key)
+  {
+    Stack <U>::push (m_L);
+    LuaRef keyRef (FromStack (m_L));
+    return Proxy (m_L, m_ref, keyRef);
   }
   */
 

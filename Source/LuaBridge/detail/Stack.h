@@ -43,6 +43,17 @@ struct Stack <lua_State*>
   }
 };
 
+/** Push a lua_CFunction.
+*/
+template <>
+struct Stack <lua_CFunction>
+{
+  static void push (lua_State* L, lua_CFunction f)
+  {
+    lua_pushcfunction (L, f);
+  }
+};
+
 /* Basic types.
 */
 
@@ -111,35 +122,18 @@ template <> struct Stack <
 
 // bool
 template <>
-struct Stack <bool>
-{
-  static inline void push (lua_State* L, bool value)
-  {
-    lua_pushboolean (L, value ? 1 : 0);
-  }
-
-  static inline bool get (lua_State* L, int index)
-  {
-    luaL_checktype (L, index, LUA_TBOOLEAN);
-
-    return lua_toboolean (L, index) ? true : false;
-  }
+struct Stack <
+  bool> { static inline void push (lua_State* L,
+  bool value) { lua_pushboolean (L, value ? 1 : 0); } static inline
+  bool get (lua_State* L, int index) { luaL_checktype (L, index, LUA_TBOOLEAN); return
+    lua_toboolean (L, index) ? true : false; }
 };
 
 // char
-template <>
-struct Stack <char>
-{
-  static inline void push (lua_State* L, char value)
-  {
-    char str [2] = { value, 0 };
-    lua_pushstring (L, str);
-  }
-
-  static inline char get (lua_State* L, int index)
-  {
-    return luaL_checkstring (L, index) [0];
-  }
+template <> struct Stack <
+  char> { static inline void push (lua_State* L,
+  char value) { char str [2] = { value, 0 }; lua_pushstring (L, str); } static inline
+  char get (lua_State* L, int index) { return luaL_checkstring (L, index) [0]; }
 };
 
 // null terminated string
@@ -148,18 +142,12 @@ struct Stack <char const*>
 {
   static inline void push (lua_State* L, char const* str)
   {
-    if (str)
-      lua_pushstring (L, str);
-    else
-      lua_pushnil (L);
+    str ? lua_pushstring (L, str) : lua_pushnil (L);
   }
 
   static inline char const* get (lua_State* L, int index)
   {
-    if (lua_isnil (L, index))
-      return 0;
-    else
-      return luaL_checkstring (L, index);
+    return lua_isnil (L, index) ? 0 : luaL_checkstring (L, index);
   }
 };
 
