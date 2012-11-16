@@ -27,11 +27,6 @@
 */
 //==============================================================================
 
-// Forward declaration
-//
-template <class T>
-struct Stack;
-
 /** Receive the lua_State* as an argument.
 */
 template <>
@@ -147,7 +142,10 @@ struct Stack <char const*>
 {
   static inline void push (lua_State* L, char const* str)
   {
-    str ? lua_pushstring (L, str) : lua_pushnil (L);
+    if (str != 0)
+      lua_pushstring (L, str);
+    else
+      lua_pushnil (L);
   }
 
   static inline char const* get (lua_State* L, int index)

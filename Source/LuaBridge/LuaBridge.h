@@ -39,6 +39,11 @@
 namespace luabridge
 {
 
+// Forward declaration
+//
+template <class T>
+struct Stack;
+
 #include "detail/LuaHelpers.h"
 
 #include "detail/TypeTraits.h"
@@ -47,7 +52,6 @@ namespace luabridge
 #include "detail/Constructor.h"
 #include "detail/Stack.h"
 #include "detail/ClassInfo.h"
-#include "detail/CFunctions.h"
 
 class LuaRef;
 
@@ -90,6 +94,7 @@ private:
 };
 
 #include "detail/Userdata.h"
+#include "detail/CFunctions.h"
 
 //=============================================================================
 
@@ -870,7 +875,7 @@ private:
       typedef int (T::*MFP)(lua_State*);
       assert (lua_istable (L, -1));
       new (lua_newuserdata (L, sizeof (mfp))) MFP (mfp);
-      lua_pushcclosure (L, &CallMemberCFunction <T>::f, 1);
+      lua_pushcclosure (L, &CFunc::CallMemberCFunction <T>::f, 1);
       rawsetfield (L, -3, name); // class table
 
       return *this;
@@ -885,7 +890,7 @@ private:
       typedef int (T::*MFP)(lua_State*) const;
       assert (lua_istable (L, -1));
       new (lua_newuserdata (L, sizeof (mfp))) MFP (mfp);
-      lua_pushcclosure (L, &CallConstMemberCFunction <T>::f, 1);
+      lua_pushcclosure (L, &CFunc::CallConstMemberCFunction <T>::f, 1);
       lua_pushvalue (L, -1);
       rawsetfield (L, -5, name); // const table
       rawsetfield (L, -3, name); // class table
@@ -1074,7 +1079,7 @@ public:
     rawgetfield (L, -1, "__propget");
     assert (lua_istable (L, -1));
     lua_pushlightuserdata (L, pt);
-    lua_pushcclosure (L, &getVariable <T>, 1);
+    lua_pushcclosure (L, &CFunc::getVariable <T>, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
 
@@ -1083,12 +1088,12 @@ public:
     if (isWritable)
     {
       lua_pushlightuserdata (L, pt);
-      lua_pushcclosure (L, &setVariable <T>, 1);
+      lua_pushcclosure (L, &CFunc::setVariable <T>, 1);
     }
     else
     {
       lua_pushstring (L, name);
-      lua_pushcclosure (L, &readOnlyError, 1);
+      lua_pushcclosure (L, &CFunc::readOnlyError, 1);
     }
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
@@ -1110,7 +1115,7 @@ public:
     rawgetfield (L, -1, "__propget");
     assert (lua_istable (L, -1));
     new (lua_newuserdata (L, sizeof (get))) TG (get);
-    lua_pushcclosure (L, &Call <TG (*) (void)>::f, 1);
+    lua_pushcclosure (L, &CFunc::Call <TG (*) (void)>::f, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
 
@@ -1119,12 +1124,12 @@ public:
     if (set != 0)
     {
       new (lua_newuserdata (L, sizeof (set))) TS (set);
-      lua_pushcclosure (L, &Call <void (*) (TS)>::f, 1);
+      lua_pushcclosure (L, &CFunc::Call <void (*) (TS)>::f, 1);
     }
     else
     {
       lua_pushstring (L, name);
-      lua_pushcclosure (L, &readOnlyError, 1);
+      lua_pushcclosure (L, &CFunc::readOnlyError, 1);
     }
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
