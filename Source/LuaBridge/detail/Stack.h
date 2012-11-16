@@ -52,6 +52,11 @@ struct Stack <lua_CFunction>
   {
     lua_pushcfunction (L, f);
   }
+
+  static lua_CFunction get (lua_State* L, int index)
+  {
+    return lua_tocfunction (L, index);
+  }
 };
 
 /* Basic types.

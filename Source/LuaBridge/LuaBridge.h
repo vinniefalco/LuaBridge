@@ -53,7 +53,6 @@ class LuaRef;
 
 #include "detail/LuaException.h"
 #include "detail/LuaPop.h"
-#include "detail/LuaVal.h"
 #include "detail/LuaRef.h"
 
 //------------------------------------------------------------------------------
@@ -1227,8 +1226,6 @@ inline void setHideMetatables (bool shouldHide)
 {
   Security::setHideMetatables (shouldHide);
 }
-
-#include "detail/LuaBridge.cpp"
 
 }
 
