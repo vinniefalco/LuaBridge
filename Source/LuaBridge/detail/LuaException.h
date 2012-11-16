@@ -27,40 +27,87 @@
 */
 //==============================================================================
 
-class LuaException : public std::runtime_error 
+class LuaException : public std::exception 
 {
-  std::string luaError;
-  std::string file;
-  long line;
-  lua_State *mL;
-  std::string mutable m_what;
-
-  // Do we we need a copy constuctor? I think the default supplied one works.
+private:
+  lua_State* m_L;
+  std::string m_what;
 
 public:
-  LuaException( lua_State *L, const char *str, const char *filename, long fileline ) 
-    : std::runtime_error(str), file(filename), line(fileline)
+  //----------------------------------------------------------------------------
+  /**
+      Construct a LuaException after a lua_pcall().
+  */
+  LuaException (lua_State* L, int /*code*/)
+    : m_L (L)
   {
-    if( lua_gettop( L ) != 0 )
-      if( lua_isstring( L, -1 ) )
-        luaError = lua_tostring( L, -1 );
-    mL = L;
+    whatFromStack ();
   }
 
-  std::string getLuaError() { return luaError; }
-  lua_State *getLuaState() { return mL; }
-  const char *what() const throw ()
+  //----------------------------------------------------------------------------
+
+  LuaException (lua_State *L,
+                char const*,
+                char const*,
+                long)
+    : m_L (L)
   {
-    std::stringstream ss;
-
-    ss << "*** " << std::runtime_error::what() << " ***" << std::endl; 
-    ss << "*** " << luaError << " ***" << std::endl;
-    ss << "*** In file: " << file << " Line: " << line << " ***" << std::endl;
-
-    m_what = ss.str ();
-    
-    return m_what.c_str ();
+    whatFromStack ();
   }
 
-  ~LuaException() throw () {}
+  //----------------------------------------------------------------------------
+
+  ~LuaException() throw ()
+  {
+  }
+
+  //----------------------------------------------------------------------------
+
+  char const* what() const throw ()
+  {
+    return m_what.c_str();
+  }
+
+  //============================================================================
+  /**
+      Throw an exception.
+
+      This centralizes all the exceptions thrown, so that we can set
+      breakpoints before the stack is unwound, or otherwise customize the
+      behavior.
+  */
+  template <class Exception>
+  static void Throw (Exception e)
+  {
+    throw e;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Wrapper for lua_pcall that throws.
+  */
+  static void pcall (lua_State* L, int nargs = 0, int nresults = 0, int msgh = 0)
+  {
+    int code = lua_pcall (L, nargs, nresults, msgh);
+
+    if (code != LUA_OK)
+      Throw (LuaException (L, code));
+  }
+
+  //----------------------------------------------------------------------------
+
+protected:
+  void whatFromStack ()
+  {
+    if (lua_gettop (m_L) > 0)
+    {
+      char const* s = lua_tostring (m_L, -1);
+      m_what = s ? s : "";
+    }
+    else
+    {
+      // stack is empty
+      m_what = "missing error";
+    }
+  }
 };
