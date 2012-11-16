@@ -55,6 +55,12 @@ inline void lua_rawsetp (lua_State* L, int idx, void const* p)
 }
 #endif
 
+#ifndef LUA_OK
+# define LUABRIDGE_LUA_OK 0
+#else
+# define LUABRIDGE_LUA_OK LUA_OK
+#endif
+
 /** Get a table value, bypassing metamethods.
 */  
 inline void rawgetfield (lua_State* L, int index, char const* key)

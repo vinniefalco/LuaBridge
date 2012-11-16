@@ -90,7 +90,7 @@ public:
   {
     int code = lua_pcall (L, nargs, nresults, msgh);
 
-    if (code != LUA_OK)
+    if (code != LUABRIDGE_LUA_OK)
       Throw (LuaException (L, code));
   }
 
