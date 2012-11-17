@@ -44,16 +44,14 @@ public:
   }
 };
 
-/** Lightweight reference to a Lua object.
+//------------------------------------------------------------------------------
+/**
+    Lightweight reference to a Lua object.
 
     The reference is maintained for the lifetime of the C++ object.
 */
 class LuaRef
 {
-private:
-  lua_State* m_L;
-  int m_ref;
-
 private:
   class Proxy;
   friend struct Stack <Proxy>;
@@ -81,6 +79,10 @@ private:
     {
     }
 
+    /** Destroy the proxy.
+
+        This does not destroy the table value.
+    */
     ~Proxy ()
     {
       luaL_unref (m_L, LUA_REGISTRYINDEX, m_keyRef);
@@ -100,7 +102,7 @@ private:
       lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_tableRef);
       lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_keyRef);
       lua_gettable (m_L, -2);
-      lua_remove (m_L, -2); // ditch the table
+      lua_remove (m_L, -2); // remove the table
     }
 
     /** Return a reference to the table value.
@@ -135,67 +137,12 @@ private:
       Stack <U>::push (m_L, u);
       lua_settable (m_L, -3);
     }
-
-#if 0
-    LuaRef& operator= (LuaRef &obj)
-    {
-      LuaPop p(m_L);
-
-      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
-      obj.push ();
-      lua_setfield (m_L, -2, m_key.c_str ());
-
-      return obj;
-    }
-
-    operator double ()
-    {
-      //luaPop p1(m_L,2);		// Removes index and table from Lua stack once out of scope.
-
-      push ();	
-
-      return lua_tonumber (m_L, -1);
-    }
-
-    operator std::string ()
-    {
-      push ();	
-      std::string str (lua_tostring (m_L, -1 ));
-      lua_pop (m_L, 2);		// Removes index and table from Lua stack
-
-      return str;
-    }
-
-    operator LuaRef ()
-    {
-      LuaPop p (m_L, 2);
-
-      push ();
-      FromStack fs (m_L);
-
-      LuaRef ref(fs);
-
-      return ref;
-    }
-
-    operator LuaVal ()
-    {
-      LuaPop p (m_L, 2);
-
-      push ();
-      FromStack fs (m_L);
-
-      LuaRef ref(fs);
-
-      LuaVal val(&ref);
-
-      return val;
-    }
-#endif
   };
 
 public:
-  /** Create an empty reference.
+  //----------------------------------------------------------------------------
+  /**
+      Create an empty reference.
 
       The LuaRef can be assigned a value later.
   */
@@ -203,18 +150,6 @@ public:
     : m_L (L)
     , m_ref (LUA_NOREF)
   {
-  }
-
-  /** Create a reference to a named global.
-
-      Numbers and strings will be copied. Changes to the referenced value
-      will not change the original. (VF: NEEDS VERIFICATION!)
-  */
-  LuaRef (lua_State *L, char const* name)
-    : m_L (L)
-  {
-    lua_getglobal (m_L, name);
-    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
   }
 
   /** Create a reference to an object at the top of the Lua stack.
@@ -230,10 +165,22 @@ public:
     }
     else
     {
-      // An argument can be made for either LUA_NOREF and LUA_REFNIL.
+      // An argument can be made for either LUA_NOREF or LUA_REFNIL.
       //
       m_ref = LUA_NOREF;
     }
+  }
+
+  /** Create a reference to a named global.
+
+      Numbers and strings will be copied. Changes to the referenced value
+      will not change the original. (VF: NEEDS VERIFICATION!)
+  */
+  LuaRef (lua_State *L, char const* name)
+    : m_L (L)
+  {
+    lua_getglobal (m_L, name);
+    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
   }
 
   /** Create a reference to a table value.
@@ -261,21 +208,9 @@ public:
     luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
   }
 
-protected:
-  /** Create a reference to this ref.
-
-      This is used internally.
-  */
-  int createRef () const
-  {
-    push ();
-    return luaL_ref (m_L, LUA_REGISTRYINDEX);
-  }
-
   //----------------------------------------------------------------------------
-
-public:
-  /** Create a new empty table and return a reference to it.
+  /**
+      Create a new empty table and return a reference to it.
   */
   static LuaRef createTable (lua_State* L)
   {
@@ -283,27 +218,68 @@ public:
     return LuaRef (FromStack (L));
   }
 
-  /* VF: This function seems extraneous.
-  void createTable (const char *name )
-  {
-    createTable ();
-    store (name);
-  }
-  */
-
   //----------------------------------------------------------------------------
-
-  /** Retrieve the lua_State associated with the reference.
+  /**
+      Retrieve the lua_State associated with the reference.
   */
   lua_State* state () const
   {
     return m_L;
   }
 
+  /** Place the object onto the Lua stack.
+  */
+  void push () const										
+  {
+    lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
+  }
+
+  /** Access a table value using a key.
+
+      This invokes metamethods.
+  */
+  template <class U>
+  Proxy operator[] (U key) const
+  {
+    Stack <U>::push (m_L, key);
+    return Proxy (m_L, m_ref);
+  }
+
+  /** Reference a different object.
+  */
+  template <class U>
+  LuaRef& operator= (U u)
+  {
+    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
+    Stack <U>::push (m_L, u);
+    luaL_ref (m_L, LUA_REGISTRYINDEX);
+    return *this;
+  }
+
+  /** Convert the referenced value to a different type.
+  */
+  template <class U>
+  U cast () const
+  {
+    LuaPop p (m_L);
+    push ();
+    return Stack <U>::get (m_L, -1);
+  }
+
+  /** Set the referenced object as a named global.
+  */
+  LuaRef& setGlobal (char const* name)
+  {
+    push ();		
+    lua_setglobal (m_L, name);
+    return *this;
+  }
+
   /** Determine the object type.
 
       The return values are the same as for lua_type().
   */
+  /** @{ */
   int type () const
   {
     int ret;
@@ -313,12 +289,51 @@ public:
     return ret;
   }
 
-  /** Place the object onto the Lua stack.
-  */
-  void push () const										
+  inline bool isNone () const
   {
-    lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
+    return m_ref == LUA_NOREF;
   }
+
+  inline bool isNil () const
+  {
+    return type () == LUA_TNIL;
+  }
+
+  inline bool isNumber () const
+  {
+    return type () == LUA_TNUMBER;
+  }
+
+  inline bool isString () const
+  {
+    return type () == LUA_TSTRING;
+  }
+
+  inline bool isTable () const
+  {
+    return type () == LUA_TTABLE;
+  }
+
+  inline bool isFunction () const
+  {
+    return type () == LUA_TFUNCTION;
+  }
+
+  inline bool isUserdata () const
+  {
+    return type () == LUA_TUSERDATA;
+  }
+
+  inline bool isThread () const
+  {
+    return type () == LUA_TTHREAD;
+  }
+
+  inline bool isLightUserdata () const
+  {
+    return type () == LUA_TLIGHTUSERDATA;
+  }
+  /** @} */
 
   /** Print a text description of the value to a stream.
   */
@@ -366,129 +381,6 @@ public:
       os << "unknown";
       break;
     }
-  }
-
-  /** Access a table value using a key.
-
-      This invokes metamethods.
-  */
-  template <class U>
-  Proxy operator[] (U key) const
-  {
-    Stack <U>::push (m_L, key);
-    return Proxy (m_L, m_ref);
-  }
-
-  /** Convert the referenced value to a different type.
-  */
-  template <class U>
-  U cast () const
-  {
-    push ();
-    return Stack <U>::get (m_L, -1);
-  }
-
-  /** Reference a different object.
-  */
-  template <class U>
-  LuaRef& operator= (U u)
-  {
-    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
-    Stack <U>::push (m_L, u);
-    luaL_ref (m_L, LUA_REGISTRYINDEX);
-    return *this;
-  }
-
-#if 0
-  /** Create a reference to an existing object.
-  */
-  LuaRef& operator= (LuaRef const& rhs)
-  {
-    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
-    m_L = rhs.m_L;
-    m_ref = rhs.createRef ();
-    return *this;
-  }
-
-  // Reference a number as a new object.
-  double operator = (double f )
-  {
-    lua_pushnumber (m_L, f);
-    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
-    return f;
-  }
-
-  // Reference a string as a new object.
-  std::string& operator = (std::string& str)
-  {
-    operator= (str.c_str ());
-    return str;
-  }
-
-  // Reference a string.
-  char const* operator= (const char *str )
-  {
-    lua_pushstring (m_L, str);
-    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);		
-    return str;
-  }
-
-  // Reference a function.
-  lua_CFunction operator = (lua_CFunction func )
-  {
-    lua_pushcfunction (m_L, func);
-    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
-    return func;
-  }
-#endif
-
-  /** Set the referenced object as a named global.
-  */
-  LuaRef& setGlobal (char const* name )
-  {
-    push ();		
-    lua_setglobal (m_L, name);
-    return *this;
-  }
-
-  // Associate referenced object as a member of a table.
-  void store (const char *name, LuaRef const& table)
-  {
-    table.push ();
-    push ();
-    lua_setfield (m_L, -2, name);	// Pops value
-    lua_pop (m_L, 1);	// Pops table
-  }
-
-  // Return as a number.
-  operator double ()
-  {
-    double ret = 0.0;
-    LuaPop p(m_L);
-    push ();
-
-    if (lua_isnumber (m_L, -1 ) )
-      ret = lua_tonumber (m_L, -1);
-    else
-      throw LuaException (m_L, "LuaRef referenced object is not a number.", __FILE__, __LINE__);
-
-    return ret;
-  }
-
-  // Return as a string
-  operator std::string ()
-  {
-    std::string ret;
-    LuaPop p(m_L);
-
-    push ();
-
-    if (lua_isstring (m_L, -1 ) )
-      ret = lua_tostring (m_L, -1);
-    else
-      throw LuaException (m_L, "LuaRef referenced object is not a string.", __FILE__, __LINE__);
-
-    return ret;
   }
 
   /** Call Lua code.
@@ -593,6 +485,21 @@ public:
     return LuaRef (FromStack (m_L));
   }
   /** @} */
+
+protected:
+  /** Create a reference to this ref.
+
+      This is used internally.
+  */
+  int createRef () const
+  {
+    push ();
+    return luaL_ref (m_L, LUA_REGISTRYINDEX);
+  }
+
+private:
+  lua_State* m_L;
+  int m_ref;
 };
 
 //------------------------------------------------------------------------------
@@ -605,6 +512,7 @@ struct Stack <LuaRef>
 public:
   static inline void push (lua_State* L, LuaRef v)
   {
+    L; // remove warning
     assert (L == v.state ());
     v.push ();
   }
@@ -626,6 +534,7 @@ struct Stack <LuaRef::Proxy>
 public:
   static inline void push (lua_State* L, LuaRef::Proxy v)
   {
+    L; // remove warning
     assert (L == v.state ());
     v.push ();
   }
