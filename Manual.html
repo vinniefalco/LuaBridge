@@ -125,33 +125,28 @@ ul.bulleted {
 </head>
 
 <!--=========================================================================-->
+
 <body>
 <HR>
 <H1>
-<A HREF="../../home.html"><IMG SRC="../../images/logo.gif" ALT="" BORDER=0></A>
+<IMG SRC="https://github.com/vinniefalco/LuaBridgeDemo/blob/gh-pages/powered-by-lua.png?raw=true" ALT="" BORDER=0>
 LuaBridge 2.0 Reference Manual
 </H1>
 
-<P>
-<A HREF="manual.html">start</A>
-&middot;
-<A HREF="#contents">contents</A>
-&middot;
-<A HREF="#index">index</A>
-&middot;
-<A HREF="../">other versions</A>
 <HR>
 <SMALL>
-Copyright &copy; 2011&ndash;2012 Lua.org, PUC-Rio.
+Copyright &copy; 2012 Vinnie Falco.
 Freely available under the terms of the
-<A HREF="../../license.html">Lua license</A>.
+<A HREF="http://www.opensource.org/licenses/mit-license.html">MIT License</A>.
 </SMALL>
 
 <H2><A NAME="contents">Contents</A></H2>
 <UL style="padding: 0">
 <LI><A HREF="manual.html#1">1 &ndash; Introduction</A>
 <UL>
-<LI><A HREF="manual.html#1.1">1.1 &ndash; Repository</A>
+<LI><A HREF="manual.html#1.1">1.1 &ndash; Design</A>
+<LI><A HREF="manual.html#1.1">1.2 &ndash; Repository</A>
+<LI><A HREF="manual.html#1.1">1.3 &ndash; License and Credits</A>
 </UL>
 <P>
 <LI><A HREF="manual.html#2">2 &ndash; Binding C++ to Lua</A>
@@ -181,6 +176,8 @@ Freely available under the terms of the
 <LI><A HREF="manual.html#2.8.4">2.8.4 &ndash; Container Constructors</A>
 <LI><A HREF="manual.html#2.8.5">2.8.5 &ndash; Mixing Lifetimes</A>
 </UL>
+</UL>
+<P>
 <LI><A HREF="manual.html#4">4 &ndash; Security</A>
 </UL>
 
@@ -200,6 +197,7 @@ Freely available under the terms of the
   LuaBridge offers the following features:
 
   <ul class="bulleted" title="Features">
+    <li><a href="http://www.opensource.org/licenses/mit-license.html">MIT Licensed</a>, no usage restrictions!</li>
     <li>No Makefile, no .cpp files, just include one header!</li>
     <li>Simple, light, and nothing else needed (like Boost).</li>
     <li>No macros, settings, or configuration scripts needed.</li>
@@ -226,9 +224,53 @@ Freely available under the terms of the
   Lua C API calls necessary to export your program's classes and functions to
   the Lua environment.
 
+  <p>
+  To expose Lua objects to C++, a class called <code>LuaRef</code> is provided.
+  The implementation allows C++ code to access Lua objects such as numbers
+  or strings, but more importantly to access things like tables and their
+  values. Using this class makes idioms like calling Lua functions simple
+  and clean.
+
 <!--========================================================================-->
 
-<h2>1.1 &ndash; <a name="1.1">Repository</a></h2>
+<h2>1.1 &ndash; <a name="1.1">Design</a></h2>
+
+  <p>
+  LuaBridge tries to be efficient as possible when creating the "glue" that
+  exposes C++ data and functions to Lua. At the same time, the code was
+  written with the intention that it is all as simple and clear as possible,
+  without resorting to obscure C++ idioms, ugly preprocessor macros, or
+  configuration settings. Furthermore, it is designed to be "header-only",
+  making it very easy to integrate into your projects.
+
+  <p>
+  Because LuaBridge was written with simplicity in mind there are some features
+  that are not available. Although it comes close to the highest possible
+  performance, LuaBridge is not quite the fastest,
+  <a href="http://code.google.com/p/oolua/">OOLua</a> slightly outperforms
+  LuaBridge in some tests. LuaBridge also does not try to implement every
+  possible feature,
+  <a href="http://www.rasterbar.com/products/luabind.html">LuaBind</a>
+  explores every corner of the C++ language (but it requires Boost).
+
+  <p>
+  LuaBridge does not support:
+
+  <ul class="bulleted">
+    <li>Enumerated constants
+    <li>More than 8 parameters on a function or method (although this can be
+        increased by adding more <code>TypeListValues</code> specializations).
+    <li>Overloaded functions, methods, or constructors.
+    <li>Global variables (variables must be wrapped in a named scope).
+    <li>Automatic conversion between STL container types and Lua tables.
+    <li>Inheriting Lua classes from C++ classes.
+    <li>Passing nil to a C++ function that expects a pointer or reference.
+    <li>Standard containers like <code>std::shared_ptr</code>.
+  </ul>
+
+<!--========================================================================-->
+
+<h2>1.2 &ndash; <a name="1.2">Repository</a></h2>
 
   <p>
   The official repository is located at
@@ -253,19 +295,57 @@ Freely available under the terms of the
 
 <!--========================================================================-->
 
-<h1>2 &ndash; <a name="2">Binding C++ to Lua</a></h1>
+<h2>1.3 &ndash; <a name="1.3">License and Credits</a></h2>
 
   <p>
-  When a C++ program embeds the Lua scripting language, there are two important
-  requirements. One is the binding of C++ to Lua. This is the process by which
-  the functions and data in the C++ program are exposed to the Lua code. The
-  other requirement is to expose Lua types and functions to C++. Each of these
-  requirements is handled by its own interface in LuaBridge. Here we will
-  describe the interface for binding C++ to Lua.
+  LuaBridge is published under the terms of the
+  <a href="http://www.opensource.org/licenses/mit-license.html">MIT License</a>:
+
+  <pre>
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+  </pre>
+
+  <p>
+  The original version of LuaBridge was written by Nathan Reed. The project
+  has been taken over by Vinnie Falco, who added new functionality and wrote
+  the new documentation. Vinnie also incorporated <code>LuaRef</code> and
+  other Lua to C++ binding contributions from Nigel Atkinson.
+
+  <p>
+  For questions, comments, or bug reports feel free to open a Github issue
+  or contact Vinnie Falco directly at the email address indicated below.
+
+  <ul>
+  <li>Copyright 2012, Vinnie Falco <a href="mailto:vinnie.falco@gmail.com">&lt;vinnie.falco@gmail.com&gt;</a>
+  <li>Copyright 2008, Nigel Atkinson <a href="mailto:suprapilot+LuaCode@gmail.com">&lt;suprapilot+LuaCode@gmail.com&gt;</a>
+  <li>Copyright 2007, Nathan Reed
+  <li>Portions from The Loki Library: Copyright (C) 2001 by Andrei Alexandrescu
+  </ul>
+
+  <p>
+  Older versions of LuaBridge up to and including 0.2 are distributed under the
+  BSD 3-Clause License. See the corresponding license file in those versions
+  for more details.
 
 <!--========================================================================-->
 
-<h2>2.1 &ndash; <a name="2.1">Registration</a></h2>
+<h1>2 &ndash; <a name="2">Binding C++ to Lua</a></h1>
 
   <p>
   In order to expose C++ data and functions to Lua, each piece of exported
@@ -273,14 +353,21 @@ Freely available under the terms of the
   LuaBridge can register:
 
   <ul>
-    <li><b>Data</b>: Global or static variables, data members, and static data members.
-    <li><b>Functions</b>: Regular functions, member functions, and static member functions.
-    <li><b>CFunctions</b>: A regular function, member function, or static member function
-      that uses the <code>lua_CFunction</code> calling convention.
-    <li><b>Namespaces</b>: A Lua table that contains other registrations.
-    <li><b>Properties</b>: Global properties, property members, and static property
-      members. These appear like data to Lua, but are implemented in C++ using functions
-      to get and set the values.
+  <table>
+    <tr><td><b>Namespaces</b>&nbsp;&nbsp;</td>
+        <td>A Lua table that contains other registrations.</td></tr>
+    <tr><td><b>Data</b>&nbsp;&nbsp;</td>
+        <td>Global or static variables, data members, and static data members.</td></tr>
+    <tr><td><b>Functions&nbsp;&nbsp;</b></td>
+        <td>Regular functions, member functions, and static member functions.</td></tr>
+    <tr><td><b>CFunctions&nbsp;&nbsp;</b></td>
+        <td>A regular function, member function, or static member function
+            that uses the <code>lua_CFunction</code> calling convention.</td></tr>
+    <tr><td><b>Properties&nbsp;&nbsp;</b></td>
+        <td>Global properties, property members, and static property members.
+          These appear like data to Lua, but are implemented in C++ using
+          functions to get and set the values.</td></tr>
+  </table>
   </ul>
 
   <p>
@@ -294,7 +381,7 @@ Freely available under the terms of the
 
 <!--========================================================================-->
 
-<h3>2.1.1 &ndash; <a name="2.1.1">Namespaces</a></h3>
+<h2>2.1 &ndash; <a name="2.1">Namespaces</a></h2>
 
   All LuaBridge registrations take place in a <en>namespace</em>. When we refer
   to a <em>namespace</em> we are always talking about a namespace in the Lua
@@ -374,7 +461,7 @@ Freely available under the terms of the
 
 <!--========================================================================-->
 
-<h3>2.1.2 &ndash; <a name="2.1.2">Data, Properties, Functions, and CFunctions</a></h3>
+<h2>2.2 &ndash; <a name="2.2">Data, Properties, Functions, and CFunctions</a></h2>
 
   <p>
   These are registered into a namespace using <code>addVariable</code>,
@@ -459,7 +546,7 @@ Freely available under the terms of the
 
 <!--========================================================================-->
 
-<h2>2.2 &ndash; <a name="2.2">Class Objects</a></h2>
+<h2>2.3 &ndash; <a name="2.3">Class Objects</a></h2>
 
   A class registration is opened using either <code>beginClass</code> or
   <code>deriveClass</code> and ended using <code>endClass</code>. Once
@@ -504,12 +591,12 @@ Freely available under the terms of the
   </pre>
 
   <p>
-  Are registered using:
+  are registered using:
 
   <pre>
       getGlobalNamespace (L)
         .beginNamespace ("test")
-          .beginClass <A> ("A")
+          .beginClass &lt;A&gt; ("A")
             .addStaticData ("staticData", &A::staticData)
             .addStaticProperty ("staticProperty", &A::staticProperty)
             .addStaticFunction ("staticFunc", &A::staticFunc)
@@ -520,7 +607,7 @@ Freely available under the terms of the
             .addFunction ("virtualFunc", &A::virtualFunc)
             .addCFunction ("cfunc", &A::cfunc)
           .endClass ()
-          .deriveClass <B, A> ("B")
+          .deriveClass &lt;B, A&gt; ("B")
             .addData ("data", &B::dataMember2)
             .addFunction ("func1", &B::func1)
             .addFunction ("func2", &B::func2)
@@ -547,7 +634,7 @@ Freely available under the terms of the
 
 <!--========================================================================-->
 
-<h2>2.3 &ndash; <a name="2.3">Property Member Proxies</a></h2>
+<h2>2.4 &ndash; <a name="2.4">Property Member Proxies</a></h2>
 
   <p>
   Sometimes when registering a class which comes from a third party library, the
@@ -608,7 +695,7 @@ Freely available under the terms of the
 
 <!--========================================================================-->
 
-<h2>2.4 &ndash; <a name="2.4">Constructors</a></h2>
+<h2>2.5 &ndash; <a name="2.5">Constructors</a></h2>
 
   <p>
   A single constructor may be added for a class using <code>addConstructor</code>.
@@ -652,18 +739,20 @@ Freely available under the terms of the
 
 <!--========================================================================-->
 
-<h2>2.5 &ndash; <a name="2.5">Lua Stack</a></h2>
+<h2>2.6 &ndash; <a name="2.6">Lua Stack</a></h2>
 
-  In the Lua C API, all operations on the `lua_State` are performed through the
-  Lua stack. In order to pass parameters back and forth between C++ and Lua,
-  LuaBridge uses specializations of this template class concept:
+  In the Lua C API, all operations on the <code>lua_State</code> are performed
+  through the Lua stack. In order to pass parameters back and forth between C++
+  and Lua, LuaBridge uses specializations of this template class concept:
 
-      template <class T>
+  <pre>
+      template &lt;class T&gt;
       struct Stack
       {
         static void push (lua_State* L, T t);
         static T get (lua_State* L, int index);
       };
+  </pre>
 
   The Stack template class specializations are used automatically for variables,
   properties, data members, property members, function arguments and return
@@ -673,8 +762,8 @@ Freely available under the terms of the
     <li><code>bool</code>
     <li><code>char</code>, converted to a string of length one.
     <li><code>char const*</code> and <code>std::string</code> strings.
-    <li><code>Integers</code>, <code>float</code>, and <code>double</code>,
-      converted to <code>Lua_number</code>.
+    <li>Integers, <code>float</code>, and <code>double</code>,
+        converted to <code>Lua_number</code>.
   </ul>
 
   <p>
@@ -686,7 +775,7 @@ Freely available under the terms of the
 
   <pre>
       template &lt;&gt;
-      struct Stack <juce::String>
+      struct Stack &lt;juce::String&gt;
       {
         static void push (lua_State* L, juce::String s)
         {
@@ -700,7 +789,7 @@ Freely available under the terms of the
       };
   </pre>
 
-<h2>2.6 &ndash; <a name="2.6"><code>lua_State*</code></a></h2>
+<h2>2.7 &ndash; <a name="2.7"><code>lua_State*</code></a></h2>
 
   <p>
   Sometimes it is convenient from within a bound function or member function
@@ -730,10 +819,10 @@ Freely available under the terms of the
   correctly even for the state created by coroutines. Undefined behavior results
   if the <code>lua_State*</code> is not the last parameter.
 
-<h2>2.7 &ndash; <a name="2.7">Passing Objects</a></h2>
+<h1>3 &ndash; <a name="2.7">Passing Objects</a></h1>
 
   <p>
-  An object of a registered class `T` may be passed to Lua as:
+  An object of a registered class <code>T</code> may be passed to Lua as:
 
   <ul>
     <li><b><code>T*</code></b> or <b><code>T&amp;</code></b>:
@@ -744,7 +833,7 @@ Freely available under the terms of the
       with <em>Lua lifetime</em>.
   </ul>
 
-<h3>2.7.1 &ndash; <a name="2.7.1">C++ Lifetime</a></h3>
+<h2>3.1 &ndash; <a name="3.1">C++ Lifetime</a></h2>
 
   <p>
   The creation and deletion of objects with <em>C++ lifetime</em> is controlled by
@@ -771,7 +860,7 @@ Freely available under the terms of the
       lua_setglobal (L, "ap");
   </pre>
 
-<h3>2.7.2 &ndash; <a name="2.7.2">Lua Lifetime</a></h3>
+<h2>3.2 &ndash; <a name="3.2">Lua Lifetime</a></h2>
 
   <p>
   When an object of a registered class is passed by value to Lua, it will have
@@ -827,7 +916,7 @@ Freely available under the terms of the
   reference, the usual warnings apply about accessing the reference later,
   after it has been garbage collected.
 
-<h3>2.7.3 &ndash; <a name="2.7.3">Pointers, References, and Pass by Value</a></h3>
+<h2>3.3 &ndash; <a name="3.3">Pointers, References, and Pass by Value</a></h2>
 
   <p>
   When C++ objects are passed from Lua back to C++ as arguments to functions,
@@ -884,7 +973,7 @@ Freely available under the terms of the
   instead. Attempting to pass a null pointer to a C++ function expecting a
   reference results in <code>lua_error</code> being called.
 
-<h2>2.8 &ndash; <a name="2.8">Shared Lifetime</a></h2>
+<h2>3.4 &ndash; <a name="3.4">Shared Lifetime</a></h2>
 
   <p>
   LuaBridge supports a <em>shared lifetime</em> model: dynamically allocated
@@ -896,7 +985,7 @@ Freely available under the terms of the
   a container when the correspoding specialization is present. Two styles of
   containers come with LuaBridge, including the necessary specializations.
 
-<h3>2.8.1 &ndash; <a name="2.8.1"><code>RefCountedObjectPtr</code></a></h3>
+<h3>3.4.1 &ndash; <a name="3.4.1"><code>RefCountedObjectPtr</code></a></h3>
 
   <p>
   This is an intrusive style container. Your existing class declaration must be
@@ -926,7 +1015,7 @@ Freely available under the terms of the
       }
   </pre>
 
-<h3>2.8.2 &ndash; <a name="2.8.2"><code>RefCountedPtr</code></a></h3>
+<h3>3.4.2 &ndash; <a name="3.4.2"><code>RefCountedPtr</code></a></h3>
 
   <p>
   This is a non intrusive reference counted pointer. The reference counts are
@@ -966,49 +1055,48 @@ Freely available under the terms of the
       }
   </pre>
 
-<h3>2.8.3 &ndash; <a name="2.8.3">User-defined Containers</a></h3>
+<h3>3.4.3 &ndash; <a name="3.4.3">User-defined Containers</a></h3>
 
-<h3>2.8.4 &ndash; <a name="2.8.4">Container Constructors</a></h3>
-
-<h3>2.8.5 &ndash; <a name="2.8.5">Mixing Lifetimes</a></h3>
-
-<h1>4 &ndash; <a name="4">Security</a></h1>
-
-  ### Custom Containers
-
+  <p>
   If you have your own container, you must provide a specialization of
-  `ContainerTraits` in the `luabridge` namespace for your type before it will be
-  recognized by LuaBridge (or else the code will not compile):
+  <code>ContainerTraits</code> in the <code>luabridge</code> namespace for your
+  type before it will be recognized by LuaBridge (or else the code will not
+  compile):
 
-      template <class T>
-      struct ContainerTraits <CustomContainer <T> >
+  <pre>
+      template &lt;class T&gt;
+      struct ContainerTraits &lt;CustomContainer &lt;T&gt; &gt;
       {
         typedef typename T Type;
 
-        static T* get (CustomContainer <T> const& c)
+        static T* get (CustomContainer &lt;T&gt; const&amp; c)
         {
           return c.getPointerToObject ();
         }
       };
+  </pre>
 
-  Standard containers like `std::shared_ptr` or `boost::shared_ptr` **will not
-  work**. This is because of type erasure; when the object goes from C++ to
-  Lua and back to C++, there is no way to associate the object with the
-  original container. The new container is constructed from a pointer to the
-  object instead of an existing container. The result is undefined behavior
-  since there are now two sets of reference counts.
+  Standard containers like <code>std::shared_ptr</code> or
+  <code>boost::shared_ptr</code> <b>will not work</b>. This is because of type
+  erasure; when the object goes from C++ to Lua and back to C++, there is no
+  way to associate the object with the original container. The new container is
+  constructed from a pointer to the object instead of an existing container.
+  The result is undefined behavior since there are now two sets of reference
+  counts.
 
-  ### Container Construction
+<h3>3.4.4 &ndash; <a name="3.4.4">Container Constructors</a></h3>
 
+  <p>
   When a constructor is registered for a class, there is an additional
   optional second template parameter describing the type of container to use.
   If this parameter is specified, calls to the constructor will create the
   object dynamically, via operator new, and place it a container of that
   type. The container must have been previously specialized in
-  `ContainerTraits`, or else a compile error will result. This code will
-  register two objects, each using a constructor that creates an object
+  <code>ContainerTraits</code>, or else a compile error will result. This code
+  will register two objects, each using a constructor that creates an object
   with Lua lifetime using the specified container:
 
+  <pre>
       class C : public RefCountedObject
       {
         C () { }
@@ -1021,16 +1109,18 @@ Freely available under the terms of the
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
-          .beginClass <C> ("C")
+          .beginClass &lt;C&gt; ("C")
             .addConstructor <void (*) (void), RefCountedObjectPtr <C> > ()
           .endClass ()
-          .beginClass <D> ("D")
+          .beginClass &lt;D&gt; ("D")
             .addConstructor <void (*) (void), RefCountedPtr <D> > ()
           .endClass ();
         .endNamespace ()
+  </pre>
 
-  ### Mixing Lifetimes
+<h3>3.5 &ndash; <a name="3.5">Mixing Lifetimes</a></h3>
 
+  <p>
   Mixing object lifetime models is entirely possible, subject to the usual
   caveats of holding references to objects which could get deleted. For
   example, C++ can be called from Lua with a pointer to an object of class
@@ -1039,33 +1129,39 @@ Freely available under the terms of the
   object). An object store in a container can be passed to a function expecting
   a pointer. These conversion work seamlessly.
 
-  ## Security
+<h1>4 &ndash; <a name="4">Security</a></h1>
 
+  <p>
   The metatables and userdata that LuaBridge creates in the `lua_State*` are
   protected using a security system, to eliminate the possibility of undefined
   behavior resulting from scripted manipulation of the environment. The
   security system has these components:
 
-  - Class and const class tables use the 'table proxy' technique. The
-    corresponding metatables have `__index` and `__newindex` metamethods,
-    so these class tables are immutable from Lua.
-
-  - Metatables have `__metatable` set to a boolean value. Scripts cannot
-    obtain the metatable from a LuaBridge object.
-
-  - Classes are mapped to metatables through the registry, which Lua scripts
+  <ul class="bulleted">
+    <li>
+    Class and const class tables use the <em>table proxy</em> technique. The
+    corresponding metatables have <code>__index</code> and <code>__newindex</code>
+    metamethods, so these class tables are immutable from Lua.
+    <li>
+    Metatables have <code>__metatable</code> set to a boolean value. Scripts
+    cannot obtain the metatable from a LuaBridge object.
+    <li>
+    Classes are mapped to metatables through the registry, which Lua scripts
     cannot access. The global environment does not expose metatables
-
-  - Metatables created by LuaBridge are tagged with a lightuserdata key which
+    <li>
+    Metatables created by LuaBridge are tagged with a lightuserdata key which
     is unique in the process. Other libraries cannot forge a LuaBridge
     metatable.
+  </ul>
 
+  <p>
   This security system can be easily bypassed if scripts are given access to
   the debug library (or functionality similar to it, i.e. a raw `getmetatable`).
   The security system can also be defeated by C code in the host, either by
   revealing the unique lightuserdata key to another module or by putting a
   LuaBridge metatable in a place that can be accessed by scripts.
 
+  <p>
   When a class member function is called, or class property member accessed,
   the `this` pointer is type-checked. This is because member functions exposed
   to Lua are just plain functions that usually get called with the Lua colon
@@ -1073,54 +1169,11 @@ Freely available under the terms of the
   dynamic typing makes this type-checking mandatory to prevent undefined
   behavior resulting from improper use.
 
-  If a type check error occurs, LuaBridge uses the `lua_error` mechanism to
-  trigger a failure. A host program can always recover from an error through
-  the use of `lua_pcall`; proper usage of LuaBridge will never result in
-  undefined behavior.
-
-  ## Limitations 
-
-  LuaBridge does not support:
-
-  - Enumerated constants
-  - More than 8 parameters on a function or method (although this can be
-    increased by adding more `TypeListValues` specializations).
-  - Overloaded functions, methods, or constructors.
-  - Global variables (variables must be wrapped in a named scope).
-  - Automatic conversion between STL container types and Lua tables.
-  - Inheriting Lua classes from C++ classes.
-  - Passing nil to a C++ function that expects a pointer or reference.
-  - Standard containers like `std::shared_ptr`.
-
-  ## Development
-
-  [Github][3] is the new official home for LuaBridge. The old SVN repository is
-  deprecated since it is no longer used, or maintained. The original author has
-  graciously passed the reins to Vinnie Falco for maintaining and improving the
-  project. To obtain the older official releases, checkout the tags from 0.2.1
-  and earlier.
-
-  If you are an existing LuaBridge user, a new LuaBridge user, or a potential
-  LuaBridge user, we welcome your input, feedback, and contributions. Feel
-  free to open Issues, or fork the repository. All questions, comments,
-  suggestions, and/or proposed changes will be handled by the new maintainer.
-
-  ## License
-
-  Copyright 2012, [Vinnie Falco][1] ([e-mail][0]) <br>
-  Copyright 2007, Nathan Reed <br>
-    
-  Portions from The Loki Library: <br>
-  Copyright (C) 2001 by Andrei Alexandrescu
-
-  License: The [MIT License][2]
-
-  Older versions of LuaBridge up to and including 0.2 are distributed under the
-  BSD 3-Clause License. See the corresponding license file in those versions
-  for more details.
-
-
-
+  <p>
+  If a type check error occurs, LuaBridge uses the <code>lua_error</code>
+  mechanism to trigger a failure. A host program can always recover from
+  an error through the use of <code>lua_pcall</code>; proper usage of
+  LuaBridge will never result in undefined behavior.
 
 </body>
 </html>
