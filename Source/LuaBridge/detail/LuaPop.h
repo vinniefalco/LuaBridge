@@ -31,14 +31,23 @@
 
 /** Cleans up the Lua stack.
 
-    This is useful when exceptions can be thrown.
+    This is useful when exceptions can be thrown, or when it is necessary to
+    pop the stack after a return statement. For example:
+
+        template <class U>
+        U cast (lua_State* L)
+        {
+          LuaPop p (L);
+          ...
+          return U ();
+        }
 */
 class LuaPop
 {
 public:
   explicit LuaPop (lua_State* L, int top = -1)
     : m_L (L)
-    , m_top ((top == -1) ? top : lua_gettop (L))
+    , m_top ((top == -1) ? lua_gettop (L) : top)
   {
   }
 

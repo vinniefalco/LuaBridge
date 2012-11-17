@@ -137,6 +137,16 @@ private:
       Stack <U>::push (m_L, u);
       lua_settable (m_L, -3);
     }
+
+    /** Access a table value using a key.
+
+        This invokes metamethods.
+    */
+    template <class U>
+    Proxy operator[] (U key) const
+    {
+      return LuaRef (*this) [key];
+    }
   };
 
 public:
@@ -234,47 +244,6 @@ public:
     lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
   }
 
-  /** Access a table value using a key.
-
-      This invokes metamethods.
-  */
-  template <class U>
-  Proxy operator[] (U key) const
-  {
-    Stack <U>::push (m_L, key);
-    return Proxy (m_L, m_ref);
-  }
-
-  /** Reference a different object.
-  */
-  template <class U>
-  LuaRef& operator= (U u)
-  {
-    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
-    Stack <U>::push (m_L, u);
-    luaL_ref (m_L, LUA_REGISTRYINDEX);
-    return *this;
-  }
-
-  /** Convert the referenced value to a different type.
-  */
-  template <class U>
-  U cast () const
-  {
-    LuaPop p (m_L);
-    push ();
-    return Stack <U>::get (m_L, -1);
-  }
-
-  /** Set the referenced object as a named global.
-  */
-  LuaRef& setGlobal (char const* name)
-  {
-    push ();		
-    lua_setglobal (m_L, name);
-    return *this;
-  }
-
   /** Determine the object type.
 
       The return values are the same as for lua_type().
@@ -289,51 +258,72 @@ public:
     return ret;
   }
 
-  inline bool isNone () const
-  {
-    return m_ref == LUA_NOREF;
-  }
-
-  inline bool isNil () const
-  {
-    return type () == LUA_TNIL;
-  }
-
-  inline bool isNumber () const
-  {
-    return type () == LUA_TNUMBER;
-  }
-
-  inline bool isString () const
-  {
-    return type () == LUA_TSTRING;
-  }
-
-  inline bool isTable () const
-  {
-    return type () == LUA_TTABLE;
-  }
-
-  inline bool isFunction () const
-  {
-    return type () == LUA_TFUNCTION;
-  }
-
-  inline bool isUserdata () const
-  {
-    return type () == LUA_TUSERDATA;
-  }
-
-  inline bool isThread () const
-  {
-    return type () == LUA_TTHREAD;
-  }
-
-  inline bool isLightUserdata () const
-  {
-    return type () == LUA_TLIGHTUSERDATA;
-  }
+  inline bool isNone () const { return m_ref == LUA_NOREF; }
+  inline bool isNil () const { return type () == LUA_TNIL; }
+  inline bool isNumber () const { return type () == LUA_TNUMBER; }
+  inline bool isString () const { return type () == LUA_TSTRING; }
+  inline bool isTable () const { return type () == LUA_TTABLE; }
+  inline bool isFunction () const { return type () == LUA_TFUNCTION; }
+  inline bool isUserdata () const { return type () == LUA_TUSERDATA; }
+  inline bool isThread () const { return type () == LUA_TTHREAD; }
+  inline bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
   /** @} */
+
+  /** Return the referenced value as a different type.
+  */
+  template <class T>
+  T cast () const
+  {
+    LuaPop p (m_L);
+    push ();
+    return Stack <T>::get (m_L, -1);
+  }
+
+  /** Universal conversion operator.
+  */
+  template <class T>
+  inline operator T () const
+  {
+    return cast <T> ();
+  }
+
+  /** Explicit type conversions.
+  */
+  /** @{ */
+  //inline operator bool () const { return cast <bool> (); }
+  //inline operator int () const { return cast <int> (); }
+  /** @} */
+
+  /** Access a table value using a key.
+
+      This invokes metamethods.
+  */
+  template <class T>
+  Proxy operator[] (T key) const
+  {
+    Stack <T>::push (m_L, key);
+    return Proxy (m_L, m_ref);
+  }
+
+  /** Reference a different object.
+  */
+  template <class T>
+  LuaRef& operator= (T t)
+  {
+    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
+    Stack <T>::push (m_L, t);
+    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
+    return *this;
+  }
+
+  /** Set the referenced object as a named global.
+  */
+  LuaRef& setGlobal (char const* name)
+  {
+    push ();		
+    lua_setglobal (m_L, name);
+    return *this;
+  }
 
   /** Print a text description of the value to a stream.
   */
