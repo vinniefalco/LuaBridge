@@ -46,6 +46,21 @@ public:
 
 //------------------------------------------------------------------------------
 /**
+    Type tag for representing LUA_TNIL.
+
+    Construct one of these using `Nil()` to represent a Lua nil. This is faster
+    than creating a reference in the registry to nil. Example:
+
+        LuaRef t (LuaRef::createTable (L));
+        ...
+        t ["k"] = Nil(); // assign nil
+*/
+struct Nil
+{
+};
+
+//------------------------------------------------------------------------------
+/**
     Lightweight reference to a Lua object.
 
     The reference is maintained for the lifetime of the C++ object.
@@ -166,14 +181,24 @@ private:
 public:
   //----------------------------------------------------------------------------
   /**
-      Create an empty reference.
+      Create a reference with no value.
 
       The LuaRef can be assigned a value later.
   */
-  explicit LuaRef (lua_State *L)
+  explicit LuaRef (lua_State* L)
     : m_L (L)
-    , m_ref (LUA_NOREF)
+    , m_ref (LUA_REFNIL)
   {
+  }
+
+  /** Create a reference to a value.
+  */
+  template <class T>
+  LuaRef (lua_State* L, T v)
+    : m_L (L)
+  {
+    Stack <T>::push (m_L, v);
+    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
   }
 
   /** Create a reference to an object at the top of the Lua stack.
@@ -189,26 +214,15 @@ public:
     }
     else
     {
-      // An argument can be made for either LUA_NOREF or LUA_REFNIL.
-      //
-      m_ref = LUA_NOREF;
+      m_ref = LUA_REFNIL;
     }
-  }
-
-  /** Create a reference to a named global.
-  */
-  LuaRef (lua_State *L, char const* name)
-    : m_L (L)
-  {
-    lua_getglobal (m_L, name);
-    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
   }
 
   /** Create a reference to a table value.
   */
-  LuaRef (Proxy const& te)
-    : m_L (te.state ())
-    , m_ref (te.createRef ())
+  LuaRef (Proxy const& v)
+    : m_L (v.state ())
+    , m_ref (v.createRef ())
   {
   }
 
@@ -236,6 +250,14 @@ public:
   static LuaRef createTable (lua_State* L)
   {
     lua_newtable (L);
+    return LuaRef (FromStack (L));
+  }
+
+  /** Return a reference to a named global.
+  */
+  static LuaRef getGlobal (lua_State *L, char const* name)
+  {
+    lua_getglobal (L, name);
     return LuaRef (FromStack (L));
   }
 
@@ -290,7 +312,7 @@ public:
     return Stack <T>::get (m_L, -1);
   }
 
-  /** Universal conversion operator.
+  /** Universal implicit conversion operator.
 
       NOTE: Visual Studio 2010 and 2012 have a bug where this function
             is not used. See:
@@ -298,6 +320,14 @@ public:
       http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/e30b2664-a92d-445c-9db2-e8e0fbde2014
       https://connect.microsoft.com/VisualStudio/feedback/details/771509/correct-code-doesnt-compile
 
+          // This code snippet fails to compile in vs2010,vs2012
+          struct S {
+            template <class T> inline operator T () const { return T (); }
+          };
+          int main () {
+            S () || false;
+            return 0;
+          }
   */
   template <class T>
   inline operator T () const
@@ -325,13 +355,13 @@ public:
     return Proxy (m_L, m_ref);
   }
 
-  /** Reference a different object.
+  /** Assign a different value to this LuaRef.
   */
   template <class T>
-  LuaRef& operator= (T t)
+  LuaRef& operator= (T v)
   {
     luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
-    Stack <T>::push (m_L, t);
+    Stack <T>::push (m_L, v);
     m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
     return *this;
   }
@@ -513,6 +543,18 @@ private:
 };
 
 //------------------------------------------------------------------------------
+
+/** Stack specialization for Nil
+*/
+template <>
+struct Stack <Nil>
+{
+public:
+  static inline void push (lua_State* L, Nil)
+  {
+    lua_pushnil (L);
+  }
+};
 
 /** Stack specialization for LuaRef.
 */
