@@ -309,7 +309,7 @@ public:
   {
     LuaPop p (m_L);
     push ();
-    return Stack <T>::get (m_L, -1);
+    return Stack <T>::get (m_L, lua_gettop (m_L));
   }
 
   /** Universal implicit conversion operator.
