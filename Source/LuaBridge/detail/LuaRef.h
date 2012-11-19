@@ -182,9 +182,6 @@ public:
   }
 
   /** Create a reference to a named global.
-
-      Numbers and strings will be copied. Changes to the referenced value
-      will not change the original. (VF: NEEDS VERIFICATION!)
   */
   LuaRef (lua_State *L, char const* name)
     : m_L (L)
