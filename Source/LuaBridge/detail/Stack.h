@@ -125,8 +125,7 @@ template <>
 struct Stack <
   bool> { static inline void push (lua_State* L,
   bool value) { lua_pushboolean (L, value ? 1 : 0); } static inline
-  bool get (lua_State* L, int index) { luaL_checktype (L, index, LUA_TBOOLEAN); return
-    lua_toboolean (L, index) ? true : false; }
+  bool get (lua_State* L, int index) { return lua_toboolean (L, index) ? true : false; }
 };
 
 // char
