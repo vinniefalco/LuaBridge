@@ -79,6 +79,12 @@ private:
     {
     }
 
+    /** Create a Proxy via copy constructor.
+
+        It is best to avoid code paths that invoke this, because it creates
+        an extra temporary Lua reference. Typically this is done by passing
+        the Proxy parameter as a `const` reference.
+    */
     Proxy (Proxy const& other)
       : m_L (other.m_L)
       , m_tableRef (other.m_tableRef)
