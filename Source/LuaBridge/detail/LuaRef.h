@@ -79,6 +79,14 @@ private:
     {
     }
 
+    Proxy (Proxy const& other)
+      : m_L (other.m_L)
+      , m_tableRef (other.m_tableRef)
+    {
+      lua_rawgeti (m_L, LUA_REGISTRYINDEX, other.m_keyRef);
+      m_keyRef = luaL_ref (m_L, LUA_REGISTRYINDEX);
+    }
+
     /** Destroy the proxy.
 
         This does not destroy the table value.
@@ -277,6 +285,13 @@ public:
   }
 
   /** Universal conversion operator.
+
+      NOTE: Visual Studio 2010 and 2012 have a bug where this function
+            is not used. See:
+
+      http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/e30b2664-a92d-445c-9db2-e8e0fbde2014
+      https://connect.microsoft.com/VisualStudio/feedback/details/771509/correct-code-doesnt-compile
+
   */
   template <class T>
   inline operator T () const
@@ -285,10 +300,12 @@ public:
   }
 
   /** Explicit type conversions.
+
+      These are here to work around defects in Visual Studio.
   */
   /** @{ */
-  //inline operator bool () const { return cast <bool> (); }
-  //inline operator int () const { return cast <int> (); }
+  inline bool toBool () const { return cast <bool> (); }
+  inline int toInt () const { return cast <int> (); }
   /** @} */
 
   /** Access a table value using a key.
@@ -497,7 +514,9 @@ template <>
 struct Stack <LuaRef>
 {
 public:
-  static inline void push (lua_State* L, LuaRef v)
+  // The value is const& to prevent a copy construction.
+  //
+  static inline void push (lua_State* L, LuaRef const& v)
   {
     L; // remove warning
     assert (L == v.state ());
@@ -519,7 +538,9 @@ template <>
 struct Stack <LuaRef::Proxy>
 {
 public:
-  static inline void push (lua_State* L, LuaRef::Proxy v)
+  // The value is const& to prevent a copy construction.
+  //
+  static inline void push (lua_State* L, LuaRef::Proxy const& v)
   {
     L; // remove warning
     assert (L == v.state ());
