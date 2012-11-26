@@ -112,6 +112,9 @@ inline void push (lua_State* L, T t)
 //------------------------------------------------------------------------------
 /**
   Set a global value in the lua_State.
+
+  @note This works on any type specialized by `Stack`, including `LuaRef` and
+        its table proxies.
 */
 template <class T>
 inline void setGlobal (lua_State* L, T t, char const* name)

@@ -221,6 +221,17 @@ private:
     m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
   }
 
+protected:
+  /** Create a reference to this ref.
+
+      This is used internally.
+  */
+  int createRef () const
+  {
+    push ();
+    return luaL_ref (m_L, LUA_REGISTRYINDEX);
+  }
+
 public:
   //----------------------------------------------------------------------------
   /**
@@ -272,6 +283,10 @@ public:
   //----------------------------------------------------------------------------
   /**
       Create a new empty table and return a reference to it.
+
+      It is also possible to use the free function `newTable`.
+
+      @see ::getGlobal
   */
   static LuaRef newTable (lua_State* L)
   {
@@ -280,6 +295,10 @@ public:
   }
 
   /** Return a reference to a named global.
+
+      It is also possible to use the free function `getGlobal`.
+
+      @see ::getGlobal
   */
   static LuaRef getGlobal (lua_State *L, char const* name)
   {
@@ -396,15 +415,6 @@ public:
     luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
     Stack <T>::push (m_L, v);
     m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
-    return *this;
-  }
-
-  /** Set the referenced object as a named global.
-  */
-  LuaRef& setGlobal (char const* name)
-  {
-    push ();		
-    lua_setglobal (m_L, name);
     return *this;
   }
 
@@ -559,17 +569,6 @@ public:
   }
   /** @} */
 
-protected:
-  /** Create a reference to this ref.
-
-      This is used internally.
-  */
-  int createRef () const
-  {
-    push ();
-    return luaL_ref (m_L, LUA_REGISTRYINDEX);
-  }
-
 private:
   lua_State* m_L;
   int m_ref;
@@ -628,6 +627,26 @@ public:
     v.push ();
   }
 };
+
+//------------------------------------------------------------------------------
+
+/** Create a reference to a new, empty table.
+
+    This is a syntactic abbreviation for LuaRef::newTable().
+*/
+inline LuaRef newTable (lua_State* L)
+{
+  return LuaRef::newTable (L);
+}
+
+/** Create a reference to a value in the global table.
+
+    This is a syntactic abbreviation for LuaRef::getGlobal().
+*/
+inline LuaRef getGlobal (lua_State *L, char const* name)
+{
+  return LuaRef::getGlobal (L, name);
+}
 
 //------------------------------------------------------------------------------
 
