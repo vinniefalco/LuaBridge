@@ -27,23 +27,6 @@
 */
 //==============================================================================
 
-class FromStack
-{
-private:
-  lua_State* m_L;
-
-public:
-  explicit FromStack (lua_State* L)
-    : m_L (L)
-  {
-  }
-
-  lua_State* const state () const
-  {
-    return m_L;
-  }
-};
-
 //------------------------------------------------------------------------------
 /**
     Type tag for representing LUA_TNIL.
@@ -217,6 +200,27 @@ private:
     }
   };
 
+  /** Type tag for stack construction.
+  */
+  struct FromStack
+  {
+  };
+
+  //----------------------------------------------------------------------------
+  /**
+      Create a reference to an object at the top of the Lua stack.
+
+      The stack element is popped. This constructor is private and not invoked
+      directly. Instead, use the `fromStack` function.
+  */
+  LuaRef (lua_State* L, FromStack)
+    : m_L (L)
+  {
+    assert (lua_gettop (m_L) >= 1);
+
+    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
+  }
+
 public:
   //----------------------------------------------------------------------------
   /**
@@ -238,23 +242,6 @@ public:
   {
     Stack <T>::push (m_L, v);
     m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
-  }
-
-  /** Create a reference to an object at the top of the Lua stack.
-
-      The stack element is popped.
-  */
-  explicit LuaRef (FromStack fs)
-    : m_L (fs.state ())
-  {
-    if (lua_gettop (m_L) >= 1)
-    {
-      m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
-    }
-    else
-    {
-      m_ref = LUA_REFNIL;
-    }
   }
 
   /** Create a reference to a table value.
@@ -289,7 +276,7 @@ public:
   static LuaRef newTable (lua_State* L)
   {
     lua_newtable (L);
-    return LuaRef (FromStack (L));
+    return LuaRef (L, FromStack ());
   }
 
   /** Return a reference to a named global.
@@ -297,7 +284,14 @@ public:
   static LuaRef getGlobal (lua_State *L, char const* name)
   {
     lua_getglobal (L, name);
-    return LuaRef (FromStack (L));
+    return LuaRef (L, FromStack ());
+  }
+
+  /** Create a reference from the top of the stack.
+  */
+  static LuaRef fromStack (lua_State* L)
+  {
+    return LuaRef (L, FromStack ());
   }
 
   //----------------------------------------------------------------------------
@@ -473,7 +467,7 @@ public:
   {
     push ();
     LuaException::pcall (m_L, 0, 1);
-    return LuaRef (FromStack (m_L));
+    return LuaRef (m_L, FromStack ());
   }
 
   template <class P1>
@@ -482,7 +476,7 @@ public:
     push ();
     Stack <P1>::push (m_L, p1);
     LuaException::pcall (m_L, 1, 1);
-    return LuaRef (FromStack (m_L));
+    return LuaRef (m_L, FromStack ());
   }
 
   template <class P1, class P2>
@@ -492,7 +486,7 @@ public:
     Stack <P1>::push (m_L, p1);
     Stack <P2>::push (m_L, p2);
     LuaException::pcall (m_L, 2, 1);
-    return LuaRef (FromStack (m_L));
+    return LuaRef (m_L, FromStack ());
   }
 
   template <class P1, class P2, class P3>
@@ -503,7 +497,7 @@ public:
     Stack <P2>::push (m_L, p2);
     Stack <P3>::push (m_L, p3);
     LuaException::pcall (m_L, 3, 1);
-    return LuaRef (FromStack (m_L));
+    return LuaRef (m_L, FromStack ());
   }
 
   template <class P1, class P2, class P3, class P4, class P5>
@@ -516,7 +510,7 @@ public:
     Stack <P4>::push (m_L, p4);
     Stack <P5>::push (m_L, p5);
     LuaException::pcall (m_L, 5, 1);
-    return LuaRef (FromStack (m_L));
+    return LuaRef (m_L, FromStack ());
   }
 
   template <class P1, class P2, class P3, class P4, class P5, class P6>
@@ -530,7 +524,7 @@ public:
     Stack <P5>::push (m_L, p5);
     Stack <P6>::push (m_L, p6);
     LuaException::pcall (m_L, 6, 1);
-    return LuaRef (FromStack (m_L));
+    return LuaRef (m_L, FromStack ());
   }
 
   template <class P1, class P2, class P3, class P4, class P5, class P6, class P7>
@@ -545,7 +539,7 @@ public:
     Stack <P6>::push (m_L, p6);
     Stack <P7>::push (m_L, p7);
     LuaException::pcall (m_L, 7, 1);
-    return LuaRef (FromStack (m_L));
+    return LuaRef (m_L, FromStack ());
   }
 
   template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8>
@@ -561,7 +555,7 @@ public:
     Stack <P7>::push (m_L, p7);
     Stack <P8>::push (m_L, p8);
     LuaException::pcall (m_L, 8, 1);
-    return LuaRef (FromStack (m_L));
+    return LuaRef (m_L, FromStack ());
   }
   /** @} */
 
