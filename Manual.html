@@ -1,13 +1,14 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!doctype html>
 <html>
 <head>
 <title>LuaBridge 2.0 Reference Manual</title>
-<link rel="stylesheet" type="text/css" href="manual.css">
 <META HTTP-EQUIV="content-type" CONTENT="text/html; charset=iso-8859-1">
 
 <!--=========================================================================-->
+
 <!-- lua.css -->
 <STYLE TYPE="text/css">
+
 body {
   color: #000000 ;
   background-color: #FFFFFF ;
@@ -84,7 +85,7 @@ hr {
 
 <!--=========================================================================-->
 <!-- manual.css -->
-<STYLE type=text/css>
+<STYLE TYPE="text/css">
 h3 code {
   font-family: inherit ;
   font-size: inherit ;
@@ -113,12 +114,12 @@ p+h1, ul+h1 {
 </STYLE>
 
 <!--=========================================================================-->
-<STYLE type=text/css>
+<STYLE TYPE="text/css">
 ul {
   list-style-type: none ;
   list-style-position: outside ;
 }
-ul.bulleted {
+ul.bullets {
   list-style-type: disc ;
 } 
 </STYLE>
@@ -127,13 +128,15 @@ ul.bulleted {
 <!--=========================================================================-->
 
 <body>
-<HR>
+
+<hr>
 <H1>
 <IMG SRC="https://github.com/vinniefalco/LuaBridgeDemo/blob/gh-pages/powered-by-lua.png?raw=true" ALT="" BORDER=0>
 LuaBridge 2.0 Reference Manual
 </H1>
 
 <HR>
+
 <SMALL>
 Copyright &copy; 2012 Vinnie Falco.
 Freely available under the terms of the
@@ -142,42 +145,41 @@ Freely available under the terms of the
 
 <H2><A NAME="contents">Contents</A></H2>
 <UL style="padding: 0">
-<LI><A HREF="manual.html#1">1 &ndash; Introduction</A>
-<UL>
-<LI><A HREF="manual.html#1.1">1.1 &ndash; Design</A>
-<LI><A HREF="manual.html#1.1">1.2 &ndash; Repository</A>
-<LI><A HREF="manual.html#1.1">1.3 &ndash; License and Credits</A>
-</UL>
-<P>
-<LI><A HREF="manual.html#2">2 &ndash; Binding C++ to Lua</A>
-<UL>
-<LI><A HREF="manual.html#2.1">2.1 &ndash; Namespaces</A>
-<LI><A HREF="manual.html#2.2">2.2 &ndash; Data, Properties, Functions, and CFunctions</A>
-<LI><A HREF="manual.html#2.3">2.3 &ndash; Class Objects</A>
-<LI><A HREF="manual.html#2.4">2.4 &ndash; Property Member Proxies</A>
-<LI><A HREF="manual.html#2.5">2.5 &ndash; Constructors</A>
-<LI><A HREF="manual.html#2.6">2.6 &ndash; Lua Stack</A>
-<LI><A HREF="manual.html#2.7">2.7 &ndash; <code>lua_State*</code></A>
-</UL>
-<LI><A HREF="manual.html#3">3 &ndash; Passing Objects</A>
-<UL>
-<LI><A HREF="manual.html#3.1">3.1 &ndash; C++ Lifetime</A>
-<LI><A HREF="manual.html#3.2">3.2 &ndash; Lua Lifetime</A>
-<LI><A HREF="manual.html#3.3">3.3 &ndash; Pointers, References, and Pass by Value</A>
-<LI><A HREF="manual.html#3.4">3.4 &ndash; Shared Lifetime</A>
-<UL>
-<LI><A HREF="manual.html#3.4.1">3.4.1 &ndash; <code>RefCountedObjectPtr</code></A>
-<LI><A HREF="manual.html#3.4.2">3.4.2 &ndash; <code>RefCountedPtr</code></A>
-<LI><A HREF="manual.html#3.4.3">3.4.3 &ndash; User-defined Containers</A>
-<LI><A HREF="manual.html#3.4.4">3.4.4 &ndash; Container Constructors</A>
-</UL>
-<LI><A HREF="manual.html#3.5">3.5 &ndash; Mixing Lifetimes</A>
-</UL>
-</UL>
-<P>
-<LI><A HREF="manual.html#4">3 &ndash; Lua Values from C++</A>
-<P>
-<LI><A HREF="manual.html#5">5 &ndash; Security</A>
+  <LI><A HREF="manual.html#1">1 &ndash; Introduction</A>
+  <UL>
+    <LI><A HREF="manual.html#1.1">1.1 &ndash; Design</A>
+    <LI><A HREF="manual.html#1.1">1.2 &ndash; Repository</A>
+    <LI><A HREF="manual.html#1.1">1.3 &ndash; License and Credits</A>
+  </UL>
+  <P>
+  <LI><A HREF="manual.html#2">2 &ndash; Accessing C++ from Lua</A>
+  <UL>
+    <LI><A HREF="manual.html#2.1">2.1 &ndash; Namespaces</A>
+    <LI><A HREF="manual.html#2.2">2.2 &ndash; Data, Properties, Functions, and CFunctions</A>
+    <LI><A HREF="manual.html#2.3">2.3 &ndash; Class Objects</A>
+    <LI><A HREF="manual.html#2.4">2.4 &ndash; Property Member Proxies</A>
+    <LI><A HREF="manual.html#2.5">2.5 &ndash; Constructors</A>
+    <LI><A HREF="manual.html#2.6">2.6 &ndash; Lua Stack</A>
+    <LI><A HREF="manual.html#2.7">2.7 &ndash; <code>lua_State*</code></A>
+  </UL>
+  <LI><A HREF="manual.html#3">3 &ndash; Passing Objects</A>
+  <UL>
+    <LI><A HREF="manual.html#3.1">3.1 &ndash; C++ Lifetime</A>
+    <LI><A HREF="manual.html#3.2">3.2 &ndash; Lua Lifetime</A>
+    <LI><A HREF="manual.html#3.3">3.3 &ndash; Pointers, References, and Pass by Value</A>
+    <LI><A HREF="manual.html#3.4">3.4 &ndash; Shared Lifetime</A>
+    <UL>
+      <LI><A HREF="manual.html#3.4.1">3.4.1 &ndash; <code>RefCountedObjectPtr</code></A>
+      <LI><A HREF="manual.html#3.4.2">3.4.2 &ndash; <code>RefCountedPtr</code></A>
+      <LI><A HREF="manual.html#3.4.3">3.4.3 &ndash; User-defined Containers</A>
+      <LI><A HREF="manual.html#3.4.4">3.4.4 &ndash; Container Constructors</A>
+    </UL>
+    <LI><A HREF="manual.html#3.5">3.5 &ndash; Mixing Lifetimes</A>
+  </UL>
+  <P>
+  <LI><A HREF="manual.html#4">4 &ndash; Accessing Lua from C++</A>
+  <P>
+  <LI><A HREF="manual.html#5">5 &ndash; Security</A>
 </UL>
 
 <!--========================================================================-->
@@ -196,7 +198,7 @@ Freely available under the terms of the
   <p>
   LuaBridge offers the following features:
 
-  <ul class="bulleted" title="Features">
+  <ul class="bullets" title="Features">
     <li><a href="http://www.opensource.org/licenses/mit-license.html">MIT Licensed</a>, no usage restrictions!</li>
     <li>No Makefile, no .cpp files, just include one header!</li>
     <li>Simple, light, and nothing else needed (like Boost).</li>
@@ -256,7 +258,7 @@ Freely available under the terms of the
   <p>
   LuaBridge does not support:
 
-  <ul class="bulleted">
+  <ul class="bullets">
     <li>Enumerated constants
     <li>More than 8 parameters on a function or method (although this can be
         increased by adding more <code>TypeListValues</code> specializations).
@@ -345,14 +347,13 @@ Freely available under the terms of the
 
 <!--========================================================================-->
 
-<h1>2 &ndash; <a name="2">Binding C++ to Lua</a></h1>
+<h1>2 &ndash; <a name="2">Accessing C++ from Lua</a></h1>
 
   <p>
   In order to expose C++ data and functions to Lua, each piece of exported
   information must be <em>registered</em>. There are five types of objects that
   LuaBridge can register:
 
-  <ul>
   <table>
     <tr><td><b>Namespaces</b>&nbsp;&nbsp;</td>
         <td>A Lua table that contains other registrations.</td></tr>
@@ -368,7 +369,6 @@ Freely available under the terms of the
           These appear like data to Lua, but are implemented in C++ using
           functions to get and set the values.</td></tr>
   </table>
-  </ul>
 
   <p>
   Both data and properties can be marked as <em>read-only</em> at the time of
@@ -383,7 +383,7 @@ Freely available under the terms of the
 
 <h2>2.1 &ndash; <a name="2.1">Namespaces</a></h2>
 
-  All LuaBridge registrations take place in a <en>namespace</em>. When we refer
+  All LuaBridge registrations take place in a <em>namespace</em>. When we refer
   to a <em>namespace</em> we are always talking about a namespace in the Lua
   sense, which is implemented using tables. The namespace need not correspond
   to a C++ namespace; in fact no C++ namespaces need to exist at all unless you
@@ -492,8 +492,8 @@ Freely available under the terms of the
   <pre>
       getGlobalNamespace (L)
         .beginNamespace ("test")
-          .addVariable ("var1", &globalVar)
-          .addVariable ("var2", &staticVar, false)     // read-only
+          .addVariable ("var1", &amp;globalVar)
+          .addVariable ("var2", &amp;staticVar, false)     // read-only
           .addProperty ("prop1", getString, setString)
           .addProperty ("prop2", getString)            // read only
           .addFunction ("foo", foo)
@@ -597,20 +597,20 @@ Freely available under the terms of the
       getGlobalNamespace (L)
         .beginNamespace ("test")
           .beginClass &lt;A&gt; ("A")
-            .addStaticData ("staticData", &A::staticData)
-            .addStaticProperty ("staticProperty", &A::staticProperty)
-            .addStaticFunction ("staticFunc", &A::staticFunc)
-            .addStaticCFunction ("staticCFunc", &A::staticCFunc)
-            .addData ("data", &A::dataMember)
-            .addProperty ("prop", &A::getProperty, &A::setProperty)
-            .addFunction ("func1", &A::func1)
-            .addFunction ("virtualFunc", &A::virtualFunc)
-            .addCFunction ("cfunc", &A::cfunc)
+            .addStaticData ("staticData", &amp;A::staticData)
+            .addStaticProperty ("staticProperty", &amp;A::staticProperty)
+            .addStaticFunction ("staticFunc", &amp;A::staticFunc)
+            .addStaticCFunction ("staticCFunc", &amp;A::staticCFunc)
+            .addData ("data", &amp;A::dataMember)
+            .addProperty ("prop", &amp;A::getProperty, &amp;A::setProperty)
+            .addFunction ("func1", &amp;A::func1)
+            .addFunction ("virtualFunc", &amp;A::virtualFunc)
+            .addCFunction ("cfunc", &amp;A::cfunc)
           .endClass ()
           .deriveClass &lt;B, A&gt; ("B")
-            .addData ("data", &B::dataMember2)
-            .addFunction ("func1", &B::func1)
-            .addFunction ("func2", &B::func2)
+            .addData ("data", &amp;B::dataMember2)
+            .addFunction ("func1", &amp;B::func1)
+            .addFunction ("func2", &amp;B::func2)
           .endClass ()
         .endNameSpace ();
   </pre>
@@ -654,7 +654,7 @@ Freely available under the terms of the
   </pre>
 
   <p>
-  Taking the address of an array element, e.g. <code>&Vec::coord [0]</code>
+  Taking the address of an array element, e.g. <code>&amp;Vec::coord [0]</code>
   results in an error instead of a pointer-to-member. The class is closed for
   modifications, but we want to export Vec objects to Lua using the familiar
   object notation. To do this, first we add a "helper" class:
@@ -662,13 +662,13 @@ Freely available under the terms of the
   <pre>
       struct VecHelper
       {
-        template <unsigned index>
+        template &lt;unsigned index&gt;
         static float get (Vec const* vec)
         {
           return vec->coord [index];
         }
 
-        template <unsigned index>
+        template &lt;unsigned index&gt;
         static void set (Vec* vec, float value)
         {
           vec->coord [index] = value;
@@ -685,10 +685,10 @@ Freely available under the terms of the
   <pre>
       getGlobalNamespace (L)
         .beginNamespace ("test")
-          .beginClass <Vec> ("Vec")
-            .addProperty ("x", &amp;VecHelper::get <0>, &amp;VecHelper::set <0>)
-            .addProperty ("y", &amp;VecHelper::get <1>, &amp;VecHelper::set <1>)
-            .addProperty ("z", &amp;VecHelper::get <2>, &amp;VecHelper::set <2>)
+          .beginClass &lt;Vec&gt; ("Vec")
+            .addProperty ("x", &amp;VecHelper::get &lt;0&gt;, &amp;VecHelper::set &lt;0&gt;)
+            .addProperty ("y", &amp;VecHelper::get &lt;1&gt;, &amp;VecHelper::set &lt;1&gt;)
+            .addProperty ("z", &amp;VecHelper::get &lt;2&gt;, &amp;VecHelper::set &lt;2&gt;)
           .endClass ()
         .endNamespace ();
   </pre>
@@ -717,11 +717,11 @@ Freely available under the terms of the
 
       getGlobalNamespace (L)
         .beginNamespace ("test")
-          .beginClass <A> ("A")
-            .addConstructor <void (*) (void)> ()
+          .beginClass &lt;A&gt; ("A")
+            .addConstructor &lt;void (*) (void)&gt; ()
           .endClass ()
-          .beginClass &lt;B> ("B")
-            .addConstructor <void (*) (char const*, int)> ()
+          .beginClass &lt;B&gt; ("B")
+            .addConstructor &lt;void (*) (char const*, int)&gt; ()
           .endClass ()
         .endNamespace ();
   </pre>
@@ -758,7 +758,7 @@ Freely available under the terms of the
   properties, data members, property members, function arguments and return
   values. These basic types are supported:
 
-  <ul class="bulleted">
+  <ul class="bullets">
     <li><code>bool</code>
     <li><code>char</code>, converted to a string of length one.
     <li><code>char const*</code> and <code>std::string</code> strings.
@@ -1029,6 +1029,8 @@ Freely available under the terms of the
       }
   </pre>
 
+<!--========================================================================-->
+
 <h3>3.4.2 &ndash; <a name="3.4.2"><code>RefCountedPtr</code></a></h3>
 
   <p>
@@ -1069,6 +1071,8 @@ Freely available under the terms of the
       }
   </pre>
 
+<!--========================================================================-->
+
 <h3>3.4.3 &ndash; <a name="3.4.3">User-defined Containers</a></h3>
 
   <p>
@@ -1098,6 +1102,8 @@ Freely available under the terms of the
   The result is undefined behavior since there are now two sets of reference
   counts.
 
+<!--========================================================================-->
+
 <h3>3.4.4 &ndash; <a name="3.4.4">Container Constructors</a></h3>
 
   <p>
@@ -1124,13 +1130,15 @@ Freely available under the terms of the
       getGlobalNamespace (L)
         .beginNamespace ("test")
           .beginClass &lt;C&gt; ("C")
-            .addConstructor <void (*) (void), RefCountedObjectPtr <C> > ()
+            .addConstructor &lt;void (*) (void), RefCountedObjectPtr &lt;C&gt; &gt; ()
           .endClass ()
           .beginClass &lt;D&gt; ("D")
-            .addConstructor <void (*) (void), RefCountedPtr <D> > ()
+            .addConstructor &lt;void (*) (void), RefCountedPtr &lt;D&gt; &gt; ()
           .endClass ();
         .endNamespace ()
   </pre>
+
+<!--========================================================================-->
 
 <h2>3.5 &ndash; <a name="3.5">Mixing Lifetimes</a></h2>
 
@@ -1143,7 +1151,73 @@ Freely available under the terms of the
   object). An object store in a container can be passed to a function expecting
   a pointer. These conversion work seamlessly.
 
-<h1>4 &ndash; <a name="4">Security</a></h1>
+<h2>3.6 &ndash; <a name="3.6">Conveniences</a></h2>
+
+<p>
+  The <code>setGlobal</code> function can be used to assign any convertible
+  value into a global variable. 
+</p>
+
+<!--========================================================================-->
+
+<h1>4 &ndash; <a name="4">Accessing Lua from C++</a></h1>
+
+<p>
+  Because Lua is a <em>dynamically typed language</em>, special consideration
+  is required to map values in Lua to C++. The following sections describe the
+  classes and functions used for representing Lua types. Only the essential
+  operations are explained; To gain understanding of all available functions,
+  please refer to the documentation comments in the corresponding source files.
+</p>
+
+<!--========================================================================-->
+
+<h2>4.1 &ndash; <a name="4.1">LuaRef</a></h2>
+
+<p>
+  The <code>LuaRef</code> class is a container which references any Lua type.
+  It can hold anything which a Lua variable can hold: <strong>nil</strong>,
+  number, boolean, string, table, function, thread, userdata, and
+  lightuserdata. Because <code>LuaRef</code> uses the <code>Stack</code>
+  template specializations to do it's work, classes, functions, and data
+  exported to Lua through namespace registrations can also be stored (these
+  are instances of userdata).
+</p>
+
+<p>
+  A <code>LuaRef</code> variable constructed with no parameters produces a
+  reference to <strong>nil</strong>:
+</p>
+
+<pre>
+    LuaRef v (L); // References nil
+</pre>
+
+<p>
+  To construct a <code>LuaRef</code> to a specific value, the two parameter
+  constructor is used:
+</p>
+
+<pre>
+    LuaRef v1 (L, 1);                   // A LUA_TNUMBER
+    LuaRef v2 (L, 1.1);                 // Also a LUA_TNUMBER
+    LuaRef v3 (L, true);                // A LUA_TBOOLEAN
+    LuaRef v4 (L, "hello");             // A LUA_TSTRING
+</pre>
+
+<p>
+  The functions `newTable` and `getGlobal` create references to new empty table
+  and an existing value in the global table respectively:
+</p>
+
+<pre>
+    LuaRef v1 = newTable (L);           // Create a new table
+    LuaRef v2 = getGlobal (L, "print")  // Reference to _G ["print"]
+</pre>
+
+<!--========================================================================-->
+
+<h1>5 &ndash; <a name="4">Security</a></h1>
 
   <p>
   The metatables and userdata that LuaBridge creates in the `lua_State*` are
@@ -1151,7 +1225,7 @@ Freely available under the terms of the
   behavior resulting from scripted manipulation of the environment. The
   security system has these components:
 
-  <ul class="bulleted">
+  <ul class="bullets">
     <li>
     Class and const class tables use the <em>table proxy</em> technique. The
     corresponding metatables have <code>__index</code> and <code>__newindex</code>
