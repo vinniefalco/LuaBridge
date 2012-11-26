@@ -114,7 +114,7 @@ inline void push (lua_State* L, T t)
   Set a global value in the lua_State.
 */
 template <class T>
-inline void setglobal (lua_State* L, T t, char const* name)
+inline void setGlobal (lua_State* L, T t, char const* name)
 {
   push (L, t);
   lua_setglobal (L, name);
