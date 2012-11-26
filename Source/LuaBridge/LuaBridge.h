@@ -30,6 +30,9 @@
 #ifndef LUABRIDGE_LUABRIDGE_HEADER
 #define LUABRIDGE_LUABRIDGE_HEADER
 
+// All #include dependencies are listed here
+// instead of in the individual header files.
+//
 #include <cassert>
 #include <sstream>
 #include <stdexcept>
