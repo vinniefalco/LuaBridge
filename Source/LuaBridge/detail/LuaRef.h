@@ -198,6 +198,37 @@ private:
     {
       return LuaRef (*this) [key];
     }
+
+    /** Return the referenced value as a different type.
+    */
+    template <class T>
+    T cast () const
+    {
+      return LuaRef (*this).cast <T>;
+    }
+
+    /** Universal implicit conversion operator.
+
+        NOTE: Visual Studio 2010 and 2012 have a bug where this function
+              is not used. See:
+
+        http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/e30b2664-a92d-445c-9db2-e8e0fbde2014
+        https://connect.microsoft.com/VisualStudio/feedback/details/771509/correct-code-doesnt-compile
+
+            // This code snippet fails to compile in vs2010,vs2012
+            struct S {
+              template <class T> inline operator T () const { return T (); }
+            };
+            int main () {
+              S () || false;
+              return 0;
+            }
+    */
+    template <class T>
+    inline operator T () const
+    {
+      return cast <T> ();
+    }
   };
 
   /** Type tag for stack construction.
