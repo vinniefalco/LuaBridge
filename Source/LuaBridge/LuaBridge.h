@@ -56,7 +56,6 @@ struct Stack;
 class LuaRef;
 
 #include "detail/LuaException.h"
-#include "detail/LuaPop.h"
 #include "detail/LuaRef.h"
 
 //------------------------------------------------------------------------------

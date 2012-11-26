@@ -71,6 +71,45 @@ private:
   class Proxy;
   friend struct Stack <Proxy>;
 
+  /** Pop the Lua stack.
+
+      Pops the specified number of stack items on destruction. We use this
+      when returning objects, to avoid an explicit temporary variable, since
+      the destructor executes after the return statement. For example:
+
+          template <class U>
+          U cast (lua_State* L)
+          {
+            StackPop p (L, 1);
+            ...
+            return U (); // dtor called after this line
+          }
+
+      @note The `StackPop` object must always be a named local variable.
+  */
+  class StackPop
+  {
+  public:
+    /** Create a StackPop object.
+
+        @param count The number of stack entries to pop on destruction.
+    */
+    StackPop (lua_State* L, int count)
+      : m_L (L)
+      , m_count (count)
+    {
+    }
+
+    ~StackPop ()
+    {
+      lua_pop (m_L, m_count);
+    }
+
+  private:
+    lua_State* m_L;
+    int m_count;
+  };
+
   //----------------------------------------------------------------------------
   /**
       A proxy for representing table values.
@@ -144,7 +183,7 @@ private:
 
     /** Retrieve the Lua type of this value.
 
-        The return values are the same as those from lua_type().
+        The return values are the same as those from `lua_type()`.
     */
     int type ()
     {
@@ -160,7 +199,7 @@ private:
     template <class U>
     void operator= (U u)
     {
-      LuaPop p (m_L);
+      StackPop p (m_L, 1);
       lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_tableRef);
       lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_keyRef);
       Stack <U>::push (m_L, u);
@@ -247,7 +286,7 @@ public:
   /**
       Create a new empty table and return a reference to it.
   */
-  static LuaRef createTable (lua_State* L)
+  static LuaRef newTable (lua_State* L)
   {
     lua_newtable (L);
     return LuaRef (FromStack (L));
@@ -307,7 +346,7 @@ public:
   template <class T>
   T cast () const
   {
-    LuaPop p (m_L);
+    StackPop p (m_L, 1);
     push ();
     return Stack <T>::get (m_L, lua_gettop (m_L));
   }

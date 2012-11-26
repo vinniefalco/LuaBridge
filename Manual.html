@@ -151,34 +151,33 @@ Freely available under the terms of the
 <P>
 <LI><A HREF="manual.html#2">2 &ndash; Binding C++ to Lua</A>
 <UL>
-<LI><A HREF="manual.html#2.1">2.1 &ndash; Registration</A>
-<UL>
-<LI><A HREF="manual.html#2.1.1">2.1.1 &ndash; Namespaces</A>
-<LI><A HREF="manual.html#2.1.1">2.1.2 &ndash; Data, Properties, Functions, and CFunctions</A>
+<LI><A HREF="manual.html#2.1">2.1 &ndash; Namespaces</A>
+<LI><A HREF="manual.html#2.2">2.2 &ndash; Data, Properties, Functions, and CFunctions</A>
+<LI><A HREF="manual.html#2.3">2.3 &ndash; Class Objects</A>
+<LI><A HREF="manual.html#2.4">2.4 &ndash; Property Member Proxies</A>
+<LI><A HREF="manual.html#2.5">2.5 &ndash; Constructors</A>
+<LI><A HREF="manual.html#2.6">2.6 &ndash; Lua Stack</A>
+<LI><A HREF="manual.html#2.7">2.7 &ndash; <code>lua_State*</code></A>
 </UL>
-<LI><A HREF="manual.html#2.2">2.2 &ndash; Class Objects</A>
-<LI><A HREF="manual.html#2.3">2.3 &ndash; Property Member Proxies</A>
-<LI><A HREF="manual.html#2.4">2.4 &ndash; Constructors</A>
-<LI><A HREF="manual.html#2.5">2.5 &ndash; Lua Stack</A>
-<LI><A HREF="manual.html#2.6">2.6 &ndash; <code>lua_State*</code></A>
-<LI><A HREF="manual.html#2.7">2.7 &ndash; Passing Objects</A>
+<LI><A HREF="manual.html#3">3 &ndash; Passing Objects</A>
 <UL>
-<LI><A HREF="manual.html#2.7.1">2.7.1 &ndash; C++ Lifetime</A>
-<LI><A HREF="manual.html#2.7.2">2.7.2 &ndash; Lua Lifetime</A>
-<LI><A HREF="manual.html#2.7.3">2.7.3 &ndash; Shared Lifetime</A>
-<LI><A HREF="manual.html#2.7.4">2.7.4 &ndash; Pointers, References, and Pass by Value</A>
+<LI><A HREF="manual.html#3.1">3.1 &ndash; C++ Lifetime</A>
+<LI><A HREF="manual.html#3.2">3.2 &ndash; Lua Lifetime</A>
+<LI><A HREF="manual.html#3.3">3.3 &ndash; Pointers, References, and Pass by Value</A>
+<LI><A HREF="manual.html#3.4">3.4 &ndash; Shared Lifetime</A>
+<UL>
+<LI><A HREF="manual.html#3.4.1">3.4.1 &ndash; <code>RefCountedObjectPtr</code></A>
+<LI><A HREF="manual.html#3.4.2">3.4.2 &ndash; <code>RefCountedPtr</code></A>
+<LI><A HREF="manual.html#3.4.3">3.4.3 &ndash; User-defined Containers</A>
+<LI><A HREF="manual.html#3.4.4">3.4.4 &ndash; Container Constructors</A>
 </UL>
-<LI><A HREF="manual.html#2.8">2.8 &ndash; Shared Lifetime</A>
-<UL>
-<LI><A HREF="manual.html#2.8.1">2.8.1 &ndash; <code>RefCountedObjectPtr</code></A>
-<LI><A HREF="manual.html#2.8.2">2.8.2 &ndash; <code>RefCountedPtr</code></A>
-<LI><A HREF="manual.html#2.8.3">2.8.3 &ndash; User-defined Containers</A>
-<LI><A HREF="manual.html#2.8.4">2.8.4 &ndash; Container Constructors</A>
-<LI><A HREF="manual.html#2.8.5">2.8.5 &ndash; Mixing Lifetimes</A>
+<LI><A HREF="manual.html#3.5">3.5 &ndash; Mixing Lifetimes</A>
 </UL>
 </UL>
 <P>
-<LI><A HREF="manual.html#4">4 &ndash; Security</A>
+<LI><A HREF="manual.html#4">3 &ndash; Lua Values from C++</A>
+<P>
+<LI><A HREF="manual.html#5">5 &ndash; Security</A>
 </UL>
 
 <!--========================================================================-->
@@ -790,6 +789,8 @@ Freely available under the terms of the
       };
   </pre>
 
+<!--========================================================================-->
+
 <h2>2.7 &ndash; <a name="2.7"><code>lua_State*</code></a></h2>
 
   <p>
@@ -820,6 +821,8 @@ Freely available under the terms of the
   correctly even for the state created by coroutines. Undefined behavior results
   if the <code>lua_State*</code> is not the last parameter.
 
+<!--========================================================================-->
+
 <h1>3 &ndash; <a name="2.7">Passing Objects</a></h1>
 
   <p>
@@ -833,6 +836,8 @@ Freely available under the terms of the
     <li><b><code>T</code></b> or <b><code>T const</code></b>: Passed by value (a copy),
       with <em>Lua lifetime</em>.
   </ul>
+
+<!--========================================================================-->
 
 <h2>3.1 &ndash; <a name="3.1">C++ Lifetime</a></h2>
 
@@ -860,6 +865,8 @@ Freely available under the terms of the
       push (L, new A);          // compiles, but will leak memory
       lua_setglobal (L, "ap");
   </pre>
+
+<!--========================================================================-->
 
 <h2>3.2 &ndash; <a name="3.2">Lua Lifetime</a></h2>
 
@@ -916,6 +923,8 @@ Freely available under the terms of the
   still pass these to C++, either by reference or by value. If passed by
   reference, the usual warnings apply about accessing the reference later,
   after it has been garbage collected.
+
+<!--========================================================================-->
 
 <h2>3.3 &ndash; <a name="3.3">Pointers, References, and Pass by Value</a></h2>
 
@@ -974,6 +983,8 @@ Freely available under the terms of the
   instead. Attempting to pass a null pointer to a C++ function expecting a
   reference results in <code>lua_error</code> being called.
 
+<!--========================================================================-->
+
 <h2>3.4 &ndash; <a name="3.4">Shared Lifetime</a></h2>
 
   <p>
@@ -985,6 +996,8 @@ Freely available under the terms of the
   template class. LuaBridge will automatically recognize when a data type is
   a container when the correspoding specialization is present. Two styles of
   containers come with LuaBridge, including the necessary specializations.
+
+<!--========================================================================-->
 
 <h3>3.4.1 &ndash; <a name="3.4.1"><code>RefCountedObjectPtr</code></a></h3>
 
@@ -1119,7 +1132,7 @@ Freely available under the terms of the
         .endNamespace ()
   </pre>
 
-<h3>3.5 &ndash; <a name="3.5">Mixing Lifetimes</a></h3>
+<h2>3.5 &ndash; <a name="3.5">Mixing Lifetimes</a></h2>
 
   <p>
   Mixing object lifetime models is entirely possible, subject to the usual
