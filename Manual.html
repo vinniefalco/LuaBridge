@@ -192,6 +192,9 @@ Copyright &copy; 2012 Vinnie Falco. Freely available under the terms of the
   </UL>
   <LI><A href="#s4.2">4.2 - Table Proxies</A>
   <LI><A href="#s4.3">4.3 - Calling Lua</A>
+  <UL>
+    <LI><A href="#s4.3.1">4.3.1 - Class LuaException</A>
+  </UL>
 </uL>
 <P>
 <LI><A href="#s5">5 - Security</A>
@@ -733,6 +736,18 @@ be re-declared and will function normally in Lua. If a class has a base class
 that is **not** registered with Lua, there is no need to declare it as a
 subclass.
 </p>
+
+<p>
+Remember that in Lua, the colon operator '<code>:</code>' is used for
+method call syntax:
+</p>
+
+<pre>
+local a = A ()
+
+a.func1 () -- Does nothing
+a:func1 () -- Works
+</pre>
 
 </section>
 
@@ -1513,15 +1528,13 @@ void passBool (bool);
 void passString (std::string);
 void passObject (A*);
 
-{
-  LuaRef v (L);
-  //...
-  passInt (v);        // implicit conversion to int
-  passBool (v);       // implicit conversion to bool
-  passString (v);     // implicit conversion to string
-  passObject (v);     // must hold a registered LuaBridge class or a
-                      // luaL_error() will be raised.
-}
+LuaRef v (L);
+//...
+passInt (v);        // implicit conversion to int
+passBool (v);       // implicit conversion to bool
+passString (v);     // implicit conversion to string
+passObject (v);     // must hold a registered LuaBridge class or a
+                    // lua_error() will be called.
 </pre>
 
 <p>
@@ -1530,8 +1543,10 @@ traditional functions like <code>lua_toboolean</code> or
 <code>lua_tostring</code>. In some cases, the type information may be
 incorrect especially when passing objects of registered class types.
 When performing these conversions, LuaBridge may raise a Lua error by
-directly or indirectly calling <code>luaL_error</code> To be bullet-proof,
-such code must be wrapped in a <code>lua_pcall</code>
+directly or indirectly calling <code>lua_error</code> To be bullet-proof,
+such code must either be wrapped in a <code>lua_pcall</code>, or you must
+install a Lua <em>panic function</em> that throws an exception which you
+can catch.
 </p>
 
 <p>
@@ -1542,16 +1557,14 @@ use the <code>cast</code> template function or an explicit C++ style cast.
 <pre>
 void passString (std::string);
 
-{
-  LuaRef v (L);
+LuaRef v (L);
 
-  // The following are all equivalent:
+// The following are all equivalent:
 
-  passString (std::string (v));
-  passString ((std::string)v);
-  passString (static_cast <std::string> (v));
-  passString (v.cast <std::string> ());
-}
+passString (std::string (v));
+passString ((std::string)v);
+passString (static_cast &lt;std::string&gt; (v));
+passString (v.cast &lt;std::string&gt; ());
 </pre>
 
 </section>
@@ -1657,17 +1670,59 @@ Table proxies support all of the Lua call notation that <code>LuaRef</code>
 supports, making these statements possible:
 </p>
 
-<pre>
-LuaRef v = getGlobal (L, "t"); // A table
+<pre class="split">
+LuaRef v = getGlobal (L, "t");
 
-t [1] ("hello");    // Call t[1] with 1 argument
-t [2] (1, 2, 3);    // Call t[2] with 3 arguments
-t [3] (t [2]);      // Call t[3] with the value in t[2]
-t [4] = t [3] ();   // Call t[3] and store the result in t[4].
+t[1]();
+t[2]("a", "b");
+t[2](t[1]); // Call t[3] with the value in t[2]
+t[4]=t[3]();   // Call t[3] and store the result in t[4].
 
 t [t[5]()] = "wow"; // Store "wow" at the key returned by
                     //   the call to t[5]
 </pre>
+
+<pre class="split">
+t = {}
+t[1] = function () print ("hello") end
+t[2] = function (u, v) print (u, v) end
+t[3] = "foo"
+</pre>
+
+<!--========================================================================-->
+
+<h3>4.3.1 - <span id="s4.3.1">Class LuaException</span></h3>
+
+<section >
+
+<p>
+When <code>LuaRef</code> is used to call into Lua using the <code>()</code>
+operator it issues a protected call using <code>lua_pcall</code>. LuaBridge
+uses the C++ exception handling mechanism, throwing a <code>LuaException</code>
+object:
+</p>
+
+<pre class="split">
+LuaRef f (L) = getGlobal (L, "fail");
+
+try {
+  f ();
+}
+catch (LuaException const&amp; e) {
+  std::cerr &amp;&amp; e.what ();
+}
+</pre>
+
+<pre class="split">
+function fail ()
+  error ("A problem occurred")
+end
+</pre>
+
+</section>
+
+<!--========================================================================-->
+
 </section>
 
 <!--========================================================================-->
