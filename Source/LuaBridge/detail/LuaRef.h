@@ -346,7 +346,12 @@ private:
     /** @} */
   };
 
-  /** Type tag for stack construction.
+private:
+  friend struct Stack <LuaRef>;
+  
+  //----------------------------------------------------------------------------
+  /**
+      Type tag for stack construction.
   */
   struct FromStack
   {
@@ -354,21 +359,38 @@ private:
 
   //----------------------------------------------------------------------------
   /**
-      Create a reference to an object at the top of the Lua stack.
+      Create a reference to an object at the top of the Lua stack and pop it.
 
-      The stack element is popped. This constructor is private and not invoked
-      directly. Instead, use the `fromStack` function.
+      This constructor is private and not invoked directly.
+      Instead, use the `fromStack` function.
+
+      @note The object is popped.
   */
   LuaRef (lua_State* L, FromStack)
     : m_L (L)
   {
-    assert (lua_gettop (m_L) >= 1);
-
     m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
   }
 
-protected:
-  /** Create a reference to this ref.
+  //----------------------------------------------------------------------------
+  /**
+      Create a reference to an object on the Lua stack.
+
+      This constructor is private and not invoked directly.
+      Instead, use the `fromStack` function.
+
+      @note The object is not popped.
+  */
+  LuaRef (lua_State* L, int idx, FromStack)
+    : m_L (L)
+  {
+    lua_pushvalue (m_L, idx);
+    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Create a reference to this ref.
 
       This is used internally.
   */
@@ -381,9 +403,13 @@ protected:
 public:
   //----------------------------------------------------------------------------
   /**
-      Create a reference with no value.
+      Create a nil reference.
 
       The LuaRef can be assigned a value later.
+
+      @note If the state refers to a thread, it is the responsibility of the
+            caller to ensure that the thread is not collected while the LuaRef
+            object exists.
   */
   explicit LuaRef (lua_State* L)
     : m_L (L)
@@ -391,7 +417,9 @@ public:
   {
   }
 
-  /** Create a reference to a value.
+  //----------------------------------------------------------------------------
+  /**
+      Create a reference to a value.
   */
   template <class T>
   LuaRef (lua_State* L, T v)
@@ -401,7 +429,9 @@ public:
     m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
   }
 
-  /** Create a reference to a table value.
+  //----------------------------------------------------------------------------
+  /**
+      Create a reference to a table value.
   */
   LuaRef (Proxy const& v)
     : m_L (v.state ())
@@ -409,7 +439,9 @@ public:
   {
   }
 
-  /** Create a new reference to an existing reference.
+  //----------------------------------------------------------------------------
+  /**
+      Create a new reference to an existing reference.
   */
   LuaRef (LuaRef const& other)
     : m_L (other.m_L)
@@ -417,9 +449,15 @@ public:
   {
   }
 
-  /** Destroy a reference.
+  //----------------------------------------------------------------------------
+  /**
+      Destroy a reference.
 
       The corresponding Lua registry reference will be released.
+
+      @note If the state refers to a thread, it is the responsibility of the
+            caller to ensure that the thread still exists when the LuaRef
+            is destroyed.
   */
   ~LuaRef ()
   {
@@ -440,7 +478,9 @@ public:
     return LuaRef (L, FromStack ());
   }
 
-  /** Return a reference to a named global.
+  //----------------------------------------------------------------------------
+  /**
+      Return a reference to a named global.
 
       It is also possible to use the free function `getGlobal`.
 
@@ -452,12 +492,16 @@ public:
     return LuaRef (L, FromStack ());
   }
 
-  /** Create a reference from the top of the stack.
+  //----------------------------------------------------------------------------
+  /**
+      Create a reference from the top of the stack.
   */
-  static LuaRef fromStack (lua_State* L)
+#if 0
+  static LuaRef popStack (lua_State* L)
   {
     return LuaRef (L, FromStack ());
   }
+#endif
 
   //----------------------------------------------------------------------------
   /**
@@ -468,14 +512,18 @@ public:
     return m_L;
   }
 
-  /** Place the object onto the Lua stack.
+  //----------------------------------------------------------------------------
+  /**
+      Place the object onto the Lua stack.
   */
   void push () const										
   {
     lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
   }
 
-  /** Determine the object type.
+  //----------------------------------------------------------------------------
+  /**
+      Determine the object type.
 
       The return values are the same as for lua_type().
   */
@@ -500,7 +548,9 @@ public:
   inline bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
   /** @} */
 
-  /** Return the referenced value as a different type.
+  //----------------------------------------------------------------------------
+  /**
+      Perform an explicit conversion.
   */
   template <class T>
   T cast () const
@@ -510,7 +560,9 @@ public:
     return Stack <T>::get (m_L, lua_gettop (m_L));
   }
 
-  /** Universal implicit conversion operator.
+  //----------------------------------------------------------------------------
+  /**
+      Universal implicit conversion operator.
 
       NOTE: Visual Studio 2010 and 2012 have a bug where this function
             is not used. See:
@@ -533,7 +585,9 @@ public:
     return cast <T> ();
   }
 
-  /** Explicit type conversions.
+  //----------------------------------------------------------------------------
+  /**
+      Explicit type conversions.
 
       These are here to work around defects in Visual Studio.
   */
@@ -542,7 +596,9 @@ public:
   inline int toInt () const { return cast <int> (); }
   /** @} */
 
-  /** Access a table value using a key.
+  //----------------------------------------------------------------------------
+  /**
+      Access a table value using a key.
 
       This invokes metamethods.
   */
@@ -553,7 +609,9 @@ public:
     return Proxy (m_L, m_ref);
   }
 
-  /** Assign a different value to this LuaRef.
+  //----------------------------------------------------------------------------
+  /**
+      Assign a different value to this LuaRef.
   */
   template <class T>
   LuaRef& operator= (T v)
@@ -564,7 +622,9 @@ public:
     return *this;
   }
 
-  /** Print a text description of the value to a stream.
+  //----------------------------------------------------------------------------
+  /**
+      Print a text description of the value to a stream.
   */
   void print (std::ostream& os)
   {
@@ -612,7 +672,9 @@ public:
     }
   }
 
-  /** Call Lua code.
+  //----------------------------------------------------------------------------
+  /**
+      Call Lua code.
 
       These overloads allow Lua code to be called with up to 8 parameters.
       The return value is provided as a LuaRef (which may be LUA_REFNIL).
@@ -733,8 +795,8 @@ private:
 };
 
 //------------------------------------------------------------------------------
-
-/** Stack specialization for Nil
+/**
+    Stack specialization for Nil
 */
 template <>
 struct Stack <Nil>
@@ -746,7 +808,9 @@ public:
   }
 };
 
-/** Stack specialization for LuaRef.
+//------------------------------------------------------------------------------
+/**
+    Stack specialization for LuaRef.
 */
 template <>
 struct Stack <LuaRef>
@@ -761,16 +825,15 @@ public:
     v.push ();
   }
 
-  /*
-    Have to make this work with a provided stack index
   static inline LuaRef get (lua_State* L, int index)
   {
-    return LuaRef (FromStack (L, ));
+    return LuaRef (L, index, LuaRef::FromStack ());
   }
-  */
 };
 
-/** Stack specialization for Proxy.
+//------------------------------------------------------------------------------
+/**
+    Stack specialization for Proxy.
 */
 template <>
 struct Stack <LuaRef::Proxy>
