@@ -229,6 +229,121 @@ private:
     {
       return cast <T> ();
     }
+
+    /** Call Lua code.
+
+        These overloads allow Lua code to be called with up to 8 parameters.
+        The return value is provided as a LuaRef (which may be LUA_REFNIL).
+        If an error occurs, a LuaException is thrown.
+    */
+    /** @{ */
+    LuaRef const operator() () const
+    {
+      push ();
+      LuaException::pcall (m_L, 0, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1>
+    LuaRef const operator() (P1 p1) const
+    {
+      push ();
+      Stack <P1>::push (m_L, p1);
+      LuaException::pcall (m_L, 1, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2>
+    LuaRef const operator() (P1 p1, P2 p2) const
+    {
+      push ();
+      Stack <P1>::push (m_L, p1);
+      Stack <P2>::push (m_L, p2);
+      LuaException::pcall (m_L, 2, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2, class P3>
+    LuaRef const operator() (P1 p1, P2 p2, P3 p3) const
+    {
+      push ();
+      Stack <P1>::push (m_L, p1);
+      Stack <P2>::push (m_L, p2);
+      Stack <P3>::push (m_L, p3);
+      LuaException::pcall (m_L, 3, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2, class P3, class P4>
+    LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4) const
+    {
+      push ();
+      Stack <P1>::push (m_L, p1);
+      Stack <P2>::push (m_L, p2);
+      Stack <P3>::push (m_L, p3);
+      Stack <P4>::push (m_L, p4);
+      LuaException::pcall (m_L, 4, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2, class P3, class P4, class P5>
+    LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) const
+    {
+      push ();
+      Stack <P1>::push (m_L, p1);
+      Stack <P2>::push (m_L, p2);
+      Stack <P3>::push (m_L, p3);
+      Stack <P4>::push (m_L, p4);
+      Stack <P5>::push (m_L, p5);
+      LuaException::pcall (m_L, 5, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2, class P3, class P4, class P5, class P6>
+    LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) const
+    {
+      push ();
+      Stack <P1>::push (m_L, p1);
+      Stack <P2>::push (m_L, p2);
+      Stack <P3>::push (m_L, p3);
+      Stack <P4>::push (m_L, p4);
+      Stack <P5>::push (m_L, p5);
+      Stack <P6>::push (m_L, p6);
+      LuaException::pcall (m_L, 6, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2, class P3, class P4, class P5, class P6, class P7>
+    LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7) const
+    {
+      push ();
+      Stack <P1>::push (m_L, p1);
+      Stack <P2>::push (m_L, p2);
+      Stack <P3>::push (m_L, p3);
+      Stack <P4>::push (m_L, p4);
+      Stack <P5>::push (m_L, p5);
+      Stack <P6>::push (m_L, p6);
+      Stack <P7>::push (m_L, p7);
+      LuaException::pcall (m_L, 7, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8>
+    LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) const
+    {
+      push ();
+      Stack <P1>::push (m_L, p1);
+      Stack <P2>::push (m_L, p2);
+      Stack <P3>::push (m_L, p3);
+      Stack <P4>::push (m_L, p4);
+      Stack <P5>::push (m_L, p5);
+      Stack <P6>::push (m_L, p6);
+      Stack <P7>::push (m_L, p7);
+      Stack <P8>::push (m_L, p8);
+      LuaException::pcall (m_L, 8, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+    /** @} */
   };
 
   /** Type tag for stack construction.
@@ -504,7 +619,7 @@ public:
       If an error occurs, a LuaException is thrown.
   */
   /** @{ */
-  LuaRef operator() () const
+  LuaRef const operator() () const
   {
     push ();
     LuaException::pcall (m_L, 0, 1);
@@ -512,7 +627,7 @@ public:
   }
 
   template <class P1>
-  LuaRef operator() (P1 p1) const
+  LuaRef const operator() (P1 p1) const
   {
     push ();
     Stack <P1>::push (m_L, p1);
@@ -521,7 +636,7 @@ public:
   }
 
   template <class P1, class P2>
-  LuaRef operator() (P1 p1, P2 p2) const
+  LuaRef const operator() (P1 p1, P2 p2) const
   {
     push ();
     Stack <P1>::push (m_L, p1);
@@ -531,7 +646,7 @@ public:
   }
 
   template <class P1, class P2, class P3>
-  LuaRef operator() (P1 p1, P2 p2, P3 p3) const
+  LuaRef const operator() (P1 p1, P2 p2, P3 p3) const
   {
     push ();
     Stack <P1>::push (m_L, p1);
@@ -541,8 +656,20 @@ public:
     return LuaRef (m_L, FromStack ());
   }
 
+  template <class P1, class P2, class P3, class P4>
+  LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4) const
+  {
+    push ();
+    Stack <P1>::push (m_L, p1);
+    Stack <P2>::push (m_L, p2);
+    Stack <P3>::push (m_L, p3);
+    Stack <P4>::push (m_L, p4);
+    LuaException::pcall (m_L, 4, 1);
+    return LuaRef (m_L, FromStack ());
+  }
+
   template <class P1, class P2, class P3, class P4, class P5>
-  LuaRef operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) const
+  LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) const
   {
     push ();
     Stack <P1>::push (m_L, p1);
@@ -555,7 +682,7 @@ public:
   }
 
   template <class P1, class P2, class P3, class P4, class P5, class P6>
-  LuaRef operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) const
+  LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) const
   {
     push ();
     Stack <P1>::push (m_L, p1);
@@ -569,7 +696,7 @@ public:
   }
 
   template <class P1, class P2, class P3, class P4, class P5, class P6, class P7>
-  LuaRef operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7) const
+  LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7) const
   {
     push ();
     Stack <P1>::push (m_L, p1);
@@ -584,7 +711,7 @@ public:
   }
 
   template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8>
-  LuaRef operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) const
+  LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) const
   {
     push ();
     Stack <P1>::push (m_L, p1);
@@ -630,7 +757,7 @@ public:
   static inline void push (lua_State* L, LuaRef const& v)
   {
     L; // remove warning
-    assert (equalstates (L, v.state ());
+    assert (equalstates (L, v.state ()));
     v.push ();
   }
 
@@ -654,14 +781,14 @@ public:
   static inline void push (lua_State* L, LuaRef::Proxy const& v)
   {
     L; // remove warning
-    assert (equalstates (L, v.state ());
+    assert (equalstates (L, v.state ()));
     v.push ();
   }
 };
 
 //------------------------------------------------------------------------------
-
-/** Create a reference to a new, empty table.
+/**
+    Create a reference to a new, empty table.
 
     This is a syntactic abbreviation for LuaRef::newTable().
 */
@@ -670,7 +797,9 @@ inline LuaRef newTable (lua_State* L)
   return LuaRef::newTable (L);
 }
 
-/** Create a reference to a value in the global table.
+//------------------------------------------------------------------------------
+/**
+    Create a reference to a value in the global table.
 
     This is a syntactic abbreviation for LuaRef::getGlobal().
 */
@@ -680,7 +809,11 @@ inline LuaRef getGlobal (lua_State *L, char const* name)
 }
 
 //------------------------------------------------------------------------------
+/**
+    Write a LuaRef to a stream.
 
+    This allows LuaRef and table proxies to work with streams.
+*/
 inline std::ostream& operator<< (std::ostream &os, LuaRef& ref)
 {
   ref.print (os);
