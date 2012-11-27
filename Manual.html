@@ -29,7 +29,7 @@ h1 {
   padding-bottom: 0.4em ;
   padding-left: 24px ;
   margin-left: -24px ;
-  background-color: #E0E0FF ;
+  background-color: #ffe668 ;
   border-radius: 8px ;
 }
 
@@ -42,13 +42,13 @@ h2 {
   padding-bottom: 0.4em ;
   padding-left: 1em ;
   padding-right: 1em ;
-  background-color: #E0E0FF ;
+  background-color: #ffe668 ;
   border-radius: 8px ;
 }
 
 h3 {
   padding-left: 0.5em ;
-  border-left: solid #E0E0FF 1em ;
+  border-left: solid #ffe668 1em ;
 }
 
 table h3 {
@@ -57,23 +57,24 @@ table h3 {
 }
 
 a:link {
-  color: #000080 ;
+  color: #8d5c00 ;
   background-color: inherit ;
   text-decoration: none ;
 }
 
 a:visited {
+  color: #b17b26;
   background-color: inherit ;
   text-decoration: none ;
 }
 
 a:link:hover, a:visited:hover {
-  color: #000080 ;
-  background-color: #E0E0FF ;
+  color: #8d5c00 ;
+  background-color: #ffe668 ;
 }
 
 a:link:active, a:visited:active {
-  color: #FF0000 ;
+  color: inherit;
 }
 
 hr {
@@ -145,8 +146,7 @@ pre {
 
 <header>
   <hr>
-  <h1 class ="title">
-  <img SRC="https://github.com/vinniefalco/LuaBridgeDemo/blob/gh-pages/powered-by-lua.png?raw=true" ALT="">
+  <h1>
   LuaBridge 2.0 Reference Manual
   </h1>
   <hr>
@@ -178,8 +178,9 @@ pre {
     <LI><A href="#s2.4">2.4 - Property Member Proxies</A>
     <LI><A href="#s2.5">2.5 - Constructors</A>
     <LI><A href="#s2.6">2.6 - Lua Stack</A>
-    <LI><A href="#s2.7">2.7 - lua_State></A>
+    <LI><A href="#s2.7">2.7 - lua_State</A>
   </UL>
+  <p>
   <LI><A href="#s3">3 - Passing Objects</A>
   <UL>
     <LI><A href="#s3.1">3.1 - C++ Lifetime</A>
@@ -866,7 +867,7 @@ pre {
 
 <p>
   In the Lua C API, all operations on the <code>lua_State</code> are performed
-  through the Lua stack. In order to pass parameters back and forth between C++
+  through the Lua stack. In order to pass values back and forth between C++
   and Lua, LuaBridge uses specializations of this template class concept:
 </p>
 
@@ -883,7 +884,7 @@ pre {
   When a specialization of <code>Stack</code> exists for a given type
   <code>T</code> we say that the <code>T</code> is <em>convertible</em>.
   Throughout this document and the LuaBridge API, these types can be used
-  anywhere a <em>convertible</em> type is expected.
+  anywhere a convertible type is expected.
 </p>
 
 <p>
@@ -1415,9 +1416,10 @@ pre {
   It can hold anything which a Lua variable can hold: <strong>nil</strong>,
   number, boolean, string, table, function, thread, userdata, and
   lightuserdata. Because <code>LuaRef</code> uses the <code>Stack</code>
-  template specializations to do it's work, classes, functions, and data
+  template specializations to do its work, classes, functions, and data
   exported to Lua through namespace registrations can also be stored (these
-  are instances of userdata).
+  are instances of userdata). In general, a <code>LuaRef</code> can represent
+  any <em>convertible</em> C++ type as well as all Lua types.
 </p>
 
 <p>
@@ -1438,12 +1440,13 @@ pre {
   LuaRef v1 (L, 1);                   // A LUA_TNUMBER
   LuaRef v2 (L, 1.1);                 // Also a LUA_TNUMBER
   LuaRef v3 (L, true);                // A LUA_TBOOLEAN
-  LuaRef v4 (L, "hello");             // A LUA_TSTRING
+  LuaRef v4 (L, "string");            // A LUA_TSTRING
 </pre>
 
 <p>
-  The functions `newTable` and `getGlobal` create references to new empty table
-  and an existing value in the global table respectively:
+  The functions <code>newTable</code> and <code>getGlobal</code> create
+  references to new empty table and an existing value in the global table
+  respectively:
 </p>
 
 <pre>
@@ -1451,6 +1454,225 @@ pre {
   LuaRef v2 = getGlobal (L, "print")  // Reference to _G ["print"]
 </pre>
 
+<p>
+  A <code>LuaRef</code> can hold classes <em>registered</em> using LuaBridge:
+</p>
+
+<pre>
+  class A;
+  //...
+  LuaRef v = new A;     // A LuaBridge userdata holding a pointer to A
+</pre>
+
+<p>
+  Any convertible type may be assigned to an already-existing <code>LuaRef</code>:
+</p>
+
+<pre>
+  LuaRef v (L);         // Nil
+  v = newTable (L);     // An empty table
+  v = "string"          // A string. The prevous value becomes
+                        // eligible for garbage collection.
+</pre>
+
+<p>
+  A <code>LuaRef</code> is itself a convertible type, and the convertible
+  type <code>Nil</code> can be used to represent a Lua <strong>nil</strong>.
+</p>
+
+<pre>
+  LuaRef v1 (L, "x");   // assign "x"
+  LuaRef v2 (L, "y");   // assign "y"
+  v2 = v1;              // v2 becomes "x"
+  v1 = "z";             // v1 becomes "z", v2 is unchanged
+  v1 = newTable (L);    // An empty table
+  v2 = v1;              // v2 references the same table as v1
+  v1 = Nil ();          // v1 becomes nil, table is still
+                        // referenced by v2.
+</pre>
+
+<p>
+  Values stored in a <code>LuaRef</code> object obey the same rules as
+  variables in Lua: tables, functions, threads, and full userdata values are
+  <em>objects</em>. The <code>LuaRef</code> does not actually <em>contain</em>
+  these values, only <em>references</em> to them. Assignment, parameter
+  passing, and function returns always manipulate references to such values;
+  these operations do not imply any kind of copy.
+</p>
+
+<!--========================================================================-->
+
+<section>
+
+<h3 id="s4.1.1">4.1.1 - Type Conversions</h3>
+
+<p>
+  A universal C++ conversion operator is provided for implicit conversions
+  which allow a <code>LuaRef</code> to be used where any convertible type is
+  expected. These operations will all compile:
+</p>
+
+<pre>
+  void passInt (int);
+  void passBool (bool);
+  void passString (std::string);
+  void passObject (A*);
+
+  {
+    LuaRef v (L);
+    //...
+    passInt (v);        // implicit conversion to int
+    passBool (v);       // implicit conversion to bool
+    passString (v);     // implicit conversion to string
+    passObject (v);     // must hold a registered LuaBridge class or a
+                        // luaL_error() will be raised.
+  }
+</pre>
+
+<p>
+  Since Lua types are dynamic, the conversion is performed at run time using
+  traditional functions like <code>lua_toboolean</code> or
+  <code>lua_tostring</code>. In some cases, the type information may be
+  incorrect especially when passing objects of registered class types.
+  When performing these conversions, LuaBridge may raise a Lua error by
+  directly or indirectly calling <code>luaL_error</code> To be bullet-proof,
+  such code must be wrapped in a <code>lua_pcall</code>
+</p>
+
+<p>
+  When an explicit conversion is required (such as when writing templates),
+  use the <code>cast</code> template function or an explicit C++ style cast.
+</p>
+
+<pre>
+  void passString (std::string);
+
+  {
+    LuaRef v (L);
+
+    // The following are all equivalent:
+
+    passString (std::string (v));
+    passString ((std::string)v);
+    passString (static_cast <std::string> (v));
+    passString (v.cast <std::string> ());
+  }
+</pre>
+
+</section>
+
+<!--========================================================================-->
+
+<section>
+
+<h3 id="s4.1.2">4.1.2 - Visual Studio 2010, 2012</h3>
+
+<p>
+  There is a defect with all versions of Visual Studio up to and including
+  Visual Studio 2012 which prevents the implicit conversion operator from
+  being applied when it is used as an operand in a boolean operator:
+</p>
+
+<pre>
+  LuaRef v1 (L);
+  LuaRef v2 (L);
+
+  if (v1 || v2) { } // Compile error in Visual Studio
+
+  // Work-arounds:
+  if (v1.cast &lt;bool&gt; () || v2.cast &lt;bool&gt; ()) { }
+  if (bool (v1) || bool (v2)) { }
+</pre>
+
+</section>
+
+<!--========================================================================-->
+
+</section>
+
+<section>
+
+<h2 id="s4.2">4.2 - Table Proxies</h2>
+
+<p>
+  As tables are the sole data structuring mechanism in Lua, the
+  <code>LuaRef</code> class provides robust facilities for accessing and
+  manipulating table elements using a simple, precise syntax. Any convertible
+  type may be used as a key or value. Applying the array indexing operator
+  <code>[]</code> to a <code>LuaRef</code> returns a special temporary object
+  called a <em>table proxy</em> which supports all the operations which can
+  be performed on a <code>LuaRef</code>. In addition, assignments made to
+  table proxies change the underlying table. Because table proxies are
+  compiler-created temporary objects, you don't work with them directly.
+  These operations all invoke table proxies behind the scenes:
+</p>
+
+<pre>
+  LuaRef v (L);
+  v = newTable (L);
+
+  v ["name"] = "John Doe";      // string key, string value
+  v [1] = 200;                  // integer key, integer value
+  v [2] = newTable (L);         // integer key, LuaRef value
+  v [3] = v [1];                // assign 200 to integer index 3
+  v [1] = 100;                  // v[1] is 100, v[3] is still 200
+  v [3] = v [2];                // v[2] and v[3] reference the same table
+  v [2] = Nil ();               // Removes the value with key = 2. The table
+                                //   is still referenced by v[3].
+</pre>
+
+</section>
+
+<!--========================================================================-->
+
+<section>
+
+<h2 id="s4.3">4.3 - Calling Lua</h2>
+
+<p>
+  Table proxies and <code>LuaRef</code> objects provide a convenient syntax
+  for invoking <code>lua_pcall</code> on suitable referenced object. This
+  includes C functions, Lua functions, or Lua objects with an appropriate
+  <code>__call</code> metamethod set. The provided implementation supports
+  up to eight parameters (although more can be supported by adding new
+  functions). Any convertible C++ type can be passed as a parameter in its
+  native format. The return value of the function call is provided as a
+  <code>LuaRef</code>, which may be <strong>nil</strong>.
+</p>
+
+<pre>
+  LuaRef same = getGlobal (L, "same");
+
+  // These all evaluate to true
+  same (1,1);
+  !same (1,2);
+  same ("text", "text");
+  !same (1, "text");
+  same (1, 1, 2); // third parameter is ignored by Lua
+</pre>
+
+<pre>
+  function same (arg1, arg)
+    return arg1 == arg2
+  end
+</pre>
+
+<p>
+  Table proxies support all of the Lua call notation that <code>LuaRef</code>
+  supports, making these statements possible:
+</p>
+
+<pre>
+  LuaRef v = getGlobal (L, "t"); // A table
+
+  t [1] ("hello");    // Call t[1] with 1 argument
+  t [2] (1, 2, 3);    // Call t[2] with 3 arguments
+  t [3] (t [2]);      // Call t[3] with the value in t[2]
+  t [4] = t [3] ();   // Call t[3] and store the result in t[4].
+
+  t [t[5]()] = "wow"; // Store "wow" at the key returned by
+                      //   the call to t[5]
+</pre>
 </section>
 
 <!--========================================================================-->
