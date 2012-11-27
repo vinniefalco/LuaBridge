@@ -630,7 +630,7 @@ public:
   static inline void push (lua_State* L, LuaRef const& v)
   {
     L; // remove warning
-    assert (L == v.state ());
+    assert (equalstates (L, v.state ());
     v.push ();
   }
 
@@ -654,7 +654,7 @@ public:
   static inline void push (lua_State* L, LuaRef::Proxy const& v)
   {
     L; // remove warning
-    assert (L == v.state ());
+    assert (equalstates (L, v.state ());
     v.push ();
   }
 };

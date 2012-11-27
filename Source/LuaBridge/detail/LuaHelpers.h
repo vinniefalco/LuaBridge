@@ -88,3 +88,15 @@ inline bool isfulluserdata (lua_State* L, int index)
 {
   return lua_isuserdata (L, index) && !lua_islightuserdata (L, index);
 }
+
+/** Test lua_State objects for global equality.
+
+    This can determine if two different lua_State objects really point
+    to the same global state, such as when using coroutines.
+
+    @note This is used for assertions.
+*/
+inline bool equalstates (lua_State* L1, lua_State* L2)
+{
+  return lua_topointer (L1, LUA_REGISTRYINDEX) == lua_topointer (L2, LUA_REGISTRYINDEX);
+}
