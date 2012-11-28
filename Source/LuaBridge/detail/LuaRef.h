@@ -105,7 +105,9 @@ private:
     int m_keyRef;
 
   public:
-    /** Construct a Proxy from a table value.
+    //--------------------------------------------------------------------------
+    /**
+        Construct a Proxy from a table value.
 
         The table is in the registry, and the key is at the top of the stack.
     */
@@ -116,7 +118,9 @@ private:
     {
     }
 
-    /** Create a Proxy via copy constructor.
+    //--------------------------------------------------------------------------
+    /**
+        Create a Proxy via copy constructor.
 
         It is best to avoid code paths that invoke this, because it creates
         an extra temporary Lua reference. Typically this is done by passing
@@ -130,7 +134,9 @@ private:
       m_keyRef = luaL_ref (m_L, LUA_REGISTRYINDEX);
     }
 
-    /** Destroy the proxy.
+    //--------------------------------------------------------------------------
+    /**
+        Destroy the proxy.
 
         This does not destroy the table value.
     */
@@ -139,14 +145,18 @@ private:
       luaL_unref (m_L, LUA_REGISTRYINDEX, m_keyRef);
     }
 
-    /** Retrieve the lua_State associated with the table value.
+    //--------------------------------------------------------------------------
+    /**
+        Retrieve the lua_State associated with the table value.
     */
     lua_State* state () const
     {
       return m_L;
     }
 
-    /** Push the value onto the Lua stack.
+    //--------------------------------------------------------------------------
+    /**
+        Push the value onto the Lua stack.
     */
     void push () const
     {
@@ -156,7 +166,9 @@ private:
       lua_remove (m_L, -2); // remove the table
     }
 
-    /** Return a reference to the table value.
+    //--------------------------------------------------------------------------
+    /**
+        Return a reference to the table value.
     */
     int createRef () const
     {
@@ -164,7 +176,9 @@ private:
       return luaL_ref (m_L, LUA_REGISTRYINDEX);
     }
 
-    /** Retrieve the Lua type of this value.
+    //--------------------------------------------------------------------------
+    /**
+        Retrieve the Lua type of this value.
 
         The return values are the same as those from `lua_type()`.
     */
@@ -177,7 +191,9 @@ private:
       return result;
     }
 
-    /** Assign a new value to this table key.
+    //--------------------------------------------------------------------------
+    /**
+        Assign a new value to this table key.
     */
     template <class U>
     void operator= (U u)
@@ -189,7 +205,9 @@ private:
       lua_settable (m_L, -3);
     }
 
-    /** Access a table value using a key.
+    //--------------------------------------------------------------------------
+    /**
+        Access a table value using a key.
 
         This invokes metamethods.
     */
@@ -199,15 +217,19 @@ private:
       return LuaRef (*this) [key];
     }
 
-    /** Return the referenced value as a different type.
+    //--------------------------------------------------------------------------
+    /**
+        Return the referenced value as a different type.
     */
     template <class T>
     T cast () const
     {
-      return LuaRef (*this).cast <T>;
+      return LuaRef (*this).cast <T> ();
     }
 
-    /** Universal implicit conversion operator.
+    //--------------------------------------------------------------------------
+    /**
+        Universal implicit conversion operator.
 
         NOTE: Visual Studio 2010 and 2012 have a bug where this function
               is not used. See:
@@ -230,7 +252,60 @@ private:
       return cast <T> ();
     }
 
-    /** Call Lua code.
+    //--------------------------------------------------------------------------
+    /**
+        Universal comparison operators.
+    */
+    /** @{ */
+    template <class T>
+    bool operator== (T rhs)
+    {
+      StackPop p (m_L, 2);
+      push ();
+      Stack <T>::push (m_L, rhs);
+      return lua_compare (m_L, -2, -1, LUA_OPEQ) == 1;
+    }
+
+    template <class T>
+    bool operator< (T rhs)
+    {
+      StackPop p (m_L, 2);
+      push ();
+      Stack <T>::push (m_L, rhs);
+      return lua_compare (m_L, -2, -1, LUA_OPLT) == 1;
+    }
+
+    template <class T>
+    bool operator<= (T rhs)
+    {
+      StackPop p (m_L, 2);
+      push ();
+      Stack <T>::push (m_L, rhs);
+      return lua_compare (m_L, -2, -1, LUA_OPLE) == 1;
+    }
+
+    template <class T>
+    bool operator> (T rhs)
+    {
+      StackPop p (m_L, 2);
+      push ();
+      Stack <T>::push (m_L, rhs);
+      return lua_compare (m_L, -1, -2, LUA_OPLT) == 1;
+    }
+
+    template <class T>
+    bool operator>= (T rhs)
+    {
+      StackPop p (m_L, 2);
+      push ();
+      Stack <T>::push (m_L, rhs);
+      return lua_compare (m_L, -1, -2, LUA_OPLE) == 1;
+    }
+    /** @} */
+
+    //--------------------------------------------------------------------------
+    /**
+        Call Lua code.
 
         These overloads allow Lua code to be called with up to 8 parameters.
         The return value is provided as a LuaRef (which may be LUA_REFNIL).
@@ -594,6 +669,57 @@ public:
   /** @{ */
   inline bool toBool () const { return cast <bool> (); }
   inline int toInt () const { return cast <int> (); }
+  /** @} */
+
+  //----------------------------------------------------------------------------
+  /**
+      Universal comparison operators.
+  */
+  /** @{ */
+  template <class T>
+  bool operator== (T rhs)
+  {
+    StackPop p (m_L, 2);
+    push ();
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -2, -1, LUA_OPEQ) == 1;
+  }
+
+  template <class T>
+  bool operator< (T rhs)
+  {
+    StackPop p (m_L, 2);
+    push ();
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -2, -1, LUA_OPLT) == 1;
+  }
+
+  template <class T>
+  bool operator<= (T rhs)
+  {
+    StackPop p (m_L, 2);
+    push ();
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -2, -1, LUA_OPLE) == 1;
+  }
+
+  template <class T>
+  bool operator> (T rhs)
+  {
+    StackPop p (m_L, 2);
+    push ();
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -1, -2, LUA_OPLT) == 1;
+  }
+
+  template <class T>
+  bool operator>= (T rhs)
+  {
+    StackPop p (m_L, 2);
+    push ();
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -1, -2, LUA_OPLE) == 1;
+  }
   /** @} */
 
   //----------------------------------------------------------------------------
