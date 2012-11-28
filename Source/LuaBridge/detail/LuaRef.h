@@ -54,7 +54,9 @@ private:
   class Proxy;
   friend struct Stack <Proxy>;
 
-  /** Pop the Lua stack.
+  //----------------------------------------------------------------------------
+  /**
+      Pop the Lua stack.
 
       Pops the specified number of stack items on destruction. We use this
       when returning objects, to avoid an explicit temporary variable, since
@@ -110,6 +112,7 @@ private:
         Construct a Proxy from a table value.
 
         The table is in the registry, and the key is at the top of the stack.
+        The key is popped off the stack.
     */
     Proxy (lua_State* L, int tableRef)
       : m_L (L)
@@ -130,6 +133,11 @@ private:
       : m_L (other.m_L)
       , m_tableRef (other.m_tableRef)
     {
+      // If this assert goes off it means code is taking this path,
+      // which is better avoided.
+      //
+      assert (0);
+
       lua_rawgeti (m_L, LUA_REGISTRYINDEX, other.m_keyRef);
       m_keyRef = luaL_ref (m_L, LUA_REGISTRYINDEX);
     }
@@ -147,7 +155,34 @@ private:
 
     //--------------------------------------------------------------------------
     /**
-        Retrieve the lua_State associated with the table value.
+        Return a reference to the table value.
+    */
+    int createRef () const
+    {
+      push (m_L);
+      return luaL_ref (m_L, LUA_REGISTRYINDEX);
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+        Assign a new value to this table key.
+    */
+    template <class T>
+    Proxy& operator= (T v)
+    {
+      StackPop p (m_L, 1);
+      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_tableRef);
+      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_keyRef);
+      Stack <U>::push (m_L, u);
+      lua_settable (m_L, -3);
+      return *this;
+    }
+
+    //==========================================================================
+    //
+    // This group of member functions mirrors the member functions in LuaRef.
+
+    /** Retrieve the lua_State associated with the table value.
     */
     lua_State* state () const
     {
@@ -158,73 +193,53 @@ private:
     /**
         Push the value onto the Lua stack.
     */
-    void push () const
+    void push (lua_State* L) const
     {
-      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_tableRef);
-      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_keyRef);
-      lua_gettable (m_L, -2);
-      lua_remove (m_L, -2); // remove the table
+      assert (equalstates (L, m_L));
+      lua_rawgeti (L, LUA_REGISTRYINDEX, m_tableRef);
+      lua_rawgeti (L, LUA_REGISTRYINDEX, m_keyRef);
+      lua_gettable (L, -2);
+      lua_remove (L, -2); // remove the table
     }
 
     //--------------------------------------------------------------------------
     /**
-        Return a reference to the table value.
-    */
-    int createRef () const
-    {
-      push ();
-      return luaL_ref (m_L, LUA_REGISTRYINDEX);
-    }
+        Determine the object type.
 
-    //--------------------------------------------------------------------------
-    /**
-        Retrieve the Lua type of this value.
-
-        The return values are the same as those from `lua_type()`.
+        The return values are the same as for `lua_type`.
     */
-    int type ()
+    int type () const
     {
       int result;
-      push ();
+      push (m_L);
       result = lua_type (m_L, -1);
       lua_pop (m_L, 1);
       return result;
     }
 
-    //--------------------------------------------------------------------------
-    /**
-        Assign a new value to this table key.
-    */
-    template <class U>
-    void operator= (U u)
-    {
-      StackPop p (m_L, 1);
-      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_tableRef);
-      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_keyRef);
-      Stack <U>::push (m_L, u);
-      lua_settable (m_L, -3);
-    }
+    inline bool isNil () const { return type () == LUA_TNIL; }
+    inline bool isNumber () const { return type () == LUA_TNUMBER; }
+    inline bool isString () const { return type () == LUA_TSTRING; }
+    inline bool isTable () const { return type () == LUA_TTABLE; }
+    inline bool isFunction () const { return type () == LUA_TFUNCTION; }
+    inline bool isUserdata () const { return type () == LUA_TUSERDATA; }
+    inline bool isThread () const { return type () == LUA_TTHREAD; }
+    inline bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
 
     //--------------------------------------------------------------------------
     /**
-        Access a table value using a key.
-
-        This invokes metamethods.
-    */
-    template <class U>
-    Proxy operator[] (U key) const
-    {
-      return LuaRef (*this) [key];
-    }
-
-    //--------------------------------------------------------------------------
-    /**
-        Return the referenced value as a different type.
+        Perform an explicit conversion.
     */
     template <class T>
     T cast () const
     {
-      return LuaRef (*this).cast <T> ();
+      StackPop p (m_L, 1);
+      push (m_L);
+
+      // lua_gettop is used because Userdata::getClass() doesn't handle
+      // negative stack indexes.
+      //
+      return Stack <T>::get (m_L, lua_gettop (m_L));
     }
 
     //--------------------------------------------------------------------------
@@ -258,50 +273,71 @@ private:
     */
     /** @{ */
     template <class T>
-    bool operator== (T rhs)
+    bool operator== (T rhs) const
     {
       StackPop p (m_L, 2);
-      push ();
+      push (m_L);
       Stack <T>::push (m_L, rhs);
       return lua_compare (m_L, -2, -1, LUA_OPEQ) == 1;
     }
 
     template <class T>
-    bool operator< (T rhs)
+    bool operator< (T rhs) const
     {
       StackPop p (m_L, 2);
-      push ();
+      push (m_L);
       Stack <T>::push (m_L, rhs);
       return lua_compare (m_L, -2, -1, LUA_OPLT) == 1;
     }
 
     template <class T>
-    bool operator<= (T rhs)
+    bool operator<= (T rhs) const
     {
       StackPop p (m_L, 2);
-      push ();
+      push (m_L);
       Stack <T>::push (m_L, rhs);
       return lua_compare (m_L, -2, -1, LUA_OPLE) == 1;
     }
 
     template <class T>
-    bool operator> (T rhs)
+    bool operator> (T rhs) const
     {
       StackPop p (m_L, 2);
-      push ();
+      push (m_L);
       Stack <T>::push (m_L, rhs);
       return lua_compare (m_L, -1, -2, LUA_OPLT) == 1;
     }
 
     template <class T>
-    bool operator>= (T rhs)
+    bool operator>= (T rhs) const
     {
       StackPop p (m_L, 2);
-      push ();
+      push (m_L);
       Stack <T>::push (m_L, rhs);
       return lua_compare (m_L, -1, -2, LUA_OPLE) == 1;
     }
+
+    template <class T>
+    bool rawequal (T rhs) const
+    {
+      StackPop p (m_L, 2);
+      push (m_L);
+      Stack <T>::push (m_L, rhs);
+      return lua_rawequal (m_L, -1, -2) == 1;
+    }
     /** @} */
+
+    //--------------------------------------------------------------------------
+    /**
+        Access a table value using a key.
+
+        This invokes metamethods.
+    */
+    template <class T>
+    Proxy operator[] (T key) const
+    {
+      return LuaRef (*this) [key];
+    }
 
     //--------------------------------------------------------------------------
     /**
@@ -314,7 +350,7 @@ private:
     /** @{ */
     LuaRef const operator() () const
     {
-      push ();
+      push (m_L);
       LuaException::pcall (m_L, 0, 1);
       return LuaRef (m_L, FromStack ());
     }
@@ -322,7 +358,7 @@ private:
     template <class P1>
     LuaRef const operator() (P1 p1) const
     {
-      push ();
+      push (m_L);
       Stack <P1>::push (m_L, p1);
       LuaException::pcall (m_L, 1, 1);
       return LuaRef (m_L, FromStack ());
@@ -331,7 +367,7 @@ private:
     template <class P1, class P2>
     LuaRef const operator() (P1 p1, P2 p2) const
     {
-      push ();
+      push (m_L);
       Stack <P1>::push (m_L, p1);
       Stack <P2>::push (m_L, p2);
       LuaException::pcall (m_L, 2, 1);
@@ -341,7 +377,7 @@ private:
     template <class P1, class P2, class P3>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3) const
     {
-      push ();
+      push (m_L);
       Stack <P1>::push (m_L, p1);
       Stack <P2>::push (m_L, p2);
       Stack <P3>::push (m_L, p3);
@@ -352,7 +388,7 @@ private:
     template <class P1, class P2, class P3, class P4>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4) const
     {
-      push ();
+      push (m_L);
       Stack <P1>::push (m_L, p1);
       Stack <P2>::push (m_L, p2);
       Stack <P3>::push (m_L, p3);
@@ -364,7 +400,7 @@ private:
     template <class P1, class P2, class P3, class P4, class P5>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) const
     {
-      push ();
+      push (m_L);
       Stack <P1>::push (m_L, p1);
       Stack <P2>::push (m_L, p2);
       Stack <P3>::push (m_L, p3);
@@ -377,7 +413,7 @@ private:
     template <class P1, class P2, class P3, class P4, class P5, class P6>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) const
     {
-      push ();
+      push (m_L);
       Stack <P1>::push (m_L, p1);
       Stack <P2>::push (m_L, p2);
       Stack <P3>::push (m_L, p3);
@@ -391,7 +427,7 @@ private:
     template <class P1, class P2, class P3, class P4, class P5, class P6, class P7>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7) const
     {
-      push ();
+      push (m_L);
       Stack <P1>::push (m_L, p1);
       Stack <P2>::push (m_L, p2);
       Stack <P3>::push (m_L, p3);
@@ -406,7 +442,7 @@ private:
     template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) const
     {
-      push ();
+      push (m_L);
       Stack <P1>::push (m_L, p1);
       Stack <P2>::push (m_L, p2);
       Stack <P3>::push (m_L, p3);
@@ -419,6 +455,8 @@ private:
       return LuaRef (m_L, FromStack ());
     }
     /** @} */
+
+    //==========================================================================
   };
 
 private:
@@ -471,7 +509,7 @@ private:
   */
   int createRef () const
   {
-    push ();
+    push (m_L);
     return luaL_ref (m_L, LUA_REGISTRYINDEX);
   }
 
@@ -569,181 +607,26 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-      Create a reference from the top of the stack.
-  */
-#if 0
-  static LuaRef popStack (lua_State* L)
-  {
-    return LuaRef (L, FromStack ());
-  }
-#endif
-
-  //----------------------------------------------------------------------------
-  /**
-      Retrieve the lua_State associated with the reference.
-  */
-  lua_State* state () const
-  {
-    return m_L;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-      Place the object onto the Lua stack.
-  */
-  void push () const										
-  {
-    lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-      Determine the object type.
-
-      The return values are the same as for lua_type().
-  */
-  /** @{ */
-  int type () const
-  {
-    int ret;
-    push ();
-    ret = lua_type (m_L, -1);
-    lua_pop (m_L, 1);
-    return ret;
-  }
-
-  inline bool isNone () const { return m_ref == LUA_NOREF; }
-  inline bool isNil () const { return type () == LUA_TNIL; }
-  inline bool isNumber () const { return type () == LUA_TNUMBER; }
-  inline bool isString () const { return type () == LUA_TSTRING; }
-  inline bool isTable () const { return type () == LUA_TTABLE; }
-  inline bool isFunction () const { return type () == LUA_TFUNCTION; }
-  inline bool isUserdata () const { return type () == LUA_TUSERDATA; }
-  inline bool isThread () const { return type () == LUA_TTHREAD; }
-  inline bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
-  /** @} */
-
-  //----------------------------------------------------------------------------
-  /**
-      Perform an explicit conversion.
-  */
-  template <class T>
-  T cast () const
-  {
-    StackPop p (m_L, 1);
-    push ();
-    return Stack <T>::get (m_L, lua_gettop (m_L));
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-      Universal implicit conversion operator.
-
-      NOTE: Visual Studio 2010 and 2012 have a bug where this function
-            is not used. See:
-
-      http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/e30b2664-a92d-445c-9db2-e8e0fbde2014
-      https://connect.microsoft.com/VisualStudio/feedback/details/771509/correct-code-doesnt-compile
-
-          // This code snippet fails to compile in vs2010,vs2012
-          struct S {
-            template <class T> inline operator T () const { return T (); }
-          };
-          int main () {
-            S () || false;
-            return 0;
-          }
-  */
-  template <class T>
-  inline operator T () const
-  {
-    return cast <T> ();
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-      Explicit type conversions.
-
-      These are here to work around defects in Visual Studio.
-  */
-  /** @{ */
-  inline bool toBool () const { return cast <bool> (); }
-  inline int toInt () const { return cast <int> (); }
-  /** @} */
-
-  //----------------------------------------------------------------------------
-  /**
-      Universal comparison operators.
-  */
-  /** @{ */
-  template <class T>
-  bool operator== (T rhs)
-  {
-    StackPop p (m_L, 2);
-    push ();
-    Stack <T>::push (m_L, rhs);
-    return lua_compare (m_L, -2, -1, LUA_OPEQ) == 1;
-  }
-
-  template <class T>
-  bool operator< (T rhs)
-  {
-    StackPop p (m_L, 2);
-    push ();
-    Stack <T>::push (m_L, rhs);
-    return lua_compare (m_L, -2, -1, LUA_OPLT) == 1;
-  }
-
-  template <class T>
-  bool operator<= (T rhs)
-  {
-    StackPop p (m_L, 2);
-    push ();
-    Stack <T>::push (m_L, rhs);
-    return lua_compare (m_L, -2, -1, LUA_OPLE) == 1;
-  }
-
-  template <class T>
-  bool operator> (T rhs)
-  {
-    StackPop p (m_L, 2);
-    push ();
-    Stack <T>::push (m_L, rhs);
-    return lua_compare (m_L, -1, -2, LUA_OPLT) == 1;
-  }
-
-  template <class T>
-  bool operator>= (T rhs)
-  {
-    StackPop p (m_L, 2);
-    push ();
-    Stack <T>::push (m_L, rhs);
-    return lua_compare (m_L, -1, -2, LUA_OPLE) == 1;
-  }
-  /** @} */
-
-  //----------------------------------------------------------------------------
-  /**
-      Access a table value using a key.
-
-      This invokes metamethods.
-  */
-  template <class T>
-  Proxy operator[] (T key) const
-  {
-    Stack <T>::push (m_L, key);
-    return Proxy (m_L, m_ref);
-  }
-
-  //----------------------------------------------------------------------------
-  /**
       Assign a different value to this LuaRef.
   */
   template <class T>
-  LuaRef& operator= (T v)
+  LuaRef& operator= (T rhs)
   {
     luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
-    Stack <T>::push (m_L, v);
+    Stack <T>::push (m_L, rhs);
+    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
+    return *this;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Assign another LuaRef to this LuaRef.
+  */
+  LuaRef& operator= (LuaRef const& rhs)
+  {
+    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
+    rhs.push (m_L);
+    m_L = rhs.state ();
     m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
     return *this;
   }
@@ -751,6 +634,8 @@ public:
   //----------------------------------------------------------------------------
   /**
       Print a text description of the value to a stream.
+
+      This is used for diagnostics.
   */
   void print (std::ostream& os)
   {
@@ -798,6 +683,169 @@ public:
     }
   }
 
+  //============================================================================
+  //
+  // This group of member functions is mirrored in Proxy
+  //
+
+  /** Retrieve the lua_State associated with the reference.
+  */
+  lua_State* state () const
+  {
+    return m_L;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Place the object onto the Lua stack.
+  */
+  void push (lua_State* L) const										
+  {
+    assert (equalstates (L, m_L));
+    lua_rawgeti (L, LUA_REGISTRYINDEX, m_ref);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Determine the object type.
+
+      The return values are the same as for `lua_type`.
+  */
+  /** @{ */
+  int type () const
+  {
+    int ret;
+    push (m_L);
+    ret = lua_type (m_L, -1);
+    lua_pop (m_L, 1);
+    return ret;
+  }
+
+  inline bool isNone () const { return m_ref == LUA_NOREF; }
+  inline bool isNil () const { return type () == LUA_TNIL; }
+  inline bool isNumber () const { return type () == LUA_TNUMBER; }
+  inline bool isString () const { return type () == LUA_TSTRING; }
+  inline bool isTable () const { return type () == LUA_TTABLE; }
+  inline bool isFunction () const { return type () == LUA_TFUNCTION; }
+  inline bool isUserdata () const { return type () == LUA_TUSERDATA; }
+  inline bool isThread () const { return type () == LUA_TTHREAD; }
+  inline bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
+  /** @} */
+
+  //----------------------------------------------------------------------------
+  /**
+      Perform an explicit conversion.
+  */
+  template <class T>
+  T cast () const
+  {
+    StackPop p (m_L, 1);
+    push (m_L);
+
+    // lua_gettop is used because Userdata::getClass() doesn't handle
+    // negative stack indexes.
+    //
+    return Stack <T>::get (m_L, lua_gettop (m_L));
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Universal implicit conversion operator.
+
+      NOTE: Visual Studio 2010 and 2012 have a bug where this function
+            is not used. See:
+
+      http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/e30b2664-a92d-445c-9db2-e8e0fbde2014
+      https://connect.microsoft.com/VisualStudio/feedback/details/771509/correct-code-doesnt-compile
+
+          // This code snippet fails to compile in vs2010,vs2012
+          struct S {
+            template <class T> inline operator T () const { return T (); }
+          };
+          int main () {
+            S () || false;
+            return 0;
+          }
+  */
+  template <class T>
+  inline operator T () const
+  {
+    return cast <T> ();
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Universal comparison operators.
+  */
+  /** @{ */
+  template <class T>
+  bool operator== (T rhs) const
+  {
+    StackPop p (m_L, 2);
+    push (m_L);
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -2, -1, LUA_OPEQ) == 1;
+  }
+
+  template <class T>
+  bool operator< (T rhs) const
+  {
+    StackPop p (m_L, 2);
+    push (m_L);
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -2, -1, LUA_OPLT) == 1;
+  }
+
+  template <class T>
+  bool operator<= (T rhs) const
+  {
+    StackPop p (m_L, 2);
+    push (m_L);
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -2, -1, LUA_OPLE) == 1;
+  }
+
+  template <class T>
+  bool operator> (T rhs) const
+  {
+    StackPop p (m_L, 2);
+    push (m_L);
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -1, -2, LUA_OPLT) == 1;
+  }
+
+  template <class T>
+  bool operator>= (T rhs) const
+  {
+    StackPop p (m_L, 2);
+    push (m_L);
+    Stack <T>::push (m_L, rhs);
+    return lua_compare (m_L, -1, -2, LUA_OPLE) == 1;
+  }
+
+  template <class T>
+  bool rawequal (T rhs) const
+  {
+    StackPop p (m_L, 2);
+    push (m_L);
+    Stack <T>::push (m_L, rhs);
+    return lua_rawequal (m_L, -1, -2) == 1;
+  }
+  /** @} */
+
+  //----------------------------------------------------------------------------
+  /**
+      Access a table value using a key.
+
+      This invokes metamethods.
+  */
+  template <class T>
+  Proxy operator[] (T key) const
+  {
+    Stack <T>::push (m_L, key);
+    return Proxy (m_L, m_ref);
+  }
+
   //----------------------------------------------------------------------------
   /**
       Call Lua code.
@@ -809,7 +857,7 @@ public:
   /** @{ */
   LuaRef const operator() () const
   {
-    push ();
+    push (m_L);
     LuaException::pcall (m_L, 0, 1);
     return LuaRef (m_L, FromStack ());
   }
@@ -817,7 +865,7 @@ public:
   template <class P1>
   LuaRef const operator() (P1 p1) const
   {
-    push ();
+    push (m_L);
     Stack <P1>::push (m_L, p1);
     LuaException::pcall (m_L, 1, 1);
     return LuaRef (m_L, FromStack ());
@@ -826,7 +874,7 @@ public:
   template <class P1, class P2>
   LuaRef const operator() (P1 p1, P2 p2) const
   {
-    push ();
+    push (m_L);
     Stack <P1>::push (m_L, p1);
     Stack <P2>::push (m_L, p2);
     LuaException::pcall (m_L, 2, 1);
@@ -836,7 +884,7 @@ public:
   template <class P1, class P2, class P3>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3) const
   {
-    push ();
+    push (m_L);
     Stack <P1>::push (m_L, p1);
     Stack <P2>::push (m_L, p2);
     Stack <P3>::push (m_L, p3);
@@ -847,7 +895,7 @@ public:
   template <class P1, class P2, class P3, class P4>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4) const
   {
-    push ();
+    push (m_L);
     Stack <P1>::push (m_L, p1);
     Stack <P2>::push (m_L, p2);
     Stack <P3>::push (m_L, p3);
@@ -859,7 +907,7 @@ public:
   template <class P1, class P2, class P3, class P4, class P5>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) const
   {
-    push ();
+    push (m_L);
     Stack <P1>::push (m_L, p1);
     Stack <P2>::push (m_L, p2);
     Stack <P3>::push (m_L, p3);
@@ -872,7 +920,7 @@ public:
   template <class P1, class P2, class P3, class P4, class P5, class P6>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) const
   {
-    push ();
+    push (m_L);
     Stack <P1>::push (m_L, p1);
     Stack <P2>::push (m_L, p2);
     Stack <P3>::push (m_L, p3);
@@ -886,7 +934,7 @@ public:
   template <class P1, class P2, class P3, class P4, class P5, class P6, class P7>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7) const
   {
-    push ();
+    push (m_L);
     Stack <P1>::push (m_L, p1);
     Stack <P2>::push (m_L, p2);
     Stack <P3>::push (m_L, p3);
@@ -901,7 +949,7 @@ public:
   template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8>
   LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) const
   {
-    push ();
+    push (m_L);
     Stack <P1>::push (m_L, p1);
     Stack <P2>::push (m_L, p2);
     Stack <P3>::push (m_L, p3);
@@ -914,6 +962,8 @@ public:
     return LuaRef (m_L, FromStack ());
   }
   /** @} */
+
+  //============================================================================
 
 private:
   lua_State* m_L;
@@ -946,9 +996,7 @@ public:
   //
   static inline void push (lua_State* L, LuaRef const& v)
   {
-    L; // remove warning
-    assert (equalstates (L, v.state ()));
-    v.push ();
+    v.push (L);
   }
 
   static inline LuaRef get (lua_State* L, int index)
@@ -969,9 +1017,7 @@ public:
   //
   static inline void push (lua_State* L, LuaRef::Proxy const& v)
   {
-    L; // remove warning
-    assert (equalstates (L, v.state ()));
-    v.push ();
+    v.push (L);
   }
 };
 
