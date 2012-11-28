@@ -1,3 +1,9 @@
+Version 1.1.0
+
+  * Split code up into several files
+  * Add Lua table and type representations (based on Nigel's code)
+  * Reformat documentation as external HTML file
+
 Version 1.0.3
 
   * Pass nil to Lua when a null pointer is passed for objects with shared lifetime.

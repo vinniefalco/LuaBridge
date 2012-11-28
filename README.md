@@ -2,67 +2,73 @@
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
 </a><br>
 
-# LuaBridge 1.0.3
+  # LuaBridge 1.0.3
 
-[LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
-functions, and classes available to [Lua][5]: A powerful, fast, lightweight,
-embeddable scripting language. LuaBridge has been tested and works with Lua
-revisions starting from 5.1.5., although it should work in any version of Lua
-from 5.1.0 and later.
+  [LuaBridge][3] is a lightweight, dependency-free library for making C++ data,
+  functions, and classes available to [Lua][5]: A powerful, fast, lightweight,
+  embeddable scripting language. LuaBridge has been tested and works with Lua
+  revisions starting from 5.1.5., although it should work in any version of Lua
+  from 5.1.0 and later.
 
-LuaBridge offers the following features:
+  LuaBridge offers the following features:
 
-- Nothing to compile, just include one header file!
+  - No Makefile, no .cpp files, just include one header !
 
-- Simple, light, and nothing else needed (like Boost).
+  - Simple, light, and nothing else needed (like Boost).
 
-- Supports different object lifetime management models.
+  - No macros, settings, or configuration scripts needed.
 
-- Convenient, type-safe access to the Lua stack.
+  - Supports different object lifetime management models.
 
-- Automatic function parameter type binding.
+  - Convenient, type-safe access to the Lua stack.
 
-- Does not require C++11.
+  - Automatic function parameter type binding.
 
-LuaBridge is distributed as a single header file. You simply add 
-`#include "LuaBridge.h"` where you want to bind your functions, classes, and
-variables. There are no additional source files, no compilation settings, and
-no Makefiles or IDE-specific project files. LuaBridge is easy to integrate.
-A few additional header files provide optional features. Like the main header
-file, these are simply used via `#include`. No additional source files need
-to be compiled.
+  - Easy access to Lua objects like tables and functions.
 
-C++ concepts like variables and classes are made available to Lua through a
-process called _registration_. Because Lua is weakly typed, the resulting
-structure is not rigid. The API is based on C++ template metaprogramming. It
-contains template code to automatically generate at compile-time the various
-Lua C API calls necessary to export your program's classes and functions to
-the Lua environment.
+  - Written in a clear and easy to debug style.
 
-### Version
+  - Does not require C++11.
 
-LuaBridge repository branches are as follows:
+  LuaBridge is distributed as a single header file. You simply add
+  `#include "LuaBridge.h"` where you want to bind your functions, classes, and
+  variables. There are no additional source files, no compilation settings, and
+  no Makefiles or IDE-specific project files. LuaBridge is easy to integrate.
+  A few additional header files provide optional features. Like the main header
+  file, these are simply used via `#include`. No additional source files need
+  to be compiled.
 
-- **[master][7]**: Tagged, stable release versions.
+  C++ concepts like variables and classes are made available to Lua through a
+  process called _registration_. Because Lua is weakly typed, the resulting
+  structure is not rigid. The API is based on C++ template metaprogramming. It
+  contains template code to automatically generate at compile-time the various
+  Lua C API calls necessary to export your program's classes and functions to
+  the Lua environment.
 
-- **[release][8]**: Tagged candidates for imminent release.
+  ### Version
 
-- **[develop][9]**: Work in progress.
+  LuaBridge repository branches are as follows:
 
-## LuaBridge Demo and Tests
+  - **[master][7]**: Tagged, stable release versions.
 
-LuaBridge provides both a command line program and a stand-alone graphical
-program for compiling and running the test suite. The graphical program brings
-up an interactive window where you can enter execute Lua statements in a
-persistent environment. This application is cross platform and works on
-Windows, Mac OS, iOS, Android, and GNU/Linux systems with X11. The stand-alone
-program should work anywhere. Both of these applications include LuaBridge,
-Lua version 5.2, and the code necessary to produce a cross platform graphic
-application. They are all together in a separate repository, with no
-additional dependencies, available on Github at [LuaBridge Demo and Tests][4].
-This is what the GUI application looks like, along with the C++ code snippet
-for registering the two classes:
-  
+  - **[release][8]**: Tagged candidates for imminent release.
+
+  - **[develop][9]**: Work in progress.
+
+  ## LuaBridge Demo and Tests
+
+  LuaBridge provides both a command line program and a stand-alone graphical
+  program for compiling and running the test suite. The graphical program brings
+  up an interactive window where you can enter execute Lua statements in a
+  persistent environment. This application is cross platform and works on
+  Windows, Mac OS, iOS, Android, and GNU/Linux systems with X11. The stand-alone
+  program should work anywhere. Both of these applications include LuaBridge,
+  Lua version 5.2, and the code necessary to produce a cross platform graphic
+  application. They are all together in a separate repository, with no
+  additional dependencies, available on Github at [LuaBridge Demo and Tests][4].
+  This is what the GUI application looks like, along with the C++ code snippet
+  for registering the two classes:
+
 <a href="https://github.com/vinniefalco/LuaBridgeDemo">
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot1.0.2.png">
 </a><br>
@@ -287,7 +293,7 @@ Are registered using:
           .addFunction ("func1", &B::func1)
           .addFunction ("func2", &B::func2)
         .endClass ()
-      .endClass ();
+      .endNameSpace ();
 
 Method registration works just like function registration.  Virtual methods
 work normally; no special syntax is needed. const methods are detected and
@@ -378,8 +384,8 @@ statements register constructors for the given classes:
         .endClass ()
         .beginClass <B> ("B")
           .addConstructor <void (*) (char const*, int)> ()
-        .endClass ();
-      .endNamespace ()
+        .endClass ()
+      .endNamespace ();
 
 Constructors added in this fashion are called from Lua using the fully
 qualified name of the class. This Lua code will create instances of `A` and
@@ -785,8 +791,8 @@ suggestions, and/or proposed changes will be handled by the new maintainer.
 
 ## License
 
-Copyright (C) 2012, [Vinnie Falco][1] ([e-mail][0]) <br>
-Copyright (C) 2007, Nathan Reed <br>
+Copyright 2012, [Vinnie Falco][1] ([e-mail][0]) <br>
+Copyright 2007, Nathan Reed <br>
   
 Portions from The Loki Library: <br>
 Copyright (C) 2001 by Andrei Alexandrescu
