@@ -173,7 +173,7 @@ private:
       StackPop p (m_L, 1);
       lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_tableRef);
       lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_keyRef);
-      Stack <U>::push (m_L, u);
+      Stack <T>::push (m_L, v);
       lua_settable (m_L, -3);
       return *this;
     }
