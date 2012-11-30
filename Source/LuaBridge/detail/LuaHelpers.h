@@ -54,9 +54,34 @@ inline void lua_rawsetp (lua_State* L, int idx, void const* p)
   lua_rawset (L, idx);
 }
 
+#define LUA_OPEQ 1
+#define LUA_OPLT 2
+#define LUA_OPLE 3
+
+inline int lua_compare (lua_State* L, int idx1, int idx2, int op)
+{
+  switch (op)
+  {
+  case LUA_OPEQ:
+    return lua_equal (L, idx1, idx2);
+    break;
+
+  case LUA_OPLT:
+    return lua_lessthan (L, idx1, idx2);
+    break;
+
+  case LUA_OPLE:
+    return lua_equal (L, idx1, idx2) || lua_lessthan (L, idx1, idx2);
+    break;
+
+  default:
+    return 0;
+  };
+}
+
 inline int get_length (lua_State* L, int idx)
 {
-  return int (lua_objlen (L, -1));
+  return int (lua_objlen (L, idx));
 }
 
 #else
