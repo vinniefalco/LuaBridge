@@ -53,6 +53,19 @@ inline void lua_rawsetp (lua_State* L, int idx, void const* p)
   lua_insert (L, -2);
   lua_rawset (L, idx);
 }
+
+inline int get_length (lua_State* L, int idx)
+{
+  return int (lua_objlen (L, -1));
+}
+
+#else
+inline int get_length (lua_State* L, int idx)
+{
+  lua_len (L, idx);
+  return int (luaL_checknumber (L, -1));
+}
+
 #endif
 
 #ifndef LUA_OK
