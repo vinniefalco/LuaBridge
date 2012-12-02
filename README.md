@@ -55,11 +55,11 @@ documentation, and incorporated contributions from Nigel Atkinson.
 For questions, comments, or bug reports feel free to open a Github issue
 or contact Vinnie Falco directly at the email address indicated below.
 
-Copyright 2012, [Vinnie Falco][7] (<[vinnie.falco@gmail.com][8]>)
-Copyright 2008, Nigel Atkinson
-Copyright 2007, Nathan Reed
+Copyright 2012, [Vinnie Falco][7] (<[vinnie.falco@gmail.com][8]>)<br>
+Copyright 2008, Nigel Atkinson<br>
+Copyright 2007, Nathan Reed<br>
 
-Portions from The Loki Library: <br>
+Portions from The Loki Library:<br>
 Copyright (C) 2001 by Andrei Alexandrescu
 
 Older versions of LuaBridge up to and including 0.2 are distributed under the

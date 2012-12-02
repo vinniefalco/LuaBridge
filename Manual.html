@@ -571,7 +571,7 @@ static float staticVar;
 
 std::string stringProperty;
 std::string getString () { return stringProperty; }
-void setString (std::string s) { return s; }
+void setString (std::string s) { stringProperty = s; }
 
 int foo () { return 42; }
 void bar (char const*) { }
