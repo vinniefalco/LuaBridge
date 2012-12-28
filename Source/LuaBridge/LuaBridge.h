@@ -38,7 +38,11 @@
 #include <stdexcept>
 #include <string>
 #include <typeinfo>
-
+extern "C" {
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+}
 namespace luabridge
 {
 
