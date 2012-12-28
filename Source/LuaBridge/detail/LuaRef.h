@@ -166,9 +166,28 @@ private:
     //--------------------------------------------------------------------------
     /**
         Assign a new value to this table key.
+
+        This may invoke metamethods.
     */
     template <class T>
     Proxy& operator= (T v)
+    {
+      StackPop p (m_L, 1);
+      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_tableRef);
+      lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_keyRef);
+      Stack <T>::push (m_L, v);
+      lua_rawset (m_L, -3);
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+        Assign a new value to this table key.
+
+        The assignment is raw, no metamethods are invoked.
+    */
+    template <class T>
+    Proxy& rawset (T v)
     {
       StackPop p (m_L, 1);
       lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_tableRef);
@@ -337,6 +356,23 @@ private:
     Proxy operator[] (T key) const
     {
       return LuaRef (*this) [key];
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+        Access a table value using a key.
+
+        The operation is raw, metamethods are not invoked. The result is
+        passed by value and may not be modified.
+    */
+    template <class T>
+    LuaRef rawget (T key) const
+    {
+      StackPop (m_L, 1);
+      push (m_L);
+      Stack <T>::push (m_L, key);
+      lua_rawget (m_L, -2);
+      return LuaRef (m_L, FromStack ());
     }
 
     //--------------------------------------------------------------------------
