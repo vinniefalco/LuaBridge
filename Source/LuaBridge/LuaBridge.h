@@ -39,6 +39,10 @@
 #include <string>
 #include <typeinfo>
 
+#define LUABRIDGE_MAJOR_VERSION 2
+#define LUABRIDGE_MINOR_VERSION 0
+#define LUABRIDGE_VERSION 200
+
 namespace luabridge
 {
 
