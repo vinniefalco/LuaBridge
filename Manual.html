@@ -1611,8 +1611,12 @@ type may be used as a key or value. Applying the array indexing operator
 called a <em>table proxy</em> which supports all the operations which can
 be performed on a <code>LuaRef</code>. In addition, assignments made to
 table proxies change the underlying table. Because table proxies are
-compiler-created temporary objects, you don't work with them directly.
-These operations all invoke table proxies behind the scenes:
+compiler-created temporary objects, you don't work with them directly. A
+LuaBridge table proxy should not be confused with the Lua proxy table
+technique described in the book "Programming in Lua"; the LuaBridge table
+proxy is simply an intermediate C++ class object that works behind the
+scenes to make table manipulation syntax conform to C++ idioms. These
+operations all invoke table proxies:
 </p>
 
 <pre>
