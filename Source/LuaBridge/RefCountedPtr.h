@@ -231,6 +231,10 @@ private:
 namespace luabridge
 {
 
+// forward declaration
+template <class T>
+struct ContainerTraits;
+
 template <class T>
 struct ContainerTraits <RefCountedPtr <T> >
 {

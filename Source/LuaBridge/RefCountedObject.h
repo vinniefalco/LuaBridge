@@ -39,10 +39,6 @@
 #ifndef LUABRIDGE_REFCOUNTEDOBJECT_HEADER
 #define LUABRIDGE_REFCOUNTEDOBJECT_HEADER
 
-#if !defined (LUABRIDGE_LUABRIDGE_HEADER)
-#error LuaBridge.h must be included before including this file
-#endif
-
 //#define LUABRIDGE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
 
 //==============================================================================
@@ -327,6 +323,10 @@ bool operator!= (ReferenceCountedObjectClass* object1, RefCountedObjectPtr<Refer
 
 namespace luabridge
 {
+
+// forward declaration
+template <class T>
+struct ContainerTraits;
 
 template <class T>
 struct ContainerTraits <RefCountedObjectPtr <T> >

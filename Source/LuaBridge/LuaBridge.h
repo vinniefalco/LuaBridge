@@ -134,7 +134,4 @@ inline void setHideMetatables (bool shouldHide)
 
 }
 
-#include "detail/RefCountedObject.h"
-#include "detail/RefCountedPtr.h"
-
 #endif
