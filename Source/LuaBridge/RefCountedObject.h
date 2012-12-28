@@ -120,18 +120,32 @@ private:
 };
 
 //==============================================================================
+
+/** Non thread-safe reference counted object.
+
+    This creates a RefCountedObjectType that uses a non-atomic integer
+    as the counter.
+*/
+typedef RefCountedObjectType <int> RefCountedObject;
+
+//==============================================================================
 /**
-  A smart-pointer class which points to a reference-counted object.
+    A smart-pointer class which points to a reference-counted object.
 
-  The template parameter specifies the class of the object you want to point to - the easiest
-  way to make a class reference-countable is to simply make it inherit from RefCountedObjectType,
-  but if you need to, you could roll your own reference-countable class by implementing a pair of
-  mathods called incReferenceCount() and decReferenceCount().
+    The template parameter specifies the class of the object you want to point
+    to - the easiest way to make a class reference-countable is to simply make
+    it inherit from RefCountedObjectType, but if you need to, you could roll
+    your own reference-countable class by implementing a pair of methods called
+    incReferenceCount() and decReferenceCount().
 
-  When using this class, you'll probably want to create a typedef to abbreviate the full
-  templated name - e.g.
+    When using this class, you'll probably want to create a typedef to
+    abbreviate the full templated name - e.g.
 
-  @code typedef RefCountedObjectPtr <MyClass> MyClassPtr;@endcode
+    @code
+    
+    typedef RefCountedObjectPtr <MyClass> MyClassPtr;
+    
+    @endcode
 */
 template <class ReferenceCountedObjectClass>
 class RefCountedObjectPtr
