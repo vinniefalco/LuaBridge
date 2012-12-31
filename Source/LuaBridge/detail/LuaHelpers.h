@@ -136,5 +136,6 @@ inline bool isfulluserdata (lua_State* L, int index)
 */
 inline bool equalstates (lua_State* L1, lua_State* L2)
 {
-  return lua_topointer (L1, LUA_REGISTRYINDEX) == lua_topointer (L2, LUA_REGISTRYINDEX);
+  return lua_topointer (L1, LUA_REGISTRYINDEX) ==
+         lua_topointer (L2, LUA_REGISTRYINDEX);
 }
