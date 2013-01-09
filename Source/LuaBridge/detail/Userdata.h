@@ -233,17 +233,27 @@ private:
           {
             // Replace current metatable with it's base class.
             rawgetfield (L, -1, "__parent");
-            lua_remove (L, -2);
+/*
+ud
+class metatable
+ud metatable
+ud __parent (nil)
+*/
 
             if (lua_isnil (L, -1))
             {
+              lua_remove (L, -1);
               // Mismatch, but its one of ours so get a type name.
-              rawgetfield (L, -2, "__type");
-              lua_insert (L, -4);
-              lua_pop (L, 2);
+              rawgetfield (L, -1, "__type");
+              lua_insert (L, -3);
+              lua_pop (L, 1);
               got = lua_tostring (L, -2);
               mismatch = true;
               break;
+            }
+            else
+            {
+              lua_remove (L, -2);
             }
           }
         }
@@ -261,6 +271,7 @@ private:
 
     if (mismatch)
     {
+      assert (lua_type (L, -1) == LUA_TTABLE);
       rawgetfield (L, -1, "__type");
       assert (lua_type (L, -1) == LUA_TSTRING);
       char const* const expected = lua_tostring (L, -1);
