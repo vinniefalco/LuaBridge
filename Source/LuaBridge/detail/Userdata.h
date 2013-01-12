@@ -758,20 +758,60 @@ struct Stack <T&>
   }
 };
 
+template <class C, bool byContainer>
+struct RefStackHelper
+{
+  typedef C return_type;  
+	
+  static inline void push (lua_State* L, C const& t)
+  {
+    UserdataSharedHelper <C,
+      TypeTraits::isConst <typename ContainerTraits <C>::Type>::value>::push (L, t);
+  }
+
+  typedef typename TypeTraits::removeConst <
+    typename ContainerTraits <C>::Type>::Type T;
+
+  static return_type get (lua_State* L, int index)
+  {
+    return Userdata::get <T> (L, index, true);
+  }
+};
+
+template <class T>
+struct RefStackHelper <T, false>
+{
+  typedef T const& return_type;  
+	
+	static inline void push (lua_State* L, T const& t)
+	{
+	  UserdataPtr::push (L, &t);
+	}
+
+  static return_type get (lua_State* L, int index)
+  {
+    T const* const t = Userdata::get <T> (L, index, true);
+
+    if (!t)
+      luaL_error (L, "nil passed to reference");
+    return *t;
+  }
+    
+};
+
 // reference to const
 template <class T>
 struct Stack <T const&>
 {
+  typedef RefStackHelper <T, TypeTraits::isContainer <T>::value> helper_t;
+  
   static inline void push (lua_State* L, T const& t)
   {
-    UserdataPtr::push (L, &t);
+    helper_t::push (L, t);
   }
 
-  static T const& get (lua_State* L, int index)
+  static typename helper_t::return_type get (lua_State* L, int index)
   {
-    T const* const t = Userdata::get <T> (L, index, true);
-    if (!t)
-      luaL_error (L, "nil passed to reference");
-    return *t;
+    return helper_t::get (L, index);
   }
 };
