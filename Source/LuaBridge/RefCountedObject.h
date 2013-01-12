@@ -41,6 +41,8 @@
 
 //#define LUABRIDGE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
 
+#include <cassert>
+
 //==============================================================================
 /**
   Adds reference-counting to an object.
