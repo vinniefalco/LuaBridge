@@ -564,6 +564,15 @@ private:
   }
 
   //----------------------------------------------------------------------------
+
+  // This type of construction is disallowed, since we don't have a `lua_State`.
+  //
+  template <class T>
+  LuaRef (T)
+  {
+  }
+
+  //----------------------------------------------------------------------------
   /**
       Create a reference to this ref.
 

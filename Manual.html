@@ -1471,7 +1471,7 @@ A <code>LuaRef</code> can hold classes <em>registered</em> using LuaBridge:
 <pre>
 class A;
 //...
-LuaRef v = new A;     // A LuaBridge userdata holding a pointer to A
+LuaRef v (L, new A); // A LuaBridge userdata holding a pointer to A
 </pre>
 
 <p>
