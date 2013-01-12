@@ -1045,7 +1045,8 @@ public:
 
     rawgetfield (L, -1, "__propget");
     assert (lua_istable (L, -1));
-    new (lua_newuserdata (L, sizeof (get))) TG (get);
+    typedef TG (*get_t) ();
+    new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
     lua_pushcclosure (L, &CFunc::Call <TG (*) (void)>::f, 1);
     rawsetfield (L, -2, name);
     lua_pop (L, 1);
@@ -1054,7 +1055,8 @@ public:
     assert (lua_istable (L, -1));
     if (set != 0)
     {
-      new (lua_newuserdata (L, sizeof (set))) TS (set);
+      typedef void (*set_t) (TS);
+      new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
       lua_pushcclosure (L, &CFunc::Call <void (*) (TS)>::f, 1);
     }
     else
