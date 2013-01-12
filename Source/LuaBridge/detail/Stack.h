@@ -27,6 +27,18 @@
 */
 //==============================================================================
 
+//zero 06-jan-2013
+//in order to interoperate with LNUM...
+#if LUA_TINT
+#define IPUSHER lua_pushinteger
+#define ILUATYPE lua_Integer
+#define ICHECKER luaL_checkinteger
+#else
+#define IPUSHER lua_pushnumber
+#define ILUATYPE lua_Number
+#define ICHECKER luaL_checknumber
+#endif
+
 //------------------------------------------------------------------------------
 /**
     Receive the lua_State* as an argument.
@@ -67,12 +79,12 @@ struct Stack <int>
 {
   static inline void push (lua_State* L, int value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    IPUSHER (L, static_cast <ILUATYPE> (value));
   }
   
   static inline int get (lua_State* L, int index)
   {
-    return static_cast <int > (luaL_checknumber (L, index));
+    return static_cast <int > (ICHECKER (L, index));
   }
 };
 
@@ -85,12 +97,12 @@ struct Stack <unsigned int>
 {
   static inline void push (lua_State* L, unsigned int value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    IPUSHER (L, static_cast <ILUATYPE> (value));
   }
   
   static inline unsigned int get (lua_State* L, int index)
   {
-    return static_cast <unsigned int > (luaL_checknumber (L, index));
+    return static_cast <unsigned int > (ICHECKER (L, index));
   }
 };
 
@@ -103,12 +115,12 @@ struct Stack <unsigned char>
 {
   static inline void push (lua_State* L, unsigned char value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    IPUSHER (L, static_cast <ILUATYPE> (value));
   }
   
   static inline unsigned char get (lua_State* L, int index)
   {
-    return static_cast <unsigned char> (luaL_checknumber (L, index));
+    return static_cast <unsigned char> (ICHECKER (L, index));
   }
 };
 
@@ -121,12 +133,12 @@ struct Stack <short>
 {
   static inline void push (lua_State* L, short value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    IPUSHER (L, static_cast <ILUATYPE> (value));
   }
   
   static inline short get (lua_State* L, int index)
   {
-    return static_cast <short> (luaL_checknumber (L, index));
+    return static_cast <short> (ICHECKER (L, index));
   }
 };
 
@@ -139,12 +151,12 @@ struct Stack <unsigned short>
 {
   static inline void push (lua_State* L, unsigned short value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    IPUSHER (L, static_cast <ILUATYPE> (value));
   }
   
   static inline unsigned short get (lua_State* L, int index)
   {
-    return static_cast <unsigned short> (luaL_checknumber (L, index));
+    return static_cast <unsigned short> (ICHECKER (L, index));
   }
 };
 
@@ -157,12 +169,12 @@ struct Stack <long>
 {
   static inline void push (lua_State* L, long value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    IPUSHER (L, static_cast <ILUATYPE> (value));
   }
   
   static inline long get (lua_State* L, int index)
   {
-    return static_cast <long> (luaL_checknumber (L, index));
+    return static_cast <long> (ICHECKER (L, index));
   }
 };
 
@@ -175,12 +187,12 @@ struct Stack <unsigned long>
 {
   static inline void push (lua_State* L, unsigned long value)
   {
-    lua_pushnumber (L, static_cast <lua_Number> (value));
+    IPUSHER (L, static_cast <ILUATYPE> (value));
   }
   
   static inline unsigned long get (lua_State* L, int index)
   {
-    return static_cast <unsigned long> (luaL_checknumber (L, index));
+    return static_cast <unsigned long> (ICHECKER (L, index));
   }
 };
 
