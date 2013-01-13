@@ -1178,3 +1178,13 @@ inline std::ostream& operator<< (std::ostream& os, LuaRef& ref)
   ref.print (os);
   return os;
 }
+
+//------------------------------------------------------------------------------
+/**
+    more C++-like cast syntax
+*/
+template<class T>
+inline T LuaRef_cast(LuaRef const& lr)
+{
+	return lr.cast<T>();
+}
