@@ -723,7 +723,7 @@ public:
   */
   std::string tostring() const
   {
-	lua_getglobal (m_L, "tostring");
+    lua_getglobal (m_L, "tostring");
     push (m_L);
     lua_call (m_L, 1, 1);
     const char* str = lua_tostring(m_L, 1);
@@ -799,7 +799,7 @@ public:
   /**
       Place the object onto the Lua stack.
   */
-  void push (lua_State* L) const										
+  void push (lua_State* L) const
   {
     assert (equalstates (L, m_L));
     lua_rawgeti (L, LUA_REGISTRYINDEX, m_ref);
@@ -1194,11 +1194,11 @@ inline std::ostream& operator<< (std::ostream& os, LuaRef const& ref)
 }
 
 //------------------------------------------------------------------------------
-/**
-    more C++-like cast syntax
-*/
+
+// more C++-like cast syntax
+//
 template<class T>
 inline T LuaRef_cast(LuaRef const& lr)
 {
-	return lr.cast<T>();
+  return lr.cast<T>();
 }
