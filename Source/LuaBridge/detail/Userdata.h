@@ -50,7 +50,7 @@
     6. Our metatables have "__metatable" set to a boolean = false.
     7. Our lightuserdata is unique.
 */
-static inline void* getIdentityKey ()
+inline void* getIdentityKey ()
 {
   static char value;
   return &value;
