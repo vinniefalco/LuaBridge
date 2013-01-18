@@ -2313,7 +2313,7 @@ namespace Detail
     has a metatable, and the metatable has a value for a lightuserdata key
     with this identity pointer address, that LuaBridge created the userdata.
   */
-  static inline void* const getIdentityKey ()
+  inline void* const getIdentityKey ()
   {
     static char value;
     return &value;
