@@ -888,6 +888,7 @@ struct Stack
 {
   static void push (lua_State* L, T t);
   static T get (lua_State* L, int index);
+  static bool is_a (lua_State* L, int index);
 };
 </pre>
 
@@ -932,6 +933,11 @@ struct Stack &lt;juce::String&gt;
   static juce::String get (lua_State* L, int index)
   {
     return juce::String (luaL_checkstring (L, index));
+  }
+
+  static bool is_a (lua_State* L, int index)
+  {
+    return lua_isstring (L, index);
   }
 };
 </pre>
