@@ -765,7 +765,8 @@ there are no get or set functions, or the get and set functons do not have the
 right function signature. Since the class declaration is closed for changes,
 LuaBridge allows for a <em>property member proxy</em>. This is a pair of get
 and set flat functions which take as their first parameter a pointer to
-the object. This is easily understood with the following example:
+the object. Similarily member functions that are not in the C++ class can
+be added. This is easily understood with the following example:
 </p>
 
 <pre>
@@ -780,7 +781,9 @@ struct Vec
 Taking the address of an array element, e.g. <code>&amp;Vec::coord [0]</code>
 results in an error instead of a pointer-to-member. The class is closed for
 modifications, but we want to export Vec objects to Lua using the familiar
-object notation. To do this, first we add a "helper" class:
+object notation. Additionally the struct does not have a string conversion
+function that we need to add a <code>__tostring</code> function to the lua
+type. To do this, first we add a "helper" class:
 </p>
 
 <pre>
@@ -797,14 +800,23 @@ struct VecHelper
   {
     vec->coord [index] = value;
   }
+  
+  static std::string tostring (Vec *vec)
+  {
+    std::stringstream result;
+    for(int i = 0;i&lt;3;++i)
+      result &lt;&lt; vec-&gt;coord[i] &lt;&lt; ' ';
+    return result.str();
+  }
 };
 </pre>
 
 <p>
 This helper class is only used to provide property member proxies.
 <code>Vec</code> continues to be used in the C++ code as it was before.
-Now we can register the <code>Vec</code> class with property member proxies for
-<code>x</code>, <code>y</code>, and <code>z</code>:
+Now we can register the <code>Vec</code> class with property member and 
+function proxies for <code>x</code>, <code>y</code>, <code>z</code> and 
+<code>__tostring</code>:
 </p>
 
 <pre>
@@ -814,6 +826,7 @@ getGlobalNamespace (L)
       .addProperty ("x", &amp;VecHelper::get &lt;0&gt;, &amp;VecHelper::set &lt;0&gt;)
       .addProperty ("y", &amp;VecHelper::get &lt;1&gt;, &amp;VecHelper::set &lt;1&gt;)
       .addProperty ("z", &amp;VecHelper::get &lt;2&gt;, &amp;VecHelper::set &lt;2&gt;)
+      .addFunction ("__tostring", &amp;VecHelper::tostring)
     .endClass ()
   .endNamespace ();
 </pre>
