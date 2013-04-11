@@ -296,7 +296,6 @@ ud __parent (nil)
     assert (index > 0);
 
     bool mismatch = false;
-    char const* got = 0;
 
     lua_rawgetp (L, LUA_REGISTRYINDEX, baseClassKey);
     assert (lua_istable (L, -1));
@@ -355,10 +354,7 @@ ud __parent (nil)
             if (lua_isnil (L, -1))
             {
               lua_remove (L, -1);
-              // Mismatch, but its one of ours so get a type name.
-              rawgetfield (L, -1, "__type");
-              lua_insert (L, -3);
-              lua_pop (L, 1);
+              lua_pop (L, 2);
               mismatch = true;
               break;
             }
@@ -379,6 +375,7 @@ ud __parent (nil)
     {
       mismatch = true;
     }
+    
 	return !mismatch;
   }
 
