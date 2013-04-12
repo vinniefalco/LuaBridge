@@ -373,6 +373,7 @@ ud __parent (nil)
     }
     else
     {
+      lua_pop (L, 1);
       mismatch = true;
     }
     
@@ -415,7 +416,7 @@ public:
   static inline bool check (lua_State* L, int index, bool canBeConst)
   {
     if (lua_isnil (L, index))
-      return true; // should this be false?
+      return false;
     else
       return checkClass (L, index, ClassInfo <T>::getClassKey (), canBeConst);
   }
