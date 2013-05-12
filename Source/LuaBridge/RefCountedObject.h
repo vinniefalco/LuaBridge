@@ -1,9 +1,8 @@
 //==============================================================================
 /*
   https://github.com/vinniefalco/LuaBridge
-  https://github.com/vinniefalco/LuaBridgeDemo
 
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright 2004-11 by Raw Material Software Ltd.
 
   This is a derivative work used by permission from part of
@@ -40,11 +39,9 @@
 #ifndef LUABRIDGE_REFCOUNTEDOBJECT_HEADER
 #define LUABRIDGE_REFCOUNTEDOBJECT_HEADER
 
-#if !defined (LUABRIDGE_LUABRIDGE_HEADER)
-#error LuaBridge.h must be included before including this file
-#endif
-
 //#define LUABRIDGE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
+
+#include <cassert>
 
 //==============================================================================
 /**
@@ -125,18 +122,32 @@ private:
 };
 
 //==============================================================================
+
+/** Non thread-safe reference counted object.
+
+    This creates a RefCountedObjectType that uses a non-atomic integer
+    as the counter.
+*/
+typedef RefCountedObjectType <int> RefCountedObject;
+
+//==============================================================================
 /**
-  A smart-pointer class which points to a reference-counted object.
+    A smart-pointer class which points to a reference-counted object.
 
-  The template parameter specifies the class of the object you want to point to - the easiest
-  way to make a class reference-countable is to simply make it inherit from RefCountedObjectType,
-  but if you need to, you could roll your own reference-countable class by implementing a pair of
-  mathods called incReferenceCount() and decReferenceCount().
+    The template parameter specifies the class of the object you want to point
+    to - the easiest way to make a class reference-countable is to simply make
+    it inherit from RefCountedObjectType, but if you need to, you could roll
+    your own reference-countable class by implementing a pair of methods called
+    incReferenceCount() and decReferenceCount().
 
-  When using this class, you'll probably want to create a typedef to abbreviate the full
-  templated name - e.g.
+    When using this class, you'll probably want to create a typedef to
+    abbreviate the full templated name - e.g.
 
-  @code typedef RefCountedObjectPtr <MyClass> MyClassPtr;@endcode
+    @code
+    
+    typedef RefCountedObjectPtr <MyClass> MyClassPtr;
+    
+    @endcode
 */
 template <class ReferenceCountedObjectClass>
 class RefCountedObjectPtr
@@ -328,6 +339,10 @@ bool operator!= (ReferenceCountedObjectClass* object1, RefCountedObjectPtr<Refer
 
 namespace luabridge
 {
+
+// forward declaration
+template <class T>
+struct ContainerTraits;
 
 template <class T>
 struct ContainerTraits <RefCountedObjectPtr <T> >

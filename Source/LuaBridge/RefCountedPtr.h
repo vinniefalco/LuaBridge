@@ -1,10 +1,9 @@
 //==============================================================================
 /*
   https://github.com/vinniefalco/LuaBridge
-  https://github.com/vinniefalco/LuaBridgeDemo
   
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright (C) 2007, Nathan Reed
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2007, Nathan Reed
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -231,6 +230,10 @@ private:
 
 namespace luabridge
 {
+
+// forward declaration
+template <class T>
+struct ContainerTraits;
 
 template <class T>
 struct ContainerTraits <RefCountedPtr <T> >
