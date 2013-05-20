@@ -96,7 +96,7 @@ private:
     assert (lua_istable (L, -1));
 
     // Make sure we have a userdata.
-    if (!mismatch && !lua_isuserdata (L, index))
+    if (!lua_isuserdata (L, index))
       mismatch = true;
 
     // Make sure it's metatable is ours.
