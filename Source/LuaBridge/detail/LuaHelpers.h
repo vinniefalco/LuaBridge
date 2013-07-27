@@ -88,7 +88,9 @@ inline int get_length (lua_State* L, int idx)
 inline int get_length (lua_State* L, int idx)
 {
   lua_len (L, idx);
-  return int (luaL_checknumber (L, -1));
+  int len = int (luaL_checknumber (L, -1));
+  lua_pop (L, 1);
+  return len;
 }
 
 #endif
