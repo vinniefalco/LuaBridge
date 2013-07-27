@@ -807,6 +807,17 @@ public:
 
   //----------------------------------------------------------------------------
   /**
+      Pop the top of Lua stack and assign the ref to m_ref
+  */
+  void pop (lua_State* L)
+  {
+    assert (equalstates (L, m_L));
+    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
+    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
       Determine the object type.
 
       The return values are the same as for `lua_type`.
