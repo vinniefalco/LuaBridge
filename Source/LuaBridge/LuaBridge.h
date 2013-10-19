@@ -46,8 +46,6 @@
 namespace luabridge
 {
 
-#include "detail/dump.h"
-
 // Forward declaration
 //
 template <class T>
