@@ -245,6 +245,14 @@ private:
     inline bool isThread () const { return type () == LUA_TTHREAD; }
     inline bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
 
+    template<class T>
+    inline bool is () const
+    {
+      StackPop p (m_L, 1);
+      push (m_L);
+      return Stack <T>::is_a (m_L, lua_gettop (m_L));
+    }
+
     //--------------------------------------------------------------------------
     /**
         Perform an explicit conversion.
@@ -726,9 +734,12 @@ public:
     lua_getglobal (m_L, "tostring");
     push (m_L);
     lua_call (m_L, 1, 1);
-    const char* str = lua_tostring(m_L, 1);
+    const char* str = lua_tostring(m_L, -1);
     lua_pop(m_L, 1);
-    return std::string(str);
+    if(str != 0)
+        return std::string(str);
+    else
+        return std::string();
   }
 
   //----------------------------------------------------------------------------
@@ -840,6 +851,15 @@ public:
   inline bool isUserdata () const { return type () == LUA_TUSERDATA; }
   inline bool isThread () const { return type () == LUA_TTHREAD; }
   inline bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
+
+  template<class T>
+  inline bool is () const
+  {
+    StackPop p (m_L, 1);
+    push (m_L);
+    return Stack <T>::is_a (m_L, lua_gettop (m_L));
+  }
+
   /** @} */
 
   //----------------------------------------------------------------------------

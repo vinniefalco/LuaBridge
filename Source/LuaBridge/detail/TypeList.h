@@ -48,9 +48,11 @@
 */
 typedef void None;
 
-template <typename Head, typename Tail = None>
+template <typename H, typename T = None>
 struct TypeList
 {
+    typedef H Head;
+    typedef T Tail;
 };
 
 /**

@@ -94,7 +94,7 @@ ul {
 
 ul.bullets {
   list-style-type: disc ;
-} 
+}
 
 img {
   border: 0;
@@ -177,7 +177,8 @@ Copyright &copy; 2012 Vinnie Falco. Freely available under the terms of the
     <LI><A href="#s3.4.1">3.4.1 - Class RefCountedObjectPtr</A>
     <LI><A href="#s3.4.2">3.4.2 - Class RefCountedPtr</A>
     <LI><A href="#s3.4.3">3.4.3 - User-defined Containers</A>
-    <LI><A href="#s3.4.4">3.4.4 - Container Constructors</A>
+    <LI><A href="#s3.4.4">3.4.4 - <code>shared_ptr</code> as Containers</A>
+    <LI><A href="#s3.4.5">3.4.5 - Container Constructors</A>
   </UL>
   <LI><A href="#s3.5">3.5 - Mixing Lifetimes</A>
   <LI><A href="#s3.6">3.6 - Convenience Functions</A>
@@ -661,7 +662,7 @@ use <code>beginClass</code> on it. These declarations:
 struct A {
   static int staticData;
   static float staticProperty;
-    
+
   static float getStaticProperty () { return staticProperty; }
   static void setStaticProperty (float f) { staticProperty = f; }
   static void staticFunc () { }
@@ -764,12 +765,13 @@ there are no get or set functions, or the get and set functons do not have the
 right function signature. Since the class declaration is closed for changes,
 LuaBridge allows for a <em>property member proxy</em>. This is a pair of get
 and set flat functions which take as their first parameter a pointer to
-the object. This is easily understood with the following example:
+the object. Similarily member functions that are not in the C++ class can
+be added. This is easily understood with the following example:
 </p>
 
 <pre>
 // Third party declaration, can't be changed
-struct Vec 
+struct Vec
 {
   float coord [3];
 };
@@ -779,7 +781,9 @@ struct Vec
 Taking the address of an array element, e.g. <code>&amp;Vec::coord [0]</code>
 results in an error instead of a pointer-to-member. The class is closed for
 modifications, but we want to export Vec objects to Lua using the familiar
-object notation. To do this, first we add a "helper" class:
+object notation. Additionally the struct does not have a string conversion
+function that we need to add a <code>__tostring</code> function to the lua
+type. To do this, first we add a "helper" class:
 </p>
 
 <pre>
@@ -796,14 +800,23 @@ struct VecHelper
   {
     vec->coord [index] = value;
   }
+  
+  static std::string tostring (Vec *vec)
+  {
+    std::stringstream result;
+    for(int i = 0;i&lt;3;++i)
+      result &lt;&lt; vec-&gt;coord[i] &lt;&lt; ' ';
+    return result.str();
+  }
 };
 </pre>
 
 <p>
 This helper class is only used to provide property member proxies.
 <code>Vec</code> continues to be used in the C++ code as it was before.
-Now we can register the <code>Vec</code> class with property member proxies for
-<code>x</code>, <code>y</code>, and <code>z</code>:
+Now we can register the <code>Vec</code> class with property member and 
+function proxies for <code>x</code>, <code>y</code>, <code>z</code> and 
+<code>__tostring</code>:
 </p>
 
 <pre>
@@ -813,6 +826,7 @@ getGlobalNamespace (L)
       .addProperty ("x", &amp;VecHelper::get &lt;0&gt;, &amp;VecHelper::set &lt;0&gt;)
       .addProperty ("y", &amp;VecHelper::get &lt;1&gt;, &amp;VecHelper::set &lt;1&gt;)
       .addProperty ("z", &amp;VecHelper::get &lt;2&gt;, &amp;VecHelper::set &lt;2&gt;)
+      .addFunction ("__tostring", &amp;VecHelper::tostring)
     .endClass ()
   .endNamespace ();
 </pre>
@@ -887,6 +901,7 @@ struct Stack
 {
   static void push (lua_State* L, T t);
   static T get (lua_State* L, int index);
+  static bool is_a (lua_State* L, int index);
 };
 </pre>
 
@@ -931,6 +946,11 @@ struct Stack &lt;juce::String&gt;
   static juce::String get (lua_State* L, int index)
   {
     return juce::String (luaL_checkstring (L, index));
+  }
+
+  static bool is_a (lua_State* L, int index)
+  {
+    return lua_isstring (L, index);
   }
 };
 </pre>
@@ -1314,14 +1334,61 @@ struct ContainerTraits &lt;CustomContainer &lt;T&gt; &gt;
 </pre>
 
 <p>
-Standard containers like <code>std::shared_ptr</code> or
-<code>boost::shared_ptr</code> <b>will not work</b>. This is because of type
-erasure; when the object goes from C++ to Lua and back to C++, there is no
-way to associate the object with the original container. The new container is
-constructed from a pointer to the object instead of an existing container.
-The result is undefined behavior since there are now two sets of reference
-counts.
+Containers must be safely constructible from raw pointers to objects that are
+already referenced by other instances of the container (such as is the case
+for the provided containers or for example <code>boost::intrusive_ptr</code>
+but <b>not</b> <code>std::shared_ptr</code> or <code>boost::shared_ptr</code>).
 </p>
+
+
+<h3>3.4.4 - <span id="s3.4.4"><code>shared_ptr</code> as Container</span></h3>
+
+<p>
+Standard containers like <code>std::shared_ptr</code> or
+<code>boost::shared_ptr</code> require special care. This is because of type
+erasure; when the object goes from C++ to Lua and back to C++, constructing
+a new shared_ptr from the raw pointer will create another reference count and
+result in undefined behavior. To overcome this issue classes that should
+be managed by <code>shared_ptr</code> have to provide a way to correctly
+obtain a <code>shared_ptr</code> which can be done with the help of
+<code>enable_shared_from_this</code>. Additionally
+<code>ContainerConstructionTraits</code> has to be specialized accordingly:
+</p>
+
+<pre>
+
+class A : public std::enable_shared_from_this&ltA&gt {
+public:
+  std::shared_ptr&ltA&gt get_shared() { return shared_from_this(); }
+  ...
+}
+
+namespace luabridge {
+  // register shared_ptr as container
+  template &ltclass T&gt
+  struct ContainerTraits &ltstd::shared_ptr&ltT&gt &gt
+  {
+    static T* get (std::shared_ptr&ltT&gt const& c)
+    {
+      return c.get();
+    }
+  };
+
+  // make sure shared_ptr isn't usable with not instrumented types
+  template &ltclass T&gt
+  struct ContainerConstructionTraits&lt std::shared_ptr&ltT&gt &gt { };
+
+  // creation traits specify how to obtain a shared_ptr from a raw pointer
+  template &lt&gt
+  struct ContainerConstructionTraits&lt std::shared_ptr&ltA&gt &gt
+  {
+    static std::shared_ptr&ltA&gt constructContainer(A *t)
+    {
+      return t-&gtget_shared();
+    }
+  };
+}
+</pre>
 
 </section>
 
@@ -1329,7 +1396,7 @@ counts.
 
 <section>
 
-<h3>3.4.4 - <span id="s3.4.4">Container Constructors</span></h3>
+<h3>3.4.5 - <span id="s3.4.5">Container Constructors</span></h3>
 
 <p>
 When a constructor is registered for a class, there is an additional
@@ -1394,7 +1461,7 @@ a pointer. These conversion work seamlessly.
 
 <p>
 The <code>setGlobal</code> function can be used to assign any convertible
-value into a global variable. 
+value into a global variable.
 </p>
 
 </section>

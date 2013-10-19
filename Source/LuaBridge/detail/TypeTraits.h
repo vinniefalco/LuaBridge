@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 /*
   https://github.com/vinniefalco/LuaBridge
-  
+
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
@@ -59,6 +59,59 @@ struct ContainerTraits
   typedef bool isNotContainer;
 };
 
+/**
+    Container Construction traits.
+
+    Unspecialized ContainerConstructionTraits implement default container
+    construction with the containers constructor. Specializing this trait
+    can be used to tell LuaBridge how to obtain a container from raw pointers
+    in cases where special care has to be taken such as in the case of
+    std::shared_ptr.
+
+    Example:
+
+		class A : public std::enable_shared_from_this<A> {
+		public:
+		  std::shared_ptr<A> get_shared() { return shared_from_this(); }
+		  ...
+		}
+
+		namespace luabridge {
+		  // register shared_ptr as container
+		  template <class T>
+		  struct ContainerTraits <std::shared_ptr<T> >
+		  {
+		    static T* get (std::shared_ptr<T> const& c)
+			{
+			  return c.get();
+			}
+		  };
+
+	      // make sure shared_ptr isn't usable with not instrumented types
+		  template <class T>
+		  struct ContainerConstructionTraits< std::shared_ptr<T> > { };
+
+		  // creation traits specify how to obtain a shared_ptr from a raw pointer
+		  template <>
+		  struct ContainerConstructionTraits< std::shared_ptr<A> >
+		  {
+			static std::shared_ptr<A> constructContainer(A *t)
+			{
+			  return t->get_shared();
+			}
+		  };
+		}
+*/
+template <class C>
+struct ContainerConstructionTraits
+{
+  typedef typename ContainerTraits<C>::Type T;
+  static C constructContainer(T *t)
+  {
+    return C(t);
+  }
+};
+
 //------------------------------------------------------------------------------
 /**
     Type traits.
@@ -81,10 +134,10 @@ struct TypeTraits
 
     template <typename C>
     static no& test (typename C::isNotContainer*);
- 
+
     template <typename>
     static yes& test (...);
- 
+
   public:
     static const bool value = sizeof (test <ContainerTraits <T> >(0)) == sizeof (yes);
   };

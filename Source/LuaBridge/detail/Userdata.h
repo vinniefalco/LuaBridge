@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 /*
   https://github.com/vinniefalco/LuaBridge
-  
+
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
@@ -112,7 +112,7 @@ private:
       {
         lua_pop (L, 2);
         mismatch = true;
-      }      
+      }
     }
 
     if (!mismatch)
@@ -262,7 +262,7 @@ ud __parent (nil)
       {
         lua_pop (L, 2);
         mismatch = true;
-      }      
+      }
     }
     else
     {
@@ -287,6 +287,99 @@ ud __parent (nil)
 
     return ud;
   }
+
+  static bool checkClass (lua_State* L,
+                             int index,
+                             void const* baseClassKey,
+                             bool canBeConst)
+  {
+    assert (index > 0);
+
+    bool mismatch = false;
+
+    lua_rawgetp (L, LUA_REGISTRYINDEX, baseClassKey);
+    assert (lua_istable (L, -1));
+
+    // Make sure we have a userdata.
+    if (lua_isuserdata (L, index))
+    {
+      // Make sure it's metatable is ours.
+      lua_getmetatable (L, index);
+      lua_rawgetp (L, -1, getIdentityKey ());
+      if (lua_isboolean (L, -1))
+      {
+        lua_pop (L, 1);
+
+        // If __const is present, object is NOT const.
+        rawgetfield (L, -1, "__const");
+        assert (lua_istable (L, -1) || lua_isnil (L, -1));
+        bool const isConst = lua_isnil (L, -1);
+        lua_pop (L, 1);
+
+        // Replace the class table with the const table if needed.
+        if (isConst)
+        {
+          rawgetfield (L, -2, "__const");
+          assert (lua_istable (L, -1));
+          lua_replace (L, -3);
+        }
+
+        for (;;)
+        {
+          if (lua_rawequal (L, -1, -2))
+          {
+            lua_pop (L, 2);
+
+            // Match, now check const-ness.
+            if (isConst && !canBeConst)
+            {
+              luaL_argerror (L, index, "cannot be const");
+            }
+            else
+            {
+              break;
+            }
+          }
+          else
+          {
+            // Replace current metatable with it's base class.
+            rawgetfield (L, -1, "__parent");
+/*
+ud
+class metatable
+ud metatable
+ud __parent (nil)
+*/
+
+            if (lua_isnil (L, -1))
+            {
+              lua_remove (L, -1);
+              lua_pop (L, 2);
+              mismatch = true;
+              break;
+            }
+            else
+            {
+              lua_remove (L, -2);
+            }
+          }
+        }
+      }
+      else
+      {
+        lua_pop (L, 2);
+        mismatch = true;
+      }
+    }
+    else
+    {
+      lua_pop (L, 1);
+      mismatch = true;
+    }
+    
+	return !mismatch;
+  }
+
 
 public:
   virtual ~Userdata () { }
@@ -319,6 +412,15 @@ public:
       return static_cast <T*> (getClass (L, index,
         ClassInfo <T>::getClassKey (), canBeConst)->getPointer ());
   }
+  template <class T>
+  static inline bool check (lua_State* L, int index, bool canBeConst)
+  {
+    if (lua_isnil (L, index))
+      return false;
+    else
+      return checkClass (L, index, ClassInfo <T>::getClassKey (), canBeConst);
+  }
+
 };
 
 //----------------------------------------------------------------------------
@@ -624,8 +726,16 @@ struct StackHelper
 
   static inline C get (lua_State* L, int index)
   {
-    return Userdata::get <T> (L, index, true);
+    return ContainerConstructionTraits<C>::constructContainer(
+      Userdata::get <T> (L, index, true)
+    );
   }
+
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return Userdata::check <T> (L, index, true);
+  }
+
 };
 
 /**
@@ -646,6 +756,11 @@ struct StackHelper <T, false>
   static inline T const& get (lua_State* L, int index)
   {
     return *Userdata::get <T> (L, index, true);
+  }
+  
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return Userdata::check <T> (L, index, true);
   }
 };
 
@@ -668,6 +783,11 @@ public:
   {
     return StackHelper <T,
       TypeTraits::isContainer <T>::value>::get (L, index);
+  }
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return StackHelper <T,
+      TypeTraits::isContainer <T>::value>::is_a (L, index);
   }
 };
 
@@ -693,6 +813,11 @@ struct Stack <T*>
   {
     return Userdata::get <T> (L, index, false);
   }
+  
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return Userdata::check <T> (L, index, false);
+  }
 };
 
 // Strips the const off the right side of *
@@ -707,6 +832,11 @@ struct Stack <T* const>
   static inline T* const get (lua_State* L, int index)
   {
     return Userdata::get <T> (L, index, false);
+  }
+
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return Userdata::check <T> (L, index, false);
   }
 };
 
@@ -723,6 +853,11 @@ struct Stack <T const*>
   {
     return Userdata::get <T> (L, index, true);
   }
+
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return Userdata::check <T> (L, index, true);
+  }
 };
 
 // Strips the const off the right side of *
@@ -737,6 +872,11 @@ struct Stack <T const* const>
   static inline T const* const get (lua_State* L, int index)
   {
     return Userdata::get <T> (L, index, true);
+  }
+
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return Userdata::check <T> (L, index, true);
   }
 };
 
@@ -756,13 +896,19 @@ struct Stack <T&>
       luaL_error (L, "nil passed to reference");
     return *t;
   }
+
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return Userdata::check <T> (L, index, false);
+  }
+
 };
 
 template <class C, bool byContainer>
 struct RefStackHelper
 {
-  typedef C return_type;  
-	
+  typedef C return_type;
+
   static inline void push (lua_State* L, C const& t)
   {
     UserdataSharedHelper <C,
@@ -776,17 +922,22 @@ struct RefStackHelper
   {
     return Userdata::get <T> (L, index, true);
   }
+
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return Userdata::check <T> (L, index, true);
+  }
 };
 
 template <class T>
 struct RefStackHelper <T, false>
 {
-  typedef T const& return_type;  
-	
-	static inline void push (lua_State* L, T const& t)
-	{
-	  UserdataPtr::push (L, &t);
-	}
+  typedef T const& return_type;
+
+    static inline void push (lua_State* L, T const& t)
+    {
+      UserdataPtr::push (L, &t);
+    }
 
   static return_type get (lua_State* L, int index)
   {
@@ -796,7 +947,11 @@ struct RefStackHelper <T, false>
       luaL_error (L, "nil passed to reference");
     return *t;
   }
-    
+
+  static inline bool is_a (lua_State* L, int index)
+  {
+    return Userdata::check <T> (L, index, true);
+  }
 };
 
 // reference to const
@@ -804,7 +959,7 @@ template <class T>
 struct Stack <T const&>
 {
   typedef RefStackHelper <T, TypeTraits::isContainer <T>::value> helper_t;
-  
+
   static inline void push (lua_State* L, T const& t)
   {
     helper_t::push (L, t);
@@ -814,4 +969,10 @@ struct Stack <T const&>
   {
     return helper_t::get (L, index);
   }
+  
+   static inline bool is_a (lua_State* L, int index)
+  {
+    return helper_t::is_a (L, index);
+  }
+
 };
