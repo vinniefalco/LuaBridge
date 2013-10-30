@@ -59,7 +59,7 @@ struct Stack <lua_CFunction>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_iscfunction (L, index);
+    return lua_iscfunction (L, index) != 0;
   }
 };
 
@@ -82,7 +82,7 @@ struct Stack <int>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -101,7 +101,7 @@ struct Stack <int const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 //------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ struct Stack <unsigned int>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -142,7 +142,7 @@ struct Stack <unsigned int const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -165,7 +165,7 @@ struct Stack <unsigned char>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -184,7 +184,7 @@ struct Stack <unsigned char const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -207,7 +207,7 @@ struct Stack <short>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -226,7 +226,7 @@ struct Stack <short const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -249,7 +249,7 @@ struct Stack <unsigned short>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -268,7 +268,7 @@ struct Stack <unsigned short const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -291,7 +291,7 @@ struct Stack <long>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -310,7 +310,7 @@ struct Stack <long const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -333,7 +333,7 @@ struct Stack <unsigned long>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -352,7 +352,7 @@ struct Stack <unsigned long const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -375,7 +375,7 @@ struct Stack <float>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -394,7 +394,7 @@ struct Stack <float const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -416,7 +416,7 @@ template <> struct Stack <double>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -434,7 +434,7 @@ template <> struct Stack <double const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isnumber (L, index);
+    return lua_isnumber (L, index) != 0;
   }
 };
 
@@ -498,7 +498,7 @@ struct Stack <char>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isstring (L, index);
+    return lua_isstring (L, index) != 0;
   }
 };
 
@@ -518,7 +518,7 @@ struct Stack <char const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isstring (L, index);
+    return lua_isstring (L, index) != 0;
   }
 };
 
@@ -544,7 +544,7 @@ struct Stack <char const*>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isstring (L, index);
+    return lua_isstring (L, index) != 0;
   }
 };
 
@@ -567,7 +567,7 @@ struct Stack <std::string>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isstring (L, index);
+    return lua_isstring (L, index) != 0;
   }
 };
 
@@ -590,6 +590,6 @@ struct Stack <std::string const&>
   
   static inline bool is_a (lua_State* L, int index)
   {
-    return lua_isstring (L, index);
+    return lua_isstring (L, index) != 0;
   }
 };
