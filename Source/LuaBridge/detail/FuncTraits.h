@@ -178,6 +178,66 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8), D>
   }
 };
 
+template <class R, class D>
+struct FuncTraits <R (), D>
+  : public FuncTraits <R (*) (), D>
+{
+};
+
+template <class R, class P1, class D>
+struct FuncTraits <R (P1), D>
+  : public FuncTraits <R (*) (P1), D>
+{
+};
+
+template <class R, class P1, class P2, class D>
+struct FuncTraits <R (P1, P2), D>
+  : public FuncTraits <R (*) (P1, P2), D>
+{
+};
+
+template <class R, class P1, class P2, class P3, class D>
+struct FuncTraits <R (P1, P2, P3), D>
+  : public FuncTraits <R (*) (P1, P2, P3), D>
+{
+};
+
+template <class R, class P1, class P2, class P3, class P4, class D>
+struct FuncTraits <R (P1, P2, P3, P4), D>
+  : public FuncTraits <R (*) (P1, P2, P3, P4), D>
+{
+};
+
+template <class R, class P1, class P2, class P3, class P4, class P5, class D>
+struct FuncTraits <R (P1, P2, P3, P4, P5), D>
+  : public FuncTraits <R (*) (P1, P2, P3, P4, P5), D>
+{
+};
+
+template <class R, class P1, class P2, class P3, class P4, class P5, class P6, class D>
+struct FuncTraits <R (P1, P2, P3, P4, P5, P6), D>
+  : public FuncTraits <R (*) (P1, P2, P3, P4, P5, P6), D>
+{
+};
+
+template <class R, class P1, class P2, class P3, class P4, class P5, class P6, class P7, class D>
+struct FuncTraits <R (P1, P2, P3, P4, P5, P6, P7), D>
+  : public FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7), D>
+{
+};
+
+template <class R, class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8, class D>
+struct FuncTraits <R (P1, P2, P3, P4, P5, P6, P7, P8), D>
+  : public FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8), D>
+{
+};
+
+template <class T>
+struct FuncTraits <std::function<T>, std::function<T>>
+  : public FuncTraits<T, std::function<T>>
+{
+};
+
 /* Non-const member function pointers. */
 
 template <class T, class R, class D>
