@@ -233,8 +233,8 @@ struct FuncTraits <R (P1, P2, P3, P4, P5, P6, P7, P8), D>
 };
 
 template <class T>
-struct FuncTraits <std::function<T>, std::function<T>>
-  : public FuncTraits<T, std::function<T>>
+struct FuncTraits <std::function<T>, std::function<T> >
+  : public FuncTraits<T, std::function<T> >
 {
 };
 
