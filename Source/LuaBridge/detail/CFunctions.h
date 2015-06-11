@@ -290,6 +290,26 @@ struct CFunc
     }
   };
 
+  template <class MemFnPtr, class T,
+            class ReturnType = typename FuncTraits <MemFnPtr>::ReturnType>
+  struct CallMemberProxy
+  {
+    typedef typename FuncTraits <MemFnPtr>::Params Params;
+
+    static int f (lua_State* L)
+    {
+      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      T* const t = Userdata::get <T> (L, 1, false);
+      MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
+      assert (fnptr != 0);
+	  // first arg is the userdata <table> itself, so the call works passing the object as first parameter
+      ArgList <Params, 1> args (L);
+	  Stack <ReturnType>::push (L, FuncTraits <MemFnPtr>::call (fnptr, args));
+      return 1;
+    }
+  };
+
+
   //----------------------------------------------------------------------------
   /**
       lua_CFunction to call a class member function with no return value.
@@ -329,6 +349,24 @@ struct CFunc
       assert (fnptr != 0);
       ArgList <Params, 2> args (L);
       FuncTraits <MemFnPtr>::call (t, fnptr, args);
+      return 0;
+    }
+  };
+
+  template <class MemFnPtr, class T>
+  struct CallMemberProxy <MemFnPtr, T, void>
+  {
+    typedef typename FuncTraits <MemFnPtr>::Params Params;
+
+    static int f (lua_State* L)
+    {
+      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      T* const t = Userdata::get <T> (L, 1, false);
+      MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
+      assert (fnptr != 0);
+	  // first arg is the userdata <table> itself, so the call works passing the object as first parameter
+      ArgList <Params, 1> args (L);
+	  FuncTraits <MemFnPtr>::call (fnptr, args);
       return 0;
     }
   };
@@ -392,6 +430,17 @@ struct CFunc
     {
       new (lua_newuserdata (L, sizeof (MemFnPtr))) MemFnPtr (mf);
       lua_pushcclosure (L, &CallMember <MemFnPtr>::f, 1);
+      rawsetfield (L, -3, name); // class table
+    }
+  };
+
+  template <class MemFnPtr, class T>
+  struct CallMemberProxyFunctionHelper
+  {
+    static void add (lua_State* L, char const* name, MemFnPtr mf)
+    {
+      new (lua_newuserdata (L, sizeof (MemFnPtr))) MemFnPtr (mf);
+      lua_pushcclosure (L, &CallMemberProxy <MemFnPtr, T>::f, 1);
       rawsetfield (L, -3, name); // class table
     }
   };
