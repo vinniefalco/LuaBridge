@@ -223,6 +223,16 @@ private:
 
     //--------------------------------------------------------------------------
     /**
+        Push the table onto the Lua stack.
+    */
+    void pushTable (lua_State* L) const
+    {
+      assert (equalstates (L, m_L));
+      lua_rawgeti (L, LUA_REGISTRYINDEX, m_tableRef);
+    }
+
+    //--------------------------------------------------------------------------
+    /**
         Determine the object type.
 
         The return values are the same as for `lua_type`.
@@ -419,6 +429,12 @@ private:
       return LuaRef (m_L, FromStack ());
     }
 
+    LuaRef const colon() const
+    {
+		pushTable(m_L);
+		return operator()(LuaRef (*this, FromStack ()));
+    }
+
     template <class P1>
     LuaRef const operator() (P1 p1) const
     {
@@ -426,6 +442,13 @@ private:
       Stack <P1>::push (m_L, p1);
       LuaException::pcall (m_L, 1, 1);
       return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1>
+    LuaRef const colon(P1 p1) const
+    {
+		pushTable(m_L);
+		return operator()(LuaRef (*this, FromStack ()), p1);
     }
 
     template <class P1, class P2>
@@ -436,6 +459,13 @@ private:
       Stack <P2>::push (m_L, p2);
       LuaException::pcall (m_L, 2, 1);
       return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2>
+    LuaRef const colon(P1 p1, P2 p2) const
+    {
+		pushTable(m_L);
+		return operator()(LuaRef (*this, FromStack ()), p1, p2);
     }
 
     template <class P1, class P2, class P3>
@@ -449,6 +479,13 @@ private:
       return LuaRef (m_L, FromStack ());
     }
 
+    template <class P1, class P2, class P3>
+    LuaRef const colon(P1 p1, P2 p2, P3 p3) const
+    {
+		pushTable(m_L);
+		return operator()(LuaRef (*this, FromStack ()), p1, p2, p3);
+    }
+
     template <class P1, class P2, class P3, class P4>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4) const
     {
@@ -459,6 +496,13 @@ private:
       Stack <P4>::push (m_L, p4);
       LuaException::pcall (m_L, 4, 1);
       return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2, class P3, class P4>
+    LuaRef const colon(P1 p1, P2 p2, P3 p3, P4 p4) const
+    {
+		pushTable(m_L);
+		return operator()(LuaRef (*this, FromStack ()), p1, p2, p3, p4);
     }
 
     template <class P1, class P2, class P3, class P4, class P5>
@@ -474,6 +518,13 @@ private:
       return LuaRef (m_L, FromStack ());
     }
 
+    template <class P1, class P2, class P3, class P4, class P5>
+    LuaRef const colon(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) const
+    {
+		pushTable(m_L);
+		return operator()(LuaRef (*this, FromStack ()), p1, p2, p3, p4, p5);
+    }
+
     template <class P1, class P2, class P3, class P4, class P5, class P6>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) const
     {
@@ -486,6 +537,13 @@ private:
       Stack <P6>::push (m_L, p6);
       LuaException::pcall (m_L, 6, 1);
       return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2, class P3, class P4, class P5, class P6>
+    LuaRef const colon(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) const
+    {
+		pushTable(m_L);
+		return operator()(LuaRef (*this, FromStack ()), p1, p2, p3, p4, p5, p6);
     }
 
     template <class P1, class P2, class P3, class P4, class P5, class P6, class P7>
@@ -503,6 +561,13 @@ private:
       return LuaRef (m_L, FromStack ());
     }
 
+    template <class P1, class P2, class P3, class P4, class P5, class P6, class P7>
+    LuaRef const colon(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7) const
+    {
+		pushTable(m_L);
+		return operator()(LuaRef (*this, FromStack ()), p1, p2, p3, p4, p5, p6, p7);
+    }
+
     template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8>
     LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) const
     {
@@ -516,6 +581,30 @@ private:
       Stack <P7>::push (m_L, p7);
       Stack <P8>::push (m_L, p8);
       LuaException::pcall (m_L, 8, 1);
+      return LuaRef (m_L, FromStack ());
+    }
+
+    template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8>
+    LuaRef const colon(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) const
+    {
+		pushTable(m_L);
+		return operator()(LuaRef (*this, FromStack ()), p1, p2, p3, p4, p5, p6, p7, p8);
+    }
+
+    template <class P1, class P2, class P3, class P4, class P5, class P6, class P7, class P8, class P9>
+    LuaRef const operator() (P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8, P9 p9) const
+    {
+      push (m_L);
+      Stack <P1>::push (m_L, p1);
+      Stack <P2>::push (m_L, p2);
+      Stack <P3>::push (m_L, p3);
+      Stack <P4>::push (m_L, p4);
+      Stack <P5>::push (m_L, p5);
+      Stack <P6>::push (m_L, p6);
+      Stack <P7>::push (m_L, p7);
+      Stack <P8>::push (m_L, p8);
+      Stack <P9>::push (m_L, p9);
+      LuaException::pcall (m_L, 9, 1);
       return LuaRef (m_L, FromStack ());
     }
     /** @} */
