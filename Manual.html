@@ -680,6 +680,11 @@ struct A {
   int cfunc (lua_State* L) { return 0; }
 };
 
+std::string A_func2(A* a, char v)
+{
+  return "func2";
+}
+
 struct B : public A {
   double dataMember2;
 
@@ -708,6 +713,7 @@ getGlobalNamespace (L)
       .addProperty ("prop", &amp;A::getProperty, &amp;A::setProperty)
       .addFunction ("func1", &amp;A::func1)
       .addFunction ("virtualFunc", &amp;A::virtualFunc)
+      .addProxyFunction ("func2", &amp;A_func2)
       .addCFunction ("cfunc", &amp;A::cfunc)
     .endClass ()
     .deriveClass &lt;B, A&gt; ("B")
@@ -1684,6 +1690,7 @@ t[4]=t[3]();   // Call t[3] and store the result in t[4].
 
 t [t[5]()] = "wow"; // Store "wow" at the key returned by
                     //   the call to t[5]
+t[10].colon(1, 3);   // Call t[10] passing the table itself as first parameter.
 </pre>
 
 <pre class="split">
@@ -1691,6 +1698,7 @@ t = {}
 t[1] = function () print ("hello") end
 t[2] = function (u, v) print (u, v) end
 t[3] = "foo"
+t[10] = function (self, u, v) print (u, v) end
 </pre>
 
 <!--========================================================================-->

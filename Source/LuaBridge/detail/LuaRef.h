@@ -419,6 +419,8 @@ private:
 
         These overloads allow Lua code to be called with up to 8 parameters.
         The return value is provided as a LuaRef (which may be LUA_REFNIL).
+		The colon() functions passes the table as the first parameter before 
+		the ones passed, to support the Lua colon operator (obj:method(param)).
         If an error occurs, a LuaException is thrown.
     */
     /** @{ */
