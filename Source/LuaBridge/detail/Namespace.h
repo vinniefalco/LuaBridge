@@ -272,7 +272,7 @@ private:
       rawsetfield (L, -2, "__newindex");
       lua_newtable (L);
       rawsetfield (L, -2, "__propget");
-      
+
       if (Security::hideMetatables ())
       {
         lua_pushnil (L);
@@ -457,7 +457,7 @@ private:
 
       assert (lua_istable (L, -1));
       rawgetfield (L, -1, name);
-      
+
       if (lua_isnil (L, -1))
       {
         lua_pop (L, 1);
@@ -586,7 +586,7 @@ private:
     {
       typedef U (*get_t)();
       typedef void (*set_t)(U);
-      
+
       assert (lua_istable (L, -1));
 
       rawgetfield (L, -1, "__propget");
@@ -766,6 +766,34 @@ private:
       }
 
       return *this;
+    }
+
+    Class<T> &addCProperty(char const *name, int (T::*get)(lua_State *), int (T::*set)(lua_State *)) {
+        // Add to __propget in class and const tables.
+        {
+            rawgetfield(L, -2, "__propget");
+            rawgetfield(L, -4, "__propget");
+            typedef int (T::*get_t)(lua_State *);
+            new(lua_newuserdata(L, sizeof(get_t))) get_t(get);
+            lua_pushcclosure(L, &CFunc::CallMemberCFunction<T>::f, 1);
+            lua_pushvalue(L, -1);
+            rawsetfield(L, -4, name);
+            rawsetfield(L, -2, name);
+            lua_pop(L, 2);
+        }
+
+        if (set != 0) {
+            // Add to __propset in class table.
+            rawgetfield(L, -2, "__propset");
+            assert(lua_istable(L, -1));
+            typedef int (T::*set_t)(lua_State *);
+            new(lua_newuserdata(L, sizeof(set_t))) set_t(set);
+            lua_pushcclosure(L, &CFunc::CallMemberCFunction<T>::f, 1);
+            rawsetfield(L, -2, name);
+            lua_pop(L, 1);
+        }
+
+        return *this;
     }
 
     // read-only
@@ -1031,7 +1059,7 @@ public:
 
     return *this;
   }
-  
+
   //----------------------------------------------------------------------------
   /**
       Add or replace a property.
