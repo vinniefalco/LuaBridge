@@ -27,6 +27,13 @@
 */
 //==============================================================================
 
+extern "C" {
+# include "lua.h"
+# include "lauxlib.h"
+# include "lualib.h"
+}
+
+
 // These are for Lua versions prior to 5.2.0.
 //
 #if LUA_VERSION_NUM < 502
