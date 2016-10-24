@@ -480,8 +480,8 @@ struct Stack <std::vector<int> >
 		lua_newtable(L);
 		for (UINT i = 0; i < vec.size(); ++i)
 		{
+			lua_pushinteger(L,static_cast <lua_Integer> (i+1));
 			lua_pushinteger(L,static_cast <lua_Integer> (vec[i]));
-			lua_pushinteger(L,static_cast <lua_Integer> (i));
 			lua_settable(L, -3);
 		}
 	}
@@ -513,8 +513,8 @@ struct Stack <std::vector<int> const&>
 		lua_newtable(L);
 		for (UINT i = 0; i < vec.size(); ++i)
 		{
+			lua_pushinteger(L, static_cast <lua_Integer> (i+1));
 			lua_pushinteger(L, static_cast <lua_Integer> (vec[i]));
-			lua_pushinteger(L, static_cast <lua_Integer> (i));
 			lua_settable(L, -3);
 		}
 	}
