@@ -314,7 +314,10 @@ public:
   static inline T* get (lua_State* L, int index, bool canBeConst)
   {
     if (lua_isnil (L, index))
+    {
+      luaL_error(L, "argument %d is nil", index-1);
       return 0;
+    }
     else
       return static_cast <T*> (getClass (L, index,
         ClassInfo <T>::getClassKey (), canBeConst)->getPointer ());
