@@ -38,9 +38,6 @@
         ...
         t ["k"] = Nil(); // assign nil
 */
-struct Nil
-{
-};
 
 //------------------------------------------------------------------------------
 /**
@@ -1124,10 +1121,10 @@ private:
     Stack specialization for Nil
 */
 template <>
-struct Stack <Nil>
+struct Stack <std::nullptr_t>
 {
 public:
-  static inline void push (lua_State* L, Nil)
+  static inline void push (lua_State* L, std::nullptr_t)
   {
     lua_pushnil (L);
   }

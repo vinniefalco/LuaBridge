@@ -47,8 +47,8 @@ private:
     }
     else
     {
-      m_key = Nil();
-      m_value = Nil();
+      m_key = nullptr;
+      m_value = nullptr;
     }
     lua_pop(m_L, 1);
   }
