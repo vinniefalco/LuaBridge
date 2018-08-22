@@ -1,2 +1,10 @@
 Documentation
 *.swp
+CMakeCache.txt
+CMakeFiles/
+*.dir/
+*.cmake
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
