@@ -51,20 +51,20 @@ namespace luabridge
 template <class T>
 struct Stack;
 
-#include "detail/LuaHelpers.h"
+#include <LuaBridge/detail/LuaHelpers.h>
 
-#include "detail/TypeTraits.h"
-#include "detail/TypeList.h"
-#include "detail/FuncTraits.h"
-#include "detail/Constructor.h"
-#include "detail/Stack.h"
-#include "detail/ClassInfo.h"
+#include <LuaBridge/detail/TypeTraits.h>
+#include <LuaBridge/detail/TypeList.h>
+#include <LuaBridge/detail/FuncTraits.h>
+#include <LuaBridge/detail/Constructor.h>
+#include <LuaBridge/detail/Stack.h>
+#include <LuaBridge/detail/ClassInfo.h>
 
 class LuaRef;
 
-#include "detail/LuaException.h"
-#include "detail/LuaRef.h"
-#include "detail/Iterator.h"
+#include <LuaBridge/detail/LuaException.h>
+#include <LuaBridge/detail/LuaRef.h>
+#include <LuaBridge/detail/Iterator.h>
 
 //------------------------------------------------------------------------------
 /**

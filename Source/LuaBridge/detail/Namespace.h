@@ -769,7 +769,7 @@ private:
     }
 
     // read-only
-    template <class TG, class TS>
+    template <class TG>
     Class <T>& addProperty (char const* name, TG (*get) (T const*))
     {
       // Add to __propget in class and const tables.
