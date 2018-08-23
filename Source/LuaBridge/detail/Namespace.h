@@ -482,8 +482,9 @@ private:
       }
       else
       {
-        rawgetfield (L, -1, "__class");
-        rawgetfield (L, -1, "__const");
+        // Map T back from its stored tables
+        lua_rawgetp(L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey());
+        lua_rawgetp(L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey());
 
         // Reverse the top 3 stack elements
         lua_insert (L, -3);
