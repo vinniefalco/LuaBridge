@@ -34,7 +34,11 @@
 # include <hash_map>
 #else
 # include <stdint.h>
+#ifdef __GNUC__
+#include <unordered_map>
+#else
 # include <ext/hash_map>
+#endif
 #endif
 
 //==============================================================================
@@ -46,6 +50,8 @@ struct RefCountedPtrBase
   // Declaration of container for the refcounts
 #ifdef _MSC_VER
   typedef stdext::hash_map <const void *, int> RefCountsType;
+#elif __GNUC__
+  typedef std::unordered_map<const void *, int> RefCountsType;
 #else
   struct ptr_hash
   {
