@@ -443,7 +443,7 @@ struct Stack <std::string>
   static inline std::string get (lua_State* L, int index)
   {
     size_t len;
-    const char *str = luaL_checklstring(L, index, &len);
+    const char *str = luaL_checklstring (L, index, &len);
     return std::string (str, len);
   }
 };
@@ -463,11 +463,10 @@ struct Stack <std::string const&>
   static inline std::string get (lua_State* L, int index)
   {
     size_t len;
-    const char *str = luaL_checklstring(L, index, &len);
+    const char *str = luaL_checklstring (L, index, &len);
     return std::string (str, len);
   }
 };
-
 
 //------------------------------------------------------------------------------
 /**
@@ -525,4 +524,68 @@ struct Stack <unsigned long long const&>
   {
     return static_cast <unsigned long long> (luaL_checknumber (L, index));
   }
+//------------------------------------------------------------------------------
+/**
+Stack specialization for `std::vector<int>`.
+*/
+template <>
+struct Stack <std::vector <int> >
+{
+	static inline void push (lua_State* L, std::vector<int> const& vec)
+	{
+		lua_newtable (L);
+		for (std::size_t i = 0; i < vec.size(); ++i)
+		{
+			lua_pushinteger (L, static_cast <lua_Integer> (i+1));
+			lua_pushinteger (L ,static_cast <lua_Integer> (vec[i]));
+			lua_settable (L, -3);
+		}
+	}
+
+	static inline std::vector <int> get (lua_State* L, int index)
+	{
+		if (!lua_istable (L, index))
+			luaL_error (L, "#%d argments must be table", index);
+		std::vector <int> ret;
+		int const absindex = lua_absindex (L, index); 
+		lua_pushnil (L);
+		while (lua_next (L, absindex) != 0) {
+			ret.push_back (static_cast <int> (luaL_checkinteger (L, -1)));
+			lua_pop (L, 1);
+		}
+		return ret;
+	}
+};
+
+//------------------------------------------------------------------------------
+/**
+Stack specialization for `std::vector<int> const&`.
+*/
+template <>
+struct Stack <std::vector <int> const&>
+{
+	static inline void push (lua_State* L, std::vector <int> const& vec)
+	{
+		lua_newtable (L);
+		for (std::size_t i = 0; i < vec.size(); ++i)
+		{
+			lua_pushinteger (L, static_cast <lua_Integer> (i+1));
+			lua_pushinteger (L, static_cast <lua_Integer> (vec[i]));
+			lua_settable (L, -3);
+		}
+	}
+
+	static inline std::vector<int> get(lua_State* L, int index)
+	{
+		if (!lua_istable (L, index))
+			luaL_error (L, "#%d argments must be table", index);
+		std::vector <int> ret;
+		int const absindex = lua_absindex (L, index);
+		lua_pushnil (L);
+		while (lua_next (L, absindex) != 0) {
+			ret.push_back (static_cast <int> (luaL_checkinteger (L, -1)));
+			lua_pop (L, 1);
+		}
+		return ret;
+	}
 };
