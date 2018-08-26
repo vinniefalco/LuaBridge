@@ -27,10 +27,11 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_REFCOUNTEDPTR_HEADER
-#define LUABRIDGE_REFCOUNTEDPTR_HEADER
+#pragma once
 
 #include <unordered_map>
+
+namespace luabridge {
 
 //==============================================================================
 /**
@@ -231,4 +232,4 @@ struct ContainerTraits <RefCountedPtr <T> >
 
 }
 
-#endif
+} // namespace luabridge

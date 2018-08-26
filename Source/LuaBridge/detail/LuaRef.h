@@ -27,6 +27,16 @@
 */
 //==============================================================================
 
+#pragma once
+
+#include <LuaBridge/detail/LuaException.h>
+#include <LuaBridge/detail/Stack.h>
+
+#include <iostream>
+#include <string>
+
+namespace luabridge {
+
 //------------------------------------------------------------------------------
 /**
     Type tag for representing LUA_TNIL.
@@ -1214,3 +1224,5 @@ inline T LuaRef_cast(LuaRef const& lr)
 {
   return lr.cast<T>();
 }
+
+} // namespace luabridge

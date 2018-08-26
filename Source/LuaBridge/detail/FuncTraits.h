@@ -26,6 +26,10 @@
 */
 //==============================================================================
 
+#pragma once
+
+namespace luabridge {
+
 /**
   Since the throw specification is part of a function signature, the FuncTraits
   family of templates needs to be specialized for both types. The
@@ -850,3 +854,5 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const LUABRIDGE_THR
 };
 
 #endif
+
+} // namespace luabridge

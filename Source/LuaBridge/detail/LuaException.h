@@ -27,6 +27,13 @@
 */
 //==============================================================================
 
+#pragma once
+
+#include <exception>
+#include <string>
+
+namespace luabridge {
+
 class LuaException : public std::exception 
 {
 private:
@@ -111,3 +118,5 @@ protected:
     }
   }
 };
+
+} // namespace luabridge

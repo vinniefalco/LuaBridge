@@ -26,6 +26,10 @@
 */
 //==============================================================================
 
+#pragma once
+
+namespace luabridge {
+
 /** Unique Lua registry keys for a class.
 
     Each registered class inserts three keys into the registry, whose
@@ -71,3 +75,4 @@ public:
   }
 };
 
+} // namespace luabridge

@@ -26,6 +26,10 @@
 */
 //==============================================================================
 
+#pragma once
+
+namespace luabridge {
+
 /** Allows table iteration.
 */
 class Iterator
@@ -112,3 +116,4 @@ private:
   Iterator operator++ (int);
 };
 
+} // namespace luabridge

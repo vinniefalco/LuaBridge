@@ -31,7 +31,7 @@ target_sources (LuaBridge INTERFACE
 target_include_directories (LuaBridge INTERFACE .)
 
 if (MSVC)
-    add_custom_target (LuaBridgeFiles SOURCES 
+    add_custom_target (LuaBridgeFiles SOURCES
 		${LUABRIDGE_HEADERS}
 		${LUABRIDGE_DETAIL_HEADERS}
 	)
