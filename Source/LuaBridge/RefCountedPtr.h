@@ -212,9 +212,6 @@ private:
 
 //==============================================================================
 
-namespace luabridge
-{
-
 // forward declaration
 template <class T>
 struct ContainerTraits;
@@ -229,7 +226,5 @@ struct ContainerTraits <RefCountedPtr <T> >
     return c.get ();
   }
 };
-
-}
 
 } // namespace luabridge
