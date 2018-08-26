@@ -1,0 +1,4 @@
+[submodule "third_party/gtest"]
+	path = third_party/gtest
+	url = git@github.com:google/googletest.git
+	branch = ec44c6c1675c25b9827aacd08c02433cccde7780
