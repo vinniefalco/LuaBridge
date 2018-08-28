@@ -34,6 +34,7 @@
 #include "LuaBridge/LuaBridge.h"
 #include "LuaBridge/RefCountedPtr.h"
 
+#include <cstring>
 #include <string>
 
 namespace LuaBridgeTests

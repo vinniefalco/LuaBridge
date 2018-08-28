@@ -45,6 +45,8 @@
 
 #pragma once
 
+#include <LuaBridge/detail/Stack.h>
+
 #include <string>
 
 namespace luabridge {

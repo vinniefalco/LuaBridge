@@ -43,7 +43,7 @@ struct RefCountedPtrBase
   typedef std::unordered_map <const void *, int> RefCountsType;
 
 protected:
-  inline RefCountsType& getRefCounts ()
+  inline RefCountsType& getRefCounts () const
   {
     static RefCountsType refcounts;
     return refcounts ;
