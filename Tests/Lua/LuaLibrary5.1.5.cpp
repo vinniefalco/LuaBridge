@@ -27,7 +27,7 @@
 */
 //==============================================================================
 
-#include "AppConfig.h"
+#include "JuceLibraryCode/AppConfig.h"
 
 #define LUALIBRARY_SOURCE
 #include "LuaLibrary.h"

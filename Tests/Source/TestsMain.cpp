@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
 
   luaL_openlibs (L);
 
-  int errorFunctionRef = LuaBridgeTests::addTraceback (L);
+  lua_pushcfunction (L, LuaBridgeTests::traceback);
 
   LuaBridgeTests::addToState (L);
 
@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
     lua_close(L);
     return 1;
   }
-  else if (lua_pcall(L, 0, 0, errorFunctionRef) != 0)
+  else if (lua_pcall(L, 0, 0, -2) != 0)
   {
     // runtime error
     cerr << lua_tostring(L, -1) << endl;

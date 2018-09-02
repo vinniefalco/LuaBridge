@@ -35,14 +35,13 @@ struct lua_State;
 namespace LuaBridgeTests
 {
 
-extern void addToState (lua_State* L);
+void addToState (lua_State* L);
 
 /**
-  Returns a registry reference to the message handler to
-  use in subsequent calls to lua_pcall ().
+  Message handler to for lua_pcall ().
 */
-extern int addTraceback (lua_State* L);
+int traceback (lua_State* L);
 
-extern void resetTests ();
+void resetTests ();
 
 }
