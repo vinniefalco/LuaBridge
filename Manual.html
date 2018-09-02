@@ -666,7 +666,7 @@ struct A {
   static void setStaticProperty (float f) { staticProperty = f; }
   static void staticFunc () { }
 
-  static int staticCFunc () { return 0; }
+  static int staticCFunc (lua_State *L) { return 0; }
 
   std::string dataMember;
 
@@ -701,7 +701,7 @@ getGlobalNamespace (L)
   .beginNamespace ("test")
     .beginClass &lt;A&gt; ("A")
       .addStaticData ("staticData", &amp;A::staticData)
-      .addStaticProperty ("staticProperty", &amp;A::staticProperty)
+      .addStaticProperty ("staticProperty", &amp;A::getStaticProperty, &amp;A::setStaticProperty)
       .addStaticFunction ("staticFunc", &amp;A::staticFunc)
       .addStaticCFunction ("staticCFunc", &amp;A::staticCFunc)
       .addData ("data", &amp;A::dataMember)
