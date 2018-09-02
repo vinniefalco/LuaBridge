@@ -34,6 +34,8 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
+#include <map>
 
 namespace luabridge {
 
@@ -245,6 +247,16 @@ private:
       lua_pop (m_L, 1);
       return result;
     }
+
+    bool isNil () const { return type () == LUA_TNIL; }
+    bool isBool () const { return type () == LUA_TBOOLEAN; }
+    bool isNumber () const { return type () == LUA_TNUMBER; }
+    bool isString () const { return type () == LUA_TSTRING; }
+    bool isTable () const { return type () == LUA_TTABLE; }
+    bool isFunction () const { return type () == LUA_TFUNCTION; }
+    bool isUserdata () const { return type () == LUA_TUSERDATA; }
+    bool isThread () const { return type () == LUA_TTHREAD; }
+    bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
 
     //--------------------------------------------------------------------------
     /**
