@@ -34,6 +34,10 @@
 #include "LuaBridge/LuaBridge.h"
 #include "LuaBridge/RefCountedPtr.h"
 
+#include "JuceLibraryCode/BinaryData.h"
+
+#include <gtest/gtest.h>
+
 #include <cstring>
 #include <string>
 
@@ -65,12 +69,6 @@ static int traceback (lua_State* L)
   lua_pushinteger(L, 2);  /* skip this function and traceback */
   lua_call(L, 2, 1);  /* call debug.traceback */
   return 1;
-}
-
-int addTraceback (lua_State* L)
-{
-  lua_pushcfunction (L, &traceback);
-  return luaL_ref (L, LUA_REGISTRYINDEX);
 }
 
 //==============================================================================
@@ -356,6 +354,193 @@ void resetTests ()
 {
   g_success = true;
   A::testStaticProp = 47;
+}
+
+void printValue (lua_State* L, int index)
+{
+  int type = lua_type (L, index);
+  switch (type)
+  {
+    case LUA_TBOOLEAN:
+      std::cerr << std::boolalpha << (lua_toboolean (L, index) != 0);
+      break;
+    case LUA_TSTRING:
+      std::cerr << lua_tostring (L, index);
+      break;
+    case LUA_TNUMBER:
+      std::cerr << lua_tonumber (L, index);
+      break;
+    case LUA_TTABLE:
+    case LUA_TTHREAD:
+    case LUA_TFUNCTION:
+      std::cerr << lua_topointer (L, index);
+      break;
+  }
+  std::cerr << ": " << lua_typename (L, type) << " (" << type << ")" << std::endl;
+}
+
+void printStack (lua_State* L)
+{
+  std::cerr << "===== Stack =====\n";
+  for (int i = 1; i <= lua_gettop (L); ++i)
+  {
+    std::cerr << "@" << i << " = ";
+    printValue (L, i);
+  }
+}
+
+struct LuaBridgeTest : public ::testing::Test
+{
+  lua_State* L = nullptr;
+  int errorFunctionRef = 0;
+
+
+  void SetUp () override
+  {
+    L = nullptr;
+    L = luaL_newstate ();
+    luaL_openlibs (L);
+    lua_pushcfunction (L, &traceback);
+  }
+
+  void TearDown () override
+  {
+    lua_close (L);
+  }
+
+  void runLua (const std::string& script)
+  {
+    luabridge::setGlobal (L, luabridge::LuaRef(L), "result");
+
+    if (luaL_loadstring (L, script.c_str()) != 0)
+    {
+      throw std::runtime_error (lua_tostring (L, -1));
+    }
+
+    if (lua_pcall (L, 0, 0, -2) != 0)
+    {
+      throw std::runtime_error (lua_tostring (L, -1));
+    }
+  }
+
+  luabridge::LuaRef result()
+  {
+    return luabridge::getGlobal (L, "result");
+  }
+};
+
+template <class T>
+T identityCFunction(T value)
+{
+  return value;
+}
+
+TEST_F (LuaBridgeTest, CFunction)
+{
+  luabridge::getGlobalNamespace(L)
+    .addFunction ("boolFn", &identityCFunction <bool>)
+    .addFunction ("shortFn", &identityCFunction <short>)
+    .addFunction ("ushortFn", &identityCFunction <unsigned short>)
+    .addFunction ("intFn", &identityCFunction <int>)
+    .addFunction ("uintFn", &identityCFunction <unsigned int>)
+    .addFunction ("longFn", &identityCFunction <long>)
+    .addFunction ("ulongFn", &identityCFunction <unsigned long>)
+    .addFunction ("longlongFn", &identityCFunction <long long>)
+    .addFunction ("ulonglongFn", &identityCFunction <unsigned long long>)
+    .addFunction ("floatFn", &identityCFunction <float>)
+    .addFunction ("doubleFn", &identityCFunction <double>)
+    .addFunction ("charFn", &identityCFunction <char>)
+    .addFunction ("cstringFn", &identityCFunction <const char*>)
+    .addFunction ("stringFn", &identityCFunction <std::string>)
+  ;
+
+  {
+    runLua ("result = boolFn (false)");
+    ASSERT_EQ (true, result().isBool ());
+    ASSERT_EQ (false, result().cast <bool> ());
+  }
+  {
+    runLua ("result = boolFn (true)");
+    ASSERT_EQ (true, result().isBool ());
+    ASSERT_EQ (true, result().cast <bool> ());
+  }
+
+  {
+    runLua ("result = shortFn (-32768)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_EQ (-32768, result().cast <int> ());
+  }
+
+  {
+    runLua ("result = ushortFn (32767)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_EQ (32767, result().cast <unsigned int> ());
+  }
+  {
+    runLua ("result = intFn (-500)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_EQ (-500, result().cast <int> ());
+  }
+
+  {
+    runLua ("result = uintFn (42)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_EQ (42, result().cast <unsigned int> ());
+  }
+
+  {
+    runLua ("result = longFn (-8000)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_EQ (-8000, result().cast <long> ());
+  }
+
+  {
+    runLua ("result = ulongFn (9000)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_EQ (9000, result().cast <unsigned long> ());
+  }
+
+  {
+    runLua ("result = longlongFn (-8000)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_EQ (-8000, result().cast <long long> ());
+  }
+
+  {
+    runLua ("result = ulonglongFn (9000)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_EQ (9000, result().cast <unsigned long long> ());
+  }
+
+  {
+    runLua ("result = floatFn (3.14)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_FLOAT_EQ (3.14, result().cast <float> ());
+  }
+
+  {
+    runLua ("result = doubleFn (-12.3)");
+    ASSERT_EQ (true, result().isNumber ());
+    ASSERT_FLOAT_EQ (-12.3, result().cast <double> ());
+  }
+
+  {
+    runLua ("result = charFn ('a')");
+    ASSERT_EQ (true, result().isString ());
+    ASSERT_EQ ('a', result().cast <char> ());
+  }
+
+  {
+    runLua ("result = cstringFn ('abc')");
+    ASSERT_EQ (true, result().isString ());
+    ASSERT_STREQ ("abc", result().cast <const char*> ());
+  }
+
+  {
+    runLua ("result = stringFn ('lua')");
+    ASSERT_EQ (true, result().isString ());
+    ASSERT_EQ ("lua", result().cast <std::string> ());
+  }
 }
 
 }

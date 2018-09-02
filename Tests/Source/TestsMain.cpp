@@ -48,9 +48,11 @@
 #include "Performance.h"
 #include "Tests.h"
 
+#include <gtest/gtest.h>
+
 using namespace std;
 
-int main (int, char **)
+int main (int argc, char ** argv)
 {
   lua_State* L = luaL_newstate ();
 
@@ -79,5 +81,7 @@ int main (int, char **)
   runPerformanceTests ();
 
   lua_close(L);
-  return 0;
+
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

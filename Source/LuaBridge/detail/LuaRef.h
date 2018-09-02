@@ -246,16 +246,6 @@ private:
       return result;
     }
 
-    inline bool isNil () const { return type () == LUA_TNIL; }
-    inline bool isBool () const { return type () == LUA_TBOOLEAN; }
-    inline bool isNumber () const { return type () == LUA_TNUMBER; }
-    inline bool isString () const { return type () == LUA_TSTRING; }
-    inline bool isTable () const { return type () == LUA_TTABLE; }
-    inline bool isFunction () const { return type () == LUA_TFUNCTION; }
-    inline bool isUserdata () const { return type () == LUA_TUSERDATA; }
-    inline bool isThread () const { return type () == LUA_TTHREAD; }
-    inline bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
-
     //--------------------------------------------------------------------------
     /**
         Perform an explicit conversion.
@@ -854,14 +844,16 @@ public:
   // should never happen
   //inline bool isNone () const { return m_ref == LUA_NOREF; }
 
-  inline bool isNil () const { return type () == LUA_TNIL; }
-  inline bool isNumber () const { return type () == LUA_TNUMBER; }
-  inline bool isString () const { return type () == LUA_TSTRING; }
-  inline bool isTable () const { return type () == LUA_TTABLE; }
-  inline bool isFunction () const { return type () == LUA_TFUNCTION; }
-  inline bool isUserdata () const { return type () == LUA_TUSERDATA; }
-  inline bool isThread () const { return type () == LUA_TTHREAD; }
-  inline bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
+  bool isNil () const { return type () == LUA_TNIL; }
+  bool isBool () const { return type () == LUA_TBOOLEAN; }
+  bool isNumber () const { return type () == LUA_TNUMBER; }
+  bool isString () const { return type () == LUA_TSTRING; }
+  bool isTable () const { return type () == LUA_TTABLE; }
+  bool isFunction () const { return type () == LUA_TFUNCTION; }
+  bool isUserdata () const { return type () == LUA_TUSERDATA; }
+  bool isThread () const { return type () == LUA_TTHREAD; }
+  bool isLightUserdata () const { return type () == LUA_TLIGHTUSERDATA; }
+
   /** @} */
 
   //----------------------------------------------------------------------------

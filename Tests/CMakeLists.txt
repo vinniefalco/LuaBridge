@@ -34,4 +34,4 @@ add_executable (LuaBridgeTests
 
 target_include_directories (LuaBridgeTests PRIVATE . Source)
 
-target_link_libraries(LuaBridgeTests LuaBridge)
+target_link_libraries(LuaBridgeTests LuaBridge gtest)
