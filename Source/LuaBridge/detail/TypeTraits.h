@@ -26,8 +26,9 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_TYPEINFO_HEADER
-#define LUABRIDGE_TYPEINFO_HEADER
+#pragma once
+
+namespace luabridge {
 
 //------------------------------------------------------------------------------
 /**
@@ -57,6 +58,7 @@ template <class T>
 struct ContainerTraits
 {
   typedef bool isNotContainer;
+  typedef T Type;
 };
 
 //------------------------------------------------------------------------------
@@ -122,4 +124,4 @@ struct TypeTraits
   /**@}*/
 };
 
-#endif
+} // namespace luabridge

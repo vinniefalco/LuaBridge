@@ -27,6 +27,16 @@
 */
 //==============================================================================
 
+#pragma once
+
+#include <LuaBridge/detail/Security.h>
+#include <LuaBridge/detail/TypeTraits.h>
+
+#include <stdexcept>
+#include <string>
+
+namespace luabridge {
+
 /** Provides C++ to Lua registration capabilities.
 
     This class is not instantiated directly, call `getGlobalNamespace` to start
@@ -1135,3 +1145,5 @@ inline Namespace getGlobalNamespace (lua_State* L)
 {
   return Namespace::getGlobalNamespace (L);
 }
+
+} // namespace luabridge

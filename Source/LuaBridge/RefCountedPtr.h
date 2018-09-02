@@ -27,15 +27,11 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_REFCOUNTEDPTR_HEADER
-#define LUABRIDGE_REFCOUNTEDPTR_HEADER
+#pragma once
 
-#ifdef _MSC_VER
-# include <hash_map>
-#else
-# include <stdint.h>
-# include <ext/hash_map>
-#endif
+#include <unordered_map>
+
+namespace luabridge {
 
 //==============================================================================
 /**
@@ -44,22 +40,10 @@
 struct RefCountedPtrBase
 {
   // Declaration of container for the refcounts
-#ifdef _MSC_VER
-  typedef stdext::hash_map <const void *, int> RefCountsType;
-#else
-  struct ptr_hash
-  {
-    size_t operator () (const void * const v) const
-    {
-      static __gnu_cxx::hash<unsigned int> H;
-      return H(uintptr_t(v));
-    }
-  };
-  typedef __gnu_cxx::hash_map<const void *, int, ptr_hash> RefCountsType;
-#endif
+  typedef std::unordered_map <const void *, int> RefCountsType;
 
 protected:
-  inline RefCountsType& getRefCounts ()
+  inline RefCountsType& getRefCounts () const
   {
     static RefCountsType refcounts;
     return refcounts ;
@@ -228,9 +212,6 @@ private:
 
 //==============================================================================
 
-namespace luabridge
-{
-
 // forward declaration
 template <class T>
 struct ContainerTraits;
@@ -246,6 +227,4 @@ struct ContainerTraits <RefCountedPtr <T> >
   }
 };
 
-}
-
-#endif
+} // namespace luabridge

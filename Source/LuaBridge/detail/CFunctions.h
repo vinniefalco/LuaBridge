@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 /*
   https://github.com/vinniefalco/LuaBridge
-  
+
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
@@ -25,6 +25,12 @@
   SOFTWARE.
 */
 //==============================================================================
+
+#pragma once
+
+#include <string>
+
+namespace luabridge {
 
 // We use a structure so we can define everything in the header.
 //
@@ -138,7 +144,7 @@ struct CFunc
       {
         assert (lua_isnil (L, -1));
         lua_pop (L, 2);
-        result = luaL_error (L,"no writable variable '%s'", lua_tostring (L, 2));
+        result = luaL_error (L, "no writable variable '%s'", lua_tostring (L, 2));
       }
     }
 
@@ -154,12 +160,12 @@ struct CFunc
   static int readOnlyError (lua_State* L)
   {
     std::string s;
-    
+
     s = s + "'" + lua_tostring (L, lua_upvalueindex (1)) + "' is read-only";
 
     return luaL_error (L, s.c_str ());
   }
-  
+
   //----------------------------------------------------------------------------
   /**
       lua_CFunction to get a variable.
@@ -206,8 +212,8 @@ struct CFunc
       The function pointer is in the first upvalue.
   */
   template <class FnPtr,
-            class ReturnType = typename FuncTraits <FnPtr>::ReturnType>
-  struct Call
+    class ReturnType = typename FuncTraits <FnPtr>::ReturnType>
+    struct Call
   {
     typedef typename FuncTraits <FnPtr>::Params Params;
     static int f (lua_State* L)
@@ -253,8 +259,8 @@ struct CFunc
       The class userdata object is at the top of the Lua stack.
   */
   template <class MemFnPtr,
-            class ReturnType = typename FuncTraits <MemFnPtr>::ReturnType>
-  struct CallMember
+    class ReturnType = typename FuncTraits <MemFnPtr>::ReturnType>
+    struct CallMember
   {
     typedef typename FuncTraits <MemFnPtr>::ClassType T;
     typedef typename FuncTraits <MemFnPtr>::Params Params;
@@ -272,8 +278,8 @@ struct CFunc
   };
 
   template <class MemFnPtr,
-            class ReturnType = typename FuncTraits <MemFnPtr>::ReturnType>
-  struct CallConstMember
+    class ReturnType = typename FuncTraits <MemFnPtr>::ReturnType>
+    struct CallConstMember
   {
     typedef typename FuncTraits <MemFnPtr>::ClassType T;
     typedef typename FuncTraits <MemFnPtr>::Params Params;
@@ -284,7 +290,7 @@ struct CFunc
       T const* const t = Userdata::get <T> (L, 1, true);
       MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fnptr != 0);
-      ArgList <Params, 2> args(L);
+      ArgList <Params, 2> args (L);
       Stack <ReturnType>::push (L, FuncTraits <MemFnPtr>::call (t, fnptr, args));
       return 1;
     }
@@ -440,3 +446,5 @@ struct CFunc
     return 0;
   }
 };
+
+} // namespace luabridge
