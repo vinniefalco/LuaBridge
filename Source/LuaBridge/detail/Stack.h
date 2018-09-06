@@ -433,7 +433,14 @@ struct Stack <std::vector <T> >
     if (!lua_istable(L, index))
       luaL_error(L, "#%d argments must be table", index);
     std::vector <T> ret;
-    ret.reserve (luaL_len (L, index));
+
+#if LUA_VERSION_NUM == 501
+    int len = lua_objlen (L, index);
+#else
+    int len = luaL_len (L, index);
+#endif
+    ret.reserve (static_cast <std::size_t> (len));
+
     int const absindex = lua_absindex (L, index);
     lua_pushnil (L);
     while (lua_next (L, absindex) != 0)
