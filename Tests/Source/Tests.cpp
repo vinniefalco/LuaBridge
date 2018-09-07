@@ -647,4 +647,198 @@ TEST_F (LuaBridgeTest, LuaRefArray)
   }
 }
 
+template <class T>
+struct TestClass
+{
+  TestClass (T data)
+    : data (data)
+    , constData (data)
+  {
+  }
+
+  T getValue () { return data; }
+  T* getPtr () { return &data; }
+  T const* getConstPtr () { return &data; }
+  T& getRef () { return data; }
+  T const& getConstRef () { return data; }
+  T getValueConst () const { return data; }
+  T* getPtrConst () const { return &data; }
+  T const* getConstPtrConst () const { return &data; }
+  T& getRefConst () const { return data; }
+  T const& getConstRefConst () const { return data; }
+
+  mutable T data;
+  mutable T constData;
+};
+
+TEST_F (LuaBridgeTest, ClassData)
+{
+  luabridge::getGlobalNamespace (L)
+    .beginClass <TestClass <int> > ("IntClass")
+    .addConstructor <void (*) (int)> ()
+    .addData ("data", &TestClass <int>::data)
+    .addData ("constData", &TestClass <int>::constData, false)
+    .endClass ()
+    .beginClass <TestClass <std::string> > ("StringClass")
+    .addConstructor <void (*) (std::string)> ()
+    .addData ("data", &TestClass <std::string>::data)
+    .addData ("constData", &TestClass <std::string>::constData, false)
+    .endClass ()
+    ;
+
+  runLua ("result = IntClass (501)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_TRUE (result () ["data"].isNumber ());
+  ASSERT_EQ (501, result () ["data"].cast <int> ());
+  ASSERT_TRUE (result () ["data"].isNumber ());
+  ASSERT_EQ (501, result () ["constData"].cast <int> ());
+
+  ASSERT_THROW (
+    runLua ("IntClass (501).constData = 2"),
+    std::runtime_error);
+
+  runLua ("result = IntClass (501) result.data = 2");
+  ASSERT_EQ (2, result () ["data"].cast <int> ());
+  ASSERT_EQ (501, result () ["constData"].cast <int> ());
+
+  runLua ("result = StringClass ('abc')");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_TRUE (result () ["data"].isString ());
+  ASSERT_EQ ("abc", result () ["data"].cast <std::string> ());
+  ASSERT_TRUE (result () ["constData"].isString ());
+  ASSERT_EQ ("abc", result () ["constData"].cast <std::string> ());
+
+  ASSERT_THROW (
+    runLua ("StringClass ('abc').constData = 'd'"),
+    std::runtime_error);
+
+  runLua ("result = StringClass ('abc') result.data = 'd'");
+  ASSERT_EQ ("d", result () ["data"].cast <std::string> ());
+  ASSERT_EQ ("abc", result () ["constData"].cast <std::string> ());
+}
+
+
+TEST_F (LuaBridgeTest, ClassFunction)
+{
+  typedef TestClass <int> Inner;
+  typedef TestClass <Inner> Outer;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Inner> ("Inner")
+    .addConstructor <void (*) (int)> ()
+    .addData ("data", &Inner::data)
+    .endClass ()
+    .beginClass <Outer> ("Outer")
+    .addConstructor <void (*) (Inner)> ()
+    .addFunction ("getValue", &Outer::getValue)
+    .addFunction ("getPtr", &Outer::getPtr)
+    .addFunction ("getConstPtr", &Outer::getConstPtr)
+    .addFunction ("getRef", &Outer::getRef)
+    .addFunction ("getConstRef", &Outer::getConstRef)
+    .addFunction ("getValueConst", &Outer::getValueConst)
+    .addFunction ("getPtrConst", &Outer::getPtrConst)
+    .addFunction ("getConstPtrConst", &Outer::getConstPtrConst)
+    .addFunction ("getRefConst", &Outer::getRefConst)
+    .addFunction ("getConstRefConst", &Outer::getConstRefConst)
+    .endClass ()
+    ;
+
+  Outer outer (Inner (0));
+  luabridge::setGlobal (L, &outer, "outer");
+
+  outer.data.data = 0;
+  runLua ("outer:getValue ().data = 1");
+  ASSERT_EQ (0, outer.data.data);
+
+  outer.data.data = 1;
+  runLua ("outer:getPtr ().data = 10");
+  ASSERT_EQ (10, outer.data.data);
+
+  outer.data.data = 2;
+  ASSERT_THROW (
+    runLua ("outer:getConstPtr ().data = 20"),
+    std::runtime_error);
+
+  outer.data.data = 3;
+  runLua ("outer:getRef().data = 30");
+  ASSERT_EQ (30, outer.data.data);
+
+  outer.data.data = 4;
+  ASSERT_THROW (
+    runLua ("outer:getConstPtr ().data = 40"),
+    std::runtime_error);
+
+  outer.data.data = 5;
+  runLua ("outer:getValueConst ().data = 50");
+  ASSERT_EQ (5, outer.data.data);
+
+  outer.data.data = 6;
+  runLua ("outer:getPtrConst ().data = 60");
+  ASSERT_EQ (60, outer.data.data);
+
+  outer.data.data = 7;
+  ASSERT_THROW (
+    runLua ("outer:getConstPtr ().data = 70"),
+    std::runtime_error);
+
+  outer.data.data = 8;
+  runLua ("outer:getRef().data = 80");
+  ASSERT_EQ (80, outer.data.data);
+
+  outer.data.data = 9;
+  ASSERT_THROW (
+    runLua ("outer:getConstPtr ().data = 90"),
+    std::runtime_error);
+}
+
+TEST_F (LuaBridgeTest, ClassProperties)
+{
+  typedef TestClass <int> Inner;
+  typedef TestClass <Inner> Outer;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Inner> ("Inner")
+    .addData ("data", &Inner::data)
+    //.addProperty ("dataProperty", &)
+    .endClass ()
+    .beginClass <Outer> ("Outer")
+    .addData ("data", &Outer::data)
+    .endClass ();
+
+  Outer outer (Inner (0));
+  luabridge::setGlobal (L, &outer, "outer");
+
+  outer.data.data = 1;
+  runLua ("outer.data.data = 10");
+  ASSERT_EQ (10, outer.data.data);
+}
+
+TEST_F (LuaBridgeTest, Issue160)
+{
+  runLua (
+    "function isConnected () "
+    " return 1, 'srvname', 'ip:10.0.0.1' "
+    "end");
+
+  luabridge::LuaRef f_isConnected = getGlobal (L, "isConnected");
+  luabridge::LuaRef v = f_isConnected ();
+  ASSERT_EQ (1, v.cast <int> ());
+}
+
+TEST_F (LuaBridgeTest, Issue121)
+{
+  runLua (R"(
+    first = {
+      second = {
+        actual = "data"
+      }
+    }
+  )");
+  auto first = luabridge::getGlobal (L, "first");
+  ASSERT_TRUE (first.isTable ());
+  ASSERT_EQ (0, first.length ());
+  ASSERT_TRUE (first ["second"].isTable ());
+  ASSERT_EQ (0, first ["second"].length ());
+}
+
 }
