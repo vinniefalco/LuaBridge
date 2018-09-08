@@ -1,10 +1,9 @@
 //==============================================================================
 /*
   https://github.com/vinniefalco/LuaBridge
-  https://github.com/vinniefalco/LuaBridgeDemo
-  
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright (C) 2007, Nathan Reed
+
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2007, Nathan Reed
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -28,20 +27,8 @@
 */
 //==============================================================================
 
-#pragma once
+#include "TestBase.h"
 
-struct lua_State;
-
-namespace LuaBridgeTests
+struct MapTests : TestBase
 {
-
-void addToState (lua_State* L);
-
-/**
-  Message handler to for lua_pcall ().
-*/
-int traceback (lua_State* L);
-
-void resetTests ();
-
-}
+};

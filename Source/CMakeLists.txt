@@ -2,6 +2,8 @@ set (LUABRIDGE_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/LuaBridge.h
 	${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/RefCountedObject.h
 	${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/RefCountedPtr.h
+	${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/Map.h
+	${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/Vector.h
 )
 source_group ("LuaBridge" FILES ${LUABRIDGE_HEADERS})
 

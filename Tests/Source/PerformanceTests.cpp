@@ -1,10 +1,9 @@
-//==========v====================================================================
+//==============================================================================
 /*
   https://github.com/vinniefalco/LuaBridge
-  https://github.com/vinniefalco/LuaBridgeDemo
-  
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright (C) 2007, Nathan Reed
+
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2007, Nathan Reed
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -28,6 +27,10 @@
 */
 //==============================================================================
 
+#include "TestBase.h"
+
+#include "JuceLibraryCode/BinaryData.h"
+
 /**
   Command line version of LuaBridge test suite.
 */
@@ -38,18 +41,6 @@
 #include <string>
 #include <vector>
 #include <ctime>
-
-#include "Lua/LuaLibrary.h"
-
-#include "LuaBridge/LuaBridge.h"
-#include "LuaBridge/RefCountedPtr.h"
-
-#include "JuceLibraryCode/BinaryData.h"
-
-#include "Performance.h"
-
-namespace PerformanceTests
-{
 
 using namespace std;
 using namespace luabridge;
@@ -77,7 +68,7 @@ public:
   double getElapsedSeconds ()
   {
     clock_t now;
-    
+
     now = clock ();
 
     return (double (now - m_start)) / CLOCKS_PER_SEC;
@@ -174,15 +165,23 @@ void runTests (lua_State* L)
   }
 }
 
-}
-
 void runPerformanceTests ()
 {
   lua_State* L = luaL_newstate ();
   luaL_openlibs (L);
 
-  PerformanceTests::addToState (L);
-  PerformanceTests::runTests (L);
+  addToState (L);
+  runTests (L);
 
   lua_close (L);
+}
+
+struct PerformanceTests : TestBase
+{
+};
+
+TEST_F (PerformanceTests, AllTests)
+{
+  addToState (L);
+  runTests (L);
 }

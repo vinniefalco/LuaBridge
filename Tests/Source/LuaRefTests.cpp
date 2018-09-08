@@ -1,10 +1,9 @@
 //==============================================================================
 /*
   https://github.com/vinniefalco/LuaBridge
-  https://github.com/vinniefalco/LuaBridgeDemo
-  
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright (C) 2007, Nathan Reed
+
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2007, Nathan Reed
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -28,9 +27,8 @@
 */
 //==============================================================================
 
-#ifndef LUABRIDGE_PERFORMANCE_HEADER
-#define LUABRIDGE_PERFORMANCE_HEADER
+#include "TestBase.h"
 
-extern void runPerformanceTests ();
-
-#endif
+struct LuaRefTests : TestBase
+{
+};

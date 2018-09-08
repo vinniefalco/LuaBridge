@@ -1,10 +1,9 @@
 //==============================================================================
 /*
   https://github.com/vinniefalco/LuaBridge
-  https://github.com/vinniefalco/LuaBridgeDemo
-  
-  Copyright (C) 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright (C) 2007, Nathan Reed
+
+  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+  Copyright 2007, Nathan Reed
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -28,60 +27,16 @@
 */
 //==============================================================================
 
-/**
-  Command line version of LuaBridge test suite.
-*/
-
-#include <cstdio>
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <vector>
-
-#include "Lua/LuaLibrary.h"
-
-#include "LuaBridge/LuaBridge.h"
-#include "LuaBridge/RefCountedPtr.h"
-
-#include "JuceLibraryCode/BinaryData.h"
-
-#include "Performance.h"
-#include "Tests.h"
-
 #include <gtest/gtest.h>
 
-using namespace std;
-
-int main (int argc, char ** argv)
+int main (int argc, char** argv)
 {
-  lua_State* L = luaL_newstate ();
-
-  luaL_openlibs (L);
-
-  lua_pushcfunction (L, LuaBridgeTests::traceback);
-
-  LuaBridgeTests::addToState (L);
-
-  // Execute lua files in order
-  if (luaL_loadstring (L, BinaryData::Tests_lua) != 0)
+  // Disable performance tests by default
+  if (argc == 1)
   {
-    // compile-time error
-    cerr << lua_tostring(L, -1) << endl;
-    lua_close(L);
-    return 1;
-  }
-  else if (lua_pcall(L, 0, 0, -2) != 0)
-  {
-    // runtime error
-    cerr << lua_tostring(L, -1) << endl;
-    lua_close(L);
-    return 1;
+    testing::GTEST_FLAG (filter) = "-PerformanceTests.AllTests";
   }
 
-  runPerformanceTests ();
-
-  lua_close(L);
-
-  ::testing::InitGoogleTest(&argc, argv);
+  testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
