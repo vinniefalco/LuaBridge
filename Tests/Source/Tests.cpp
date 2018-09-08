@@ -33,6 +33,7 @@
 
 #include "LuaBridge/LuaBridge.h"
 #include "LuaBridge/RefCountedPtr.h"
+#include "LuaBridge/Vector.h"
 
 #include "JuceLibraryCode/BinaryData.h"
 
@@ -813,16 +814,55 @@ TEST_F (LuaBridgeTest, ClassProperties)
   ASSERT_EQ (10, outer.data.data);
 }
 
+void pushArgs (lua_State* L)
+{
+}
+
+template <class Arg, class... Args>
+void pushArgs (lua_State* L, Arg arg, Args... args)
+{
+  luabridge::Stack <Arg>::push (L, arg);
+  pushArgs (L, args...);
+}
+
+template <class... Args>
+std::vector <luabridge::LuaRef> callFunction (const luabridge::LuaRef& function, Args... args)
+{
+  assert (function.isFunction ());
+
+  lua_State* L = function.state ();
+  int originalTop = lua_gettop (L);
+  function.push (L);
+  pushArgs (L, args...);
+
+  LuaException::pcall (L, sizeof... (args), LUA_MULTRET);
+
+  std::vector <luabridge::LuaRef> results;
+  int top = lua_gettop (L);
+  results.reserve (top - originalTop);
+  for (int i = originalTop + 1; i <= top; ++i)
+  {
+    results.push_back (luabridge::LuaRef::fromStack (L, i));
+  }
+  return results;
+}
+
 TEST_F (LuaBridgeTest, Issue160)
 {
   runLua (
-    "function isConnected () "
-    " return 1, 'srvname', 'ip:10.0.0.1' "
+    "function isConnected (arg1, arg2) "
+    " return 1, 'srvname', 'ip:10.0.0.1', arg1, arg2 "
     "end");
 
   luabridge::LuaRef f_isConnected = getGlobal (L, "isConnected");
-  luabridge::LuaRef v = f_isConnected ();
-  ASSERT_EQ (1, v.cast <int> ());
+
+  auto v = callFunction (f_isConnected, 2, "abc");
+  ASSERT_EQ (5, v.size ());
+  ASSERT_EQ (1, v [0].cast <int> ());
+  ASSERT_EQ ("srvname", v [1].cast <std::string> ());
+  ASSERT_EQ ("ip:10.0.0.1", v [2].cast <std::string> ());
+  ASSERT_EQ (2, v [3].cast <int> ());
+  ASSERT_EQ ("abc", v [4].cast <std::string> ());
 }
 
 TEST_F (LuaBridgeTest, Issue121)
