@@ -29,6 +29,12 @@
 
 #include "TestBase.h"
 
+#include "LuaBridge/Map.h"
+
 struct MapTests : TestBase
 {
 };
+
+TEST_F (MapTests, LuaRef)
+{
+}

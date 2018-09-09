@@ -35,13 +35,15 @@
 
 namespace luabridge {
 
-template <class T>
-struct Stack <std::map <T> >
+template <class K, class V>
+struct Stack <std::map <K, V> >
 {
-  static void push(lua_State* L, std::map <T> const& map)
+  typedef std::map <K, V> Value;
+
+  static void push(lua_State* L, const Value& map)
   {
     lua_createtable (L, map.size (), 0);
-    typedef typename std::map <T>::const_iterator ConstIter;
+    typedef typename Value::const_iterator ConstIter;
     for (ConstIter i = map.begin(); i != map.end(); ++i)
     {
       Stack <T>::push (L, i->first);
@@ -50,21 +52,21 @@ struct Stack <std::map <T> >
     }
   }
 
-  static std::map <T> get(lua_State* L, int index)
+  static Value get(lua_State* L, int index)
   {
     if (!lua_istable(L, index))
     {
       luaL_error(L, "#%d argments must be table", index);
     }
 
-    std::map <T> map;
+    Value map;
     ret.reserve (static_cast <std::size_t> (get_length (L, index)));
 
     int const absindex = lua_absindex (L, index);
     lua_pushnil (L);
     while (lua_next (L, absindex) != 0)
     {
-      ret.push_back (Stack <T>::get (L, -1));
+      ret.push_back (Stack <Value>::get (L, -1));
       lua_pop (L, 1);
     }
     return ret;

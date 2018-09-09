@@ -62,7 +62,7 @@ TEST_F (IssueTests, Issue87)
     .endClass ()
     .addFunction ("getAbstractClass", &ConcreteClass::get);
 
-  runLua ("c = getAbstractClass():sum (1, 2)");
+  runLua ("result = getAbstractClass():sum (1, 2)");
   ASSERT_TRUE (result ().isNumber ());
   ASSERT_EQ (3, result ().cast <int> ());
 }

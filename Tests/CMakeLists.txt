@@ -21,8 +21,6 @@ set (LUABRIDGE_TEST_JUICE_FILES
 
 add_library (JuceLibraryCode ${LUABRIDGE_TEST_JUICE_FILES})
 
-source_group ("JuceLibraryCode" FILES ${LUABRIDGE_TEST_SOURCE_FILES})
-
 # Lua 5.1
 
 file (GLOB_RECURSE LUABRIDGE_TEST_LUA51_FILES

@@ -196,50 +196,6 @@ TEST_F (LuaBridgeTest, CFunction)
   }
 }
 
-TEST_F (LuaBridgeTest, LuaRefDictionary)
-{
-  runLua (
-    "result = {"
-    "  bool = true,"
-    "  int = 5,"
-    "  c = 3.14,"
-    "  [true] = 'D',"
-    "  [8] = 'abc',"
-    "  fn = function (i) result = i end"
-    "}");
-
-  ASSERT_EQ (true, result () ["bool"].isBool ());
-  ASSERT_EQ (true, result () ["bool"].cast <bool> ());
-
-  ASSERT_EQ (true, result () ["int"].isNumber ());
-  ASSERT_EQ (5u, result ()["int"].cast <unsigned char> ());
-  ASSERT_EQ (5, result ()["int"].cast <short> ());
-  ASSERT_EQ (5u, result () ["int"].cast <unsigned short> ());
-  ASSERT_EQ (5, result () ["int"].cast <int> ());
-  ASSERT_EQ (5u, result () ["int"].cast <unsigned int> ());
-  ASSERT_EQ (5, result () ["int"].cast <long> ());
-  ASSERT_EQ (5u, result () ["int"].cast <unsigned long> ());
-  ASSERT_EQ (5, result () ["int"].cast <long long> ());
-  ASSERT_EQ (5u, result () ["int"].cast <unsigned long long> ());
-
-  ASSERT_EQ (true, result () ['c'].isNumber ());
-  ASSERT_FLOAT_EQ (3.14f, result () ['c'].cast <float> ());
-  ASSERT_DOUBLE_EQ (3.14, result () ['c'].cast <double> ());
-
-  ASSERT_EQ (true, result () [true].isString ());
-  ASSERT_EQ ('D', result () [true].cast <char> ());
-  ASSERT_EQ ("D", result () [true].cast <std::string>());
-  ASSERT_STREQ ("D", result () [true].cast <const char*> ());
-
-  ASSERT_EQ (true, result () [8].isString ());
-  ASSERT_EQ ("abc", result () [8].cast <std::string> ());
-  ASSERT_STREQ ("abc", result () [8].cast <char const*> ());
-
-  ASSERT_EQ (true, result () ["fn"].isFunction ());
-  result () ["fn"] (42); // Replaces result variable
-  ASSERT_EQ (42, result ().cast <int> ());
-}
-
 template <class T>
 struct TestClass
 {

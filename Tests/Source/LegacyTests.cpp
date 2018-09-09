@@ -368,7 +368,6 @@ TEST_F (LegacyTests, AllTests)
   {
     // compile-time error
     FAIL () << lua_tostring (L, -1);
-    lua_close (L);
   }
   else if (lua_pcall (L, 0, 0, -2) != 0)
   {
