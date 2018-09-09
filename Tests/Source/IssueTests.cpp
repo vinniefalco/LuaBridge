@@ -35,6 +35,38 @@ struct IssueTests : TestBase
 {
 };
 
+struct AbstractClass
+{
+  virtual int sum (int a, int b) = 0;
+};
+
+struct ConcreteClass : AbstractClass
+{
+  int sum (int a, int b) override
+  {
+    return a + b;
+  }
+
+  static AbstractClass& get()
+  {
+    static ConcreteClass instance;
+    return instance;
+  }
+};
+
+TEST_F (IssueTests, Issue87)
+{
+  luabridge::getGlobalNamespace (L)
+    .beginClass <AbstractClass> ("Class")
+    .addFunction ("sum", &AbstractClass::sum)
+    .endClass ()
+    .addFunction ("getAbstractClass", &ConcreteClass::get);
+
+  runLua ("c = getAbstractClass():sum (1, 2)");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (3, result ().cast <int> ());
+}
+
 TEST_F (IssueTests, Issue121)
 {
   runLua (R"(
@@ -47,8 +79,8 @@ TEST_F (IssueTests, Issue121)
   auto first = luabridge::getGlobal (L, "first");
   ASSERT_TRUE (first.isTable ());
   ASSERT_EQ (0, first.length ());
-  ASSERT_TRUE (first["second"].isTable ());
-  ASSERT_EQ (0, first["second"].length ());
+  ASSERT_TRUE (first ["second"].isTable ());
+  ASSERT_EQ (0, first ["second"].length ());
 }
 
 void pushArgs (lua_State*)
@@ -100,4 +132,13 @@ TEST_F (IssueTests, Issue160)
   ASSERT_EQ ("ip:10.0.0.1", v [2].cast <std::string> ());
   ASSERT_EQ (2, v [3].cast <int> ());
   ASSERT_EQ ("abc", v [4].cast <std::string> ());
+}
+
+TEST_F (IssueTests, Issue161)
+{
+  runLua ("t = { aa=1,bb=2, othert={1,2,3} }");
+
+  luabridge::LuaRef t = luabridge::getGlobal (L, "t");
+  luabridge::LuaRef othert = t ["othert"];
+  ASSERT_TRUE (t ["othert"].isTable ());
 }
