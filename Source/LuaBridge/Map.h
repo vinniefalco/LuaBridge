@@ -2,8 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
   
-  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright 2007, Nathan Reed
+  Copyright 2018, Dmitry Tarakanov <dmitry.a.tarakanov@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -38,43 +37,41 @@ namespace luabridge {
 template <class K, class V>
 struct Stack <std::map <K, V> >
 {
-  typedef std::map <K, V> Value;
+  typedef std::map <K, V> Map;
 
-  static void push(lua_State* L, const Value& map)
+  static void push(lua_State* L, const Map& map)
   {
     lua_createtable (L, map.size (), 0);
-    typedef typename Value::const_iterator ConstIter;
+    typedef typename Map::const_iterator ConstIter;
     for (ConstIter i = map.begin(); i != map.end(); ++i)
     {
-      Stack <T>::push (L, i->first);
-      Stack <T>::push (L, i->second);
+      Stack <K>::push (L, i->first);
+      Stack <V>::push (L, i->second);
       lua_settable (L, -3);
     }
   }
 
-  static Value get(lua_State* L, int index)
+  static Map get(lua_State* L, int index)
   {
     if (!lua_istable(L, index))
     {
       luaL_error(L, "#%d argments must be table", index);
     }
 
-    Value map;
-    ret.reserve (static_cast <std::size_t> (get_length (L, index)));
-
+    Map map;
     int const absindex = lua_absindex (L, index);
     lua_pushnil (L);
     while (lua_next (L, absindex) != 0)
     {
-      ret.push_back (Stack <Value>::get (L, -1));
+      map.emplace (Stack <K>::get (L, -2), Stack <V>::get (L, -1));
       lua_pop (L, 1);
     }
-    return ret;
+    return map;
   }
 };
 
-template <class T>
-struct Stack <std::vector <T> const&> : Stack <std::vector <T> >
+template <class K, class V>
+struct Stack <std::map <K, V> const&> : Stack <std::map <K, V> >
 {
 };
 

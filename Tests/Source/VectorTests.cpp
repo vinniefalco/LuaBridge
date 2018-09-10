@@ -2,8 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
 
-  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright 2007, Nathan Reed
+  Copyright 2018, Dmitry Tarakanov <dmitry.a.tarakanov@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -40,49 +39,41 @@ TEST_F (VectorTests, LuaRef)
   {
     runLua ("result = {1, 2, 3}");
 
-    std::vector <int> expected;
-    expected.push_back (1);
-    expected.push_back (2);
-    expected.push_back (3);
-    std::vector <int> vec = result ();
-    ASSERT_EQ (expected, vec);
+    std::vector <int> expected {1, 2, 3};
+    std::vector <int> vector = result ();
+    ASSERT_EQ (expected, vector);
     ASSERT_EQ (expected, result ().cast <std::vector <int>> ());
   }
 
   {
     runLua ("result = {'a', 'b', 'c'}");
 
-    std::vector <std::string> expected;
-    expected.push_back ("a");
-    expected.push_back ("b");
-    expected.push_back ("c");
-    std::vector <std::string> vec = result ();
-    ASSERT_EQ (expected, vec);
+    std::vector <std::string> expected {"a", "b", "c"};
+    std::vector <std::string> vector = result ();
+    ASSERT_EQ (expected, vector);
     ASSERT_EQ (expected, result ().cast <std::vector <std::string> > ());
   }
 
   {
     runLua ("result = {1, 2.3, 'abc', false}");
 
-    std::vector <luabridge::LuaRef> expected;
-    expected.push_back (luabridge::LuaRef (L, 1));
-    expected.push_back (luabridge::LuaRef (L, 2.3));
-    expected.push_back (luabridge::LuaRef (L, "abc"));
-    expected.push_back (luabridge::LuaRef (L, false));
-    std::vector <luabridge::LuaRef> vec = result ();
-    ASSERT_EQ (expected, vec);
+    std::vector <luabridge::LuaRef> expected {
+      luabridge::LuaRef (L, 1),
+      luabridge::LuaRef (L, 2.3),
+      luabridge::LuaRef (L, "abc"),
+      luabridge::LuaRef (L, false),
+    };
+    std::vector <luabridge::LuaRef> vector = result ();
+    ASSERT_EQ (expected, vector);
     ASSERT_EQ (expected, result ().cast <std::vector <luabridge::LuaRef> > ());
   }
 
   {
     runLua ("result = function (t) result = t end");
 
-    std::vector <int> vec;
-    vec.push_back (1);
-    vec.push_back (2);
-    vec.push_back (3);
-    result () (vec); // Replaces result variable
-    ASSERT_EQ (vec, result ().cast <std::vector <int> > ());
+    std::vector <int> vector {1, 2, 3};
+    result () (vector); // Replaces result variable
+    ASSERT_EQ (vector, result ().cast <std::vector <int> > ());
   }
 }
 
@@ -97,19 +88,15 @@ TEST_F (VectorTests, PassToFunction)
 
   resetResult ();
 
-  std::vector <int> lvalue{ 10, 20, 30 };
+  std::vector <int> lvalue {10, 20, 30};
   foo (lvalue);
   ASSERT_TRUE (result ().isTable ());
-  ASSERT_EQ (
-    std::vector <int> ({ 10, 20, 30 }),
-    result ().cast <std::vector<int>> ());
+  ASSERT_EQ (lvalue, result ().cast <std::vector<int>> ());
 
   resetResult ();
 
-  const std::vector <int> constLvalue{ 10, 20, 30 };
+  const std::vector <int> constLvalue = lvalue;
   foo (constLvalue);
   ASSERT_TRUE (result ().isTable ());
-  ASSERT_EQ (
-    std::vector <int> ({ 10, 20, 30 }),
-    result ().cast <std::vector<int>> ());
+  ASSERT_EQ (lvalue, result ().cast <std::vector<int>> ());
 }

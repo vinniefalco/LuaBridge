@@ -929,6 +929,10 @@ public:
     StackPop p (m_L, 2);
     push (m_L);
     Stack <T>::push (m_L, rhs);
+    if (lua_type (m_L, -2) != lua_type (m_L, -1))
+    {
+      return lua_type (m_L, -2) < lua_type (m_L, -1);
+    }
     return lua_compare (m_L, -2, -1, LUA_OPLT) == 1;
   }
 
@@ -938,6 +942,10 @@ public:
     StackPop p (m_L, 2);
     push (m_L);
     Stack <T>::push (m_L, rhs);
+    if (lua_type (m_L, -2) != lua_type (m_L, -1))
+    {
+      return lua_type (m_L, -2) <= lua_type (m_L, -1);
+    }
     return lua_compare (m_L, -2, -1, LUA_OPLE) == 1;
   }
 
@@ -947,6 +955,10 @@ public:
     StackPop p (m_L, 2);
     push (m_L);
     Stack <T>::push (m_L, rhs);
+    if (lua_type (m_L, -2) != lua_type (m_L, -1))
+    {
+      return lua_type (m_L, -2) > lua_type (m_L, -1);
+    }
     return lua_compare (m_L, -1, -2, LUA_OPLT) == 1;
   }
 
@@ -956,6 +968,10 @@ public:
     StackPop p (m_L, 2);
     push (m_L);
     Stack <T>::push (m_L, rhs);
+    if (lua_type (m_L, -2) != lua_type (m_L, -1))
+    {
+      return lua_type (m_L, -2) >= lua_type (m_L, -1);
+    }
     return lua_compare (m_L, -1, -2, LUA_OPLE) == 1;
   }
 
