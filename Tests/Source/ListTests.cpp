@@ -28,77 +28,77 @@
 
 #include "TestBase.h"
 
-#include "LuaBridge/Vector.h"
+#include "LuaBridge/List.h"
 
-#include <vector>
+#include <list>
 
-struct VectorTests : TestBase
+struct ListTests : TestBase
 {
 };
 
-TEST_F (VectorTests, LuaRef)
+TEST_F (ListTests, LuaRef)
 {
   {
     runLua ("result = {1, 2, 3}");
 
-    std::vector <int> expected {1, 2, 3};
-    std::vector <int> actual = result ();
+    std::list <int> expected {1, 2, 3};
+    std::list <int> actual = result ();
     ASSERT_EQ (expected, actual);
-    ASSERT_EQ (expected, result ().cast <std::vector <int>> ());
+    ASSERT_EQ (expected, result ().cast <std::list <int>> ());
   }
 
   {
     runLua ("result = {'a', 'b', 'c'}");
 
-    std::vector <std::string> expected {"a", "b", "c"};
-    std::vector <std::string> actual = result ();
+    std::list <std::string> expected {"a", "b", "c"};
+    std::list <std::string> actual = result ();
     ASSERT_EQ (expected, actual);
-    ASSERT_EQ (expected, result ().cast <std::vector <std::string> > ());
+    ASSERT_EQ (expected, result ().cast <std::list <std::string> > ());
   }
 
   {
     runLua ("result = {1, 2.3, 'abc', false}");
 
-    std::vector <luabridge::LuaRef> expected {
+    std::list <luabridge::LuaRef> expected {
       luabridge::LuaRef (L, 1),
       luabridge::LuaRef (L, 2.3),
       luabridge::LuaRef (L, "abc"),
       luabridge::LuaRef (L, false),
     };
-    std::vector <luabridge::LuaRef> actual = result ();
+    std::list <luabridge::LuaRef> actual = result ();
     ASSERT_EQ (expected, actual);
-    ASSERT_EQ (expected, result ().cast <std::vector <luabridge::LuaRef> > ());
+    ASSERT_EQ (expected, result ().cast <std::list <luabridge::LuaRef> > ());
   }
 
   {
     runLua ("result = function (t) result = t end");
 
-    std::vector <int> vector {1, 2, 3};
-    result () (vector); // Replaces result variable
-    ASSERT_EQ (vector, result ().cast <std::vector <int> > ());
+    std::list <int> list {1, 2, 3};
+    result () (list); // Replaces result variable
+    ASSERT_EQ (list, result ().cast <std::list <int> > ());
   }
 }
 
-TEST_F (VectorTests, PassToFunction)
+TEST_F (ListTests, PassToFunction)
 {
   runLua (
-    "function foo (vector) "
-    "  result = vector "
+    "function foo (list) "
+    "  result = list "
     "end");
 
   auto foo = luabridge::getGlobal (L, "foo");
 
   resetResult ();
 
-  std::vector <int> lvalue {10, 20, 30};
+  std::list <int> lvalue {10, 20, 30};
   foo (lvalue);
   ASSERT_TRUE (result ().isTable ());
-  ASSERT_EQ (lvalue, result ().cast <std::vector<int>> ());
+  ASSERT_EQ (lvalue, result ().cast <std::list<int>> ());
 
   resetResult ();
 
-  const std::vector <int> constLvalue = lvalue;
+  const std::list <int> constLvalue = lvalue;
   foo (constLvalue);
   ASSERT_TRUE (result ().isTable ());
-  ASSERT_EQ (lvalue, result ().cast <std::vector<int>> ());
+  ASSERT_EQ (lvalue, result ().cast <std::list<int>> ());
 }

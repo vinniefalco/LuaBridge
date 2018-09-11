@@ -2,8 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
 
-  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright 2007, Nathan Reed
+  Copyright 2018, Dmitry Tarakanov <dmitry.a.tarakanov@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
 
@@ -132,13 +131,4 @@ TEST_F (IssueTests, Issue160)
   ASSERT_EQ ("ip:10.0.0.1", v [2].cast <std::string> ());
   ASSERT_EQ (2, v [3].cast <int> ());
   ASSERT_EQ ("abc", v [4].cast <std::string> ());
-}
-
-TEST_F (IssueTests, Issue161)
-{
-  runLua ("t = { aa=1,bb=2, othert={1,2,3} }");
-
-  luabridge::LuaRef t = luabridge::getGlobal (L, "t");
-  luabridge::LuaRef othert = t ["othert"];
-  ASSERT_TRUE (t ["othert"].isTable ());
 }

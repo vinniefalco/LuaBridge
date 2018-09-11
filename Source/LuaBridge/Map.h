@@ -41,7 +41,7 @@ struct Stack <std::map <K, V> >
 
   static void push(lua_State* L, const Map& map)
   {
-    lua_createtable (L, map.size (), 0);
+    lua_createtable (L, 0, map.size ());
     typedef typename Map::const_iterator ConstIter;
     for (ConstIter i = map.begin(); i != map.end(); ++i)
     {

@@ -1,6 +1,7 @@
 set (LUABRIDGE_TEST_SOURCE_FILES
   Source/IssueTests.cpp
   Source/LegacyTests.cpp
+  Source/ListTests.cpp
   Source/LuaRefTests.cpp
   Source/MapTests.cpp
   Source/PerformanceTests.cpp

@@ -30,47 +30,48 @@
 
 #include <LuaBridge/detail/Stack.h>
 
-#include <vector>
+#include <list>
 
 namespace luabridge {
 
 template <class T>
-struct Stack <std::vector <T> >
+struct Stack <std::list <T> >
 {
-  static void push(lua_State* L, std::vector <T> const& vector)
+  static void push(lua_State* L, std::list <T> const& list)
   {
-    lua_createtable (L, vector.size (), 0);
-    for (std::size_t i = 0; i < vector.size (); ++i)
+    lua_createtable (L, list.size (), 0);
+    typename std::list <T>::const_iterator item = list.begin();
+    for (std::size_t i = 1; i <= list.size (); ++i)
     {
-      lua_pushinteger (L, static_cast <lua_Integer> (i + 1));
-      Stack <T>::push (L, vector [i]);
+      lua_pushinteger (L, static_cast <lua_Integer> (i));
+      Stack <T>::push (L, *item);
       lua_settable (L, -3);
+      ++item;
     }
   }
 
-  static std::vector <T> get(lua_State* L, int index)
+  static std::list <T> get(lua_State* L, int index)
   {
     if (!lua_istable(L, index))
     {
       luaL_error(L, "#%d argments must be table", index);
     }
 
-    std::vector <T> vector;
-    vector.reserve (static_cast <std::size_t> (get_length (L, index)));
+    std::list <T> list;
 
     int const absindex = lua_absindex (L, index);
     lua_pushnil (L);
     while (lua_next (L, absindex) != 0)
     {
-      vector.push_back (Stack <T>::get (L, -1));
+      list.push_back (Stack <T>::get (L, -1));
       lua_pop (L, 1);
     }
-    return vector;
+    return list;
   }
 };
 
 template <class T>
-struct Stack <std::vector <T> const&> : Stack <std::vector <T> >
+struct Stack <std::list <T> const&> : Stack <std::list <T> >
 {
 };
 
