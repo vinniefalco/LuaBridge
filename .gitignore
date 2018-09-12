@@ -1,5 +1,6 @@
 Documentation
 *.swp
+Makefile
 CMakeCache.txt
 CMakeFiles/
 *.dir/
@@ -8,3 +9,4 @@ CMakeFiles/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
+.vscode

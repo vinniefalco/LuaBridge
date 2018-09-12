@@ -1,3 +1,9 @@
+Version 2.1
+
+ * Added stack specializations for STL vector, list and map stack
+ * Added ability to use LuaRef objects as an std::map keys
+ * Fixed some manual errata
+
 Version 2.0
 
   * Numerous bug fixes
