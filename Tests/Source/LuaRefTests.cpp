@@ -128,3 +128,97 @@ TEST_F (LuaRefTests, DictionaryAccess)
   ASSERT_TRUE (result ().isNumber ());
   ASSERT_EQ (42, result ().cast <int> ());
 }
+
+struct Class
+{
+};
+
+TEST_F (LuaRefTests, Comparison)
+{
+  runLua (
+    "function foo() end "
+    "local m = {} "
+    "m.__eq = function (l, r) return l.a == r.a end "
+    "m.__lt = function (l, r) return l.a < r.a end "
+    "m.__le = function (l, r) return l.a <= r.a end "
+    "t1 = {a = 1} setmetatable(t1, m) "
+    "t2 = {a = 2} setmetatable(t2, m) "
+    "t3 = {a = 1} setmetatable(t3, m) "
+    "t4 = {a = 2} "
+  );
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Class> ("Class")
+    .endClass ();
+
+  luabridge::LuaRef nil (L, luabridge::Nil ());
+  luabridge::LuaRef boolFalse (L, false);
+  luabridge::LuaRef boolTrue (L, true);
+  luabridge::LuaRef minus5 (L, -5);
+  luabridge::LuaRef numPi (L, 3.14);
+  luabridge::LuaRef stringA (L, 'a');
+  luabridge::LuaRef stringAB (L, "ab");
+  luabridge::LuaRef t1 = luabridge::getGlobal (L, "t1");
+  luabridge::LuaRef t2 = luabridge::getGlobal (L, "t2");
+  luabridge::LuaRef t3 = luabridge::getGlobal (L, "t3");
+  luabridge::LuaRef t4 = luabridge::getGlobal (L, "t4");
+
+  ASSERT_TRUE (nil == nil);
+
+  ASSERT_TRUE (nil < boolFalse);
+
+  ASSERT_TRUE (boolFalse == boolFalse);
+  ASSERT_TRUE (boolTrue == boolTrue);
+
+  ASSERT_TRUE (boolTrue < minus5);
+
+  ASSERT_TRUE (minus5 == minus5);
+  ASSERT_FALSE (minus5 == numPi);
+  ASSERT_TRUE (minus5 < numPi);
+  ASSERT_TRUE (minus5 <= numPi);
+  ASSERT_FALSE (minus5 > numPi);
+  ASSERT_FALSE (minus5 >= numPi);
+
+  ASSERT_TRUE (numPi < stringA);
+
+  ASSERT_TRUE (stringA == stringA);
+  ASSERT_FALSE (stringA == stringAB);
+  ASSERT_TRUE (stringA < stringAB);
+  ASSERT_TRUE (stringA <= stringAB);
+  ASSERT_FALSE (stringA > stringAB);
+  ASSERT_FALSE (stringA >= stringAB);
+
+  ASSERT_TRUE (stringA < t1);
+
+  ASSERT_TRUE (t1 == t1);
+  ASSERT_FALSE (t1 == t2);
+  ASSERT_TRUE (t1 == t3);
+  ASSERT_FALSE (t1.rawequal (t3));
+  ASSERT_FALSE (t1 == t4);
+  ASSERT_TRUE (t2 == t2);
+  ASSERT_FALSE (t2 == t3);
+  ASSERT_FALSE (t2 == t4);
+  ASSERT_TRUE (t3 == t3);
+  ASSERT_FALSE (t3 == t4);
+
+  ASSERT_FALSE (t1 < t1);
+  ASSERT_TRUE (t1 < t2);
+  ASSERT_FALSE (t1 < t3);
+  ASSERT_FALSE (t2 < t3);
+
+  ASSERT_TRUE (t1 <= t1);
+  ASSERT_TRUE (t1 <= t2);
+  ASSERT_TRUE (t1 <= t3);
+  ASSERT_FALSE (t2 <= t3);
+
+  ASSERT_FALSE (t1 > t1);
+  ASSERT_FALSE (t1 > t2);
+  ASSERT_FALSE (t1 > t3);
+  ASSERT_TRUE (t2 > t3);
+
+  ASSERT_TRUE (t1 >= t1);
+  ASSERT_FALSE (t1 >= t2);
+  ASSERT_TRUE (t1 >= t3);
+  ASSERT_TRUE (t2 >= t3);
+
+}
