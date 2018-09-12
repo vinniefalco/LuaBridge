@@ -30,8 +30,7 @@
 /** Include file for the Lua library.
 */
 
-#ifndef LUALIBRARY_HEADER
-#define LUALIBRARY_HEADER
+#pragma once
 
 // This determines which version of Lua to use.
 // The value is the same as LUA_VERSION_NUM in lua.h
@@ -59,8 +58,6 @@ extern "C"
 
 #else
   #error "Unknown LUA_VERSION_NUM"
-
-#endif
 
 #endif
 

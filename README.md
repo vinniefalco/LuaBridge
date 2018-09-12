@@ -2,7 +2,7 @@
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
 </a><br>
 
-# LuaBridge 2.0
+# LuaBridge 2.1
 
 [LuaBridge][1] is a lightweight and dependency-free library for mapping data,
 functions, and classes back and forth between C++ and [Lua][2] (a powerful,
@@ -55,6 +55,7 @@ documentation, and incorporated contributions from Nigel Atkinson.
 For questions, comments, or bug reports feel free to open a Github issue
 or contact Vinnie Falco directly at the email address indicated below.
 
+Copyright 2018, Dmitry Tarakanov<br>
 Copyright 2012, [Vinnie Falco][7] (<[vinnie.falco@gmail.com][8]>)<br>
 Copyright 2008, Nigel Atkinson<br>
 Copyright 2007, Nathan Reed<br>

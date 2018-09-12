@@ -1,10 +1,17 @@
 set (LUABRIDGE_TEST_SOURCE_FILES
-  Source/Performance.h
-  Source/Performance.cpp
-  Source/Tests.h
+  Source/IssueTests.cpp
+  Source/LegacyTests.cpp
+  Source/ListTests.cpp
+  Source/LuaRefTests.cpp
+  Source/MapTests.cpp
+  Source/PerformanceTests.cpp
   Source/Tests.cpp
+  Source/TestBase.h
   Source/TestsMain.cpp
+  Source/VectorTests.cpp
 )
+
+source_group ("Source" FILES ${LUABRIDGE_TEST_SOURCE_FILES})
 
 set (LUABRIDGE_TEST_JUICE_FILES
   JuceLibraryCode/AppConfig.h
@@ -30,7 +37,6 @@ target_include_directories (Lua51 PRIVATE .)
 
 add_executable (LuaBridgeTests51
   ${LUABRIDGE_TEST_SOURCE_FILES}
-  ${LUABRIDGE_TEST_JUICE_FILES}
 )
 
 target_include_directories (LuaBridgeTests51 PRIVATE . Source)
@@ -39,6 +45,7 @@ target_link_libraries (LuaBridgeTests51
   LuaBridge
   Lua51
   gtest
+  JuceLibraryCode
 )
 
 # Lua 5.2
@@ -56,7 +63,6 @@ target_include_directories (Lua52 PRIVATE .)
 
 add_executable (LuaBridgeTests52
   ${LUABRIDGE_TEST_SOURCE_FILES}
-  ${LUABRIDGE_TEST_JUICE_FILES}
 )
 
 target_include_directories (LuaBridgeTests52 PRIVATE . Source)
@@ -65,6 +71,7 @@ target_link_libraries (LuaBridgeTests52
   LuaBridge
   Lua52
   gtest
+  JuceLibraryCode
 )
 
 # Fix runtime library link options by gtest macro

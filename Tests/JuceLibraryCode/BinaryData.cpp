@@ -124,7 +124,7 @@ const char* Tests_lua = (const char*) temp_b6c6a671;
 const char* getNamedResource (const char*, int&) throw();
 const char* getNamedResource (const char* resourceNameUTF8, int& numBytes) throw()
 {
-    int hash = 0;
+    unsigned hash = 0;
     if (resourceNameUTF8 != 0)
         while (*resourceNameUTF8 != 0)
             hash = 31 * hash + *resourceNameUTF8++;
