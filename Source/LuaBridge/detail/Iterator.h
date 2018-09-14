@@ -40,21 +40,31 @@ private:
   LuaRef m_key;
   LuaRef m_value;
 
+  void printStack ()
+  {
+    std::cerr << "===== Stack =====\n";
+    for (int i = 1; i <= lua_gettop (m_L); ++i)
+    {
+      std::cerr << "@" << i << " = " << luabridge::LuaRef::fromStack (m_L, i) << "\n";
+    }
+    std::cerr << "==========\n";
+  }
+
   void next ()
   {
-    m_table.push(m_L);
-    m_key.push (m_L);
+    m_table.push ();
+    m_key.push ();
     if (lua_next (m_L, -2))
     {
-      m_value.pop (m_L);
-      m_key.pop (m_L);
+      m_value.pop ();
+      m_key.pop ();
     }
     else
     {
-      m_key = Nil();
-      m_value = Nil();
+      m_key = Nil ();
+      m_value = Nil ();
     }
-    lua_pop(m_L, 1);
+    lua_pop (m_L, 1);
   }
 
 public:

@@ -198,5 +198,4 @@ TEST_F (LuaRefTests, Comparison)
   ASSERT_FALSE (t1 >= t2);
   ASSERT_TRUE (t1 >= t3);
   ASSERT_TRUE (t2 >= t3);
-
 }

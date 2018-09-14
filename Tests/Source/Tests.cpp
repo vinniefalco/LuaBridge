@@ -39,16 +39,6 @@ void printValue (lua_State* L, int index)
   std::cerr << ": " << lua_typename (L, type) << " (" << type << ")" << std::endl;
 }
 
-void printStack (lua_State* L)
-{
-  std::cerr << "===== Stack =====\n";
-  for (int i = 1; i <= lua_gettop (L); ++i)
-  {
-    std::cerr << "@" << i << " = ";
-    printValue (L, i);
-  }
-}
-
 struct LuaBridgeTest : public TestBase
 {
 };

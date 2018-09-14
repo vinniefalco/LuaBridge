@@ -82,4 +82,13 @@ struct TestBase : public ::testing::Test
   {
     luabridge::setGlobal (L, luabridge::LuaRef (L), "result");
   }
+
+  void printStack ()
+  {
+    std::cerr << "===== Stack =====\n";
+    for (int i = 1; i <= lua_gettop (L); ++i)
+    {
+      std::cerr << "@" << i << " = " << luabridge::LuaRef::fromStack (L, i) << "\n";
+    }
+  }
 };
