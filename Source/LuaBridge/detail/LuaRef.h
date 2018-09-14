@@ -739,7 +739,7 @@ public:
     lua_getglobal (m_L, "tostring");
     push (m_L);
     lua_call (m_L, 1, 1);
-    const char* str = lua_tostring(m_L, 1);
+    const char* str = lua_tostring(m_L, -1);
     lua_pop(m_L, 1);
     return std::string(str);
   }
@@ -812,21 +812,31 @@ public:
   /**
       Place the object onto the Lua stack.
   */
+  void push () const
+  {
+    lua_rawgeti (m_L, LUA_REGISTRYINDEX, m_ref);
+  }
+
   void push (lua_State* L) const
   {
     assert (equalstates (L, m_L));
-    lua_rawgeti (L, LUA_REGISTRYINDEX, m_ref);
+    push ();
   }
 
   //----------------------------------------------------------------------------
   /**
       Pop the top of Lua stack and assign the ref to m_ref
   */
+  void pop ()
+  {
+    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
+    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
+  }
+
   void pop (lua_State* L)
   {
     assert (equalstates (L, m_L));
-    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
-    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
+    pop ();
   }
 
   //----------------------------------------------------------------------------

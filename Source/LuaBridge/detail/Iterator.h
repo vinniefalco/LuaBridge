@@ -28,6 +28,10 @@
 
 #pragma once
 
+#include <LuaBridge/detail/LuaRef.h>
+
+#include <utility>
+
 namespace luabridge {
 
 /** Allows table iteration.
@@ -42,29 +46,32 @@ private:
 
   void next ()
   {
-    m_table.push(m_L);
-    m_key.push (m_L);
+    m_table.push ();
+    m_key.push ();
     if (lua_next (m_L, -2))
     {
-      m_value.pop (m_L);
-      m_key.pop (m_L);
+      m_value.pop ();
+      m_key.pop ();
     }
     else
     {
-      m_key = Nil();
-      m_value = Nil();
+      m_key = Nil ();
+      m_value = Nil ();
     }
-    lua_pop(m_L, 1);
+    lua_pop (m_L, 1);
   }
 
 public:
-  explicit Iterator (LuaRef table)
+  explicit Iterator (const LuaRef& table, bool isEnd = false)
     : m_L (table.state ())
     , m_table (table)
     , m_key (table.state ()) // m_key is nil
     , m_value (table.state ()) // m_value is nil
   {
-    next (); // get the first (key, value) pair from table
+    if (!isEnd)
+    {
+      next (); // get the first (key, value) pair from table
+    }
   }
 
   lua_State* state () const
@@ -72,14 +79,20 @@ public:
     return m_L;
   }
 
-  LuaRef operator* () const
+  std::pair<LuaRef, LuaRef> operator* () const
   {
-    return m_value;
+    return std::make_pair (m_key, m_value);
   }
 
   LuaRef operator-> () const
   {
     return m_value;
+  }
+
+  bool operator!= (const Iterator& rhs) const
+  {
+    assert (m_L == rhs.m_L);
+    return !m_table.rawequal (rhs.m_table) || !m_key.rawequal (rhs.m_key);
   }
 
   Iterator& operator++ ()
@@ -96,17 +109,17 @@ public:
     }
   }
 
-  inline bool isNil () const
+  bool isNil () const
   {
     return m_key.isNil ();
   }
 
-  inline LuaRef key () const
+  LuaRef key () const
   {
     return m_key;
   }
 
-  inline LuaRef value () const
+  LuaRef value () const
   {
     return m_value;
   }
@@ -115,5 +128,26 @@ private:
   // Don't use postfix increment, it is less efficient
   Iterator operator++ (int);
 };
+
+class Range
+{
+  Iterator m_begin;
+  Iterator m_end;
+
+public:
+  Range (const Iterator& begin, const Iterator& end)
+    : m_begin (begin)
+    , m_end (end)
+  {
+  }
+
+  const Iterator& begin () const { return m_begin; }
+  const Iterator& end () const { return m_end; }
+};
+
+inline Range pairs(const LuaRef& table)
+{
+  return Range (Iterator (table, false), Iterator (table, true));
+}
 
 } // namespace luabridge
