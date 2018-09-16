@@ -7,6 +7,9 @@
 
 #include "TestBase.h"
 
+#include <sstream>
+
+
 struct LuaRefTests : TestBase
 {
 };
@@ -216,4 +219,67 @@ TEST_F (LuaRefTests, Assignment)
   ASSERT_EQ (LUA_TNUMBER, value.type ());
   ASSERT_TRUE (value.isNumber ());
   ASSERT_EQ (5, value.cast <int> ());
+
+  runLua ("t = {a = {b = 5}}");
+  auto table = luabridge::getGlobal (L, "t");
+  luabridge::LuaRef entry = table ["a"];
+  luabridge::LuaRef b1 = entry ["b"];
+  luabridge::LuaRef b2 = table ["a"] ["b"];
+  ASSERT_TRUE (b1 == b2);
+}
+
+TEST_F (LuaRefTests, Print)
+{
+  {
+    runLua ("result = true");
+    std::ostringstream stream;
+    stream << result ();
+    ASSERT_EQ ("true", stream.str ());
+  }
+  {
+    runLua ("result = false");
+    std::ostringstream stream;
+    stream << result ();
+    ASSERT_EQ ("false", stream.str ());
+  }
+  {
+    runLua ("result = 5");
+    std::ostringstream stream;
+    stream << result ();
+    ASSERT_EQ ("5", stream.str ());
+  }
+  {
+    runLua ("result = 'abc'");
+    std::ostringstream stream;
+    stream << result ();
+    ASSERT_EQ ("\"abc\"", stream.str ());
+  }
+
+  runLua (
+    "result = {"
+    "  true_ = true,"
+    "  false_ = false,"
+    "  five = 5,"
+    "  abc = 'abc'"
+    "}");
+  {
+    std::ostringstream stream;
+    stream << result () ["true_"];
+    ASSERT_EQ ("true", stream.str ());
+  }
+  {
+    std::ostringstream stream;
+    stream << result () ["false_"];
+    ASSERT_EQ ("false", stream.str ());
+  }
+  {
+    std::ostringstream stream;
+    stream << result () ["five"];
+    ASSERT_EQ ("5", stream.str ());
+  }
+  {
+    std::ostringstream stream;
+    stream << result () ["abc"];
+    ASSERT_EQ ("\"abc\"", stream.str ());
+  }
 }
