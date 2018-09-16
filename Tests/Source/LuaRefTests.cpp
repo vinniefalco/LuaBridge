@@ -199,3 +199,21 @@ TEST_F (LuaRefTests, Comparison)
   ASSERT_TRUE (t1 >= t3);
   ASSERT_TRUE (t2 >= t3);
 }
+
+TEST_F (LuaRefTests, Assignment)
+{
+  runLua ("value = {a = 5}");
+  auto value = luabridge::getGlobal (L, "value");
+  ASSERT_TRUE (value.isTable ());
+  ASSERT_TRUE (value ["a"].isNumber ());
+  ASSERT_EQ (5, value ["a"].cast <int> ());
+
+  value = value ["a"];
+  ASSERT_TRUE (value.isNumber ());
+  ASSERT_EQ (5, value.cast <int> ());
+
+  value = value;
+  ASSERT_EQ (LUA_TNUMBER, value.type ());
+  ASSERT_TRUE (value.isNumber ());
+  ASSERT_EQ (5, value.cast <int> ());
+}

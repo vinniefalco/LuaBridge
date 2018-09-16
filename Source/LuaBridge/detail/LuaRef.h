@@ -62,7 +62,6 @@ struct Nil
 */
 class LuaRef
 {
-private:
   class Proxy;
   friend struct Stack <Proxy>;
 
@@ -113,11 +112,6 @@ private:
   */
   class Proxy
   {
-  private:
-    lua_State* m_L;
-    int m_tableRef;
-    int m_keyRef;
-
   public:
     //--------------------------------------------------------------------------
     /**
@@ -286,7 +280,7 @@ private:
 
             // This code snippet fails to compile in vs2010,vs2012
             struct S {
-              template <class T> inline operator T () const { return T (); }
+              template <class T> operator T () const { return T (); }
             };
             int main () {
               S () || false;
@@ -294,7 +288,7 @@ private:
             }
     */
     template <class T>
-    inline operator T () const
+    operator T () const
     {
       return cast <T> ();
     }
@@ -533,10 +527,12 @@ private:
     }
     /** @} */
 
-    //==========================================================================
+  private:
+    lua_State* m_L;
+    int m_tableRef;
+    int m_keyRef;
   };
 
-private:
   friend struct Stack <LuaRef>;
 
   //----------------------------------------------------------------------------
@@ -574,15 +570,6 @@ private:
   {
     lua_pushvalue (m_L, index);
     m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
-  }
-
-  //----------------------------------------------------------------------------
-
-  // This type of construction is disallowed, since we don't have a `lua_State`.
-  //
-  template <class T>
-  LuaRef (T)
-  {
   }
 
   //----------------------------------------------------------------------------
@@ -706,14 +693,24 @@ public:
 
   //----------------------------------------------------------------------------
   /**
+  Assign nil to this LuaRef.
+  */
+  LuaRef& operator= (Nil const&)
+  {
+    LuaRef ref (m_L);
+    swap (ref);
+    return *this;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
       Assign a different value to this LuaRef.
   */
   template <class T>
   LuaRef& operator= (T rhs)
   {
-    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
-    Stack <T>::push (m_L, rhs);
-    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
+    LuaRef ref (rhs);
+    swap (ref);
     return *this;
   }
 
@@ -723,10 +720,8 @@ public:
   */
   LuaRef& operator= (LuaRef const& rhs)
   {
-    luaL_unref (m_L, LUA_REGISTRYINDEX, m_ref);
-    rhs.push (m_L);
-    m_L = rhs.state ();
-    m_ref = luaL_ref (m_L, LUA_REGISTRYINDEX);
+    LuaRef ref (rhs);
+    swap (ref);
     return *this;
   }
 
@@ -864,7 +859,7 @@ public:
   }
 
   // should never happen
-  //inline bool isNone () const { return m_ref == LUA_NOREF; }
+  // bool isNone () const { return m_ref == LUA_NOREF; }
 
   bool isNil () const { return type () == LUA_TNIL; }
   bool isBool () const { return type () == LUA_TBOOLEAN; }
@@ -906,7 +901,7 @@ public:
 
           // This code snippet fails to compile in vs2010,vs2012
           struct S {
-            template <class T> inline operator T () const { return T (); }
+            template <class T> operator T () const { return T (); }
           };
           int main () {
             S () || false;
@@ -914,7 +909,7 @@ public:
           }
   */
   template <class T>
-  inline operator T () const
+  operator T () const
   {
     return cast <T> ();
   }
@@ -1164,6 +1159,12 @@ public:
   //============================================================================
 
 private:
+  void swap (LuaRef& other)
+  {
+    std::swap (m_L, other.m_L);
+    std::swap (m_ref, other.m_ref);
+  }
+
   lua_State* m_L;
   int m_ref;
 };
@@ -1175,8 +1176,7 @@ private:
 template <>
 struct Stack <Nil>
 {
-public:
-  static inline void push (lua_State* L, Nil)
+  static void push (lua_State* L, Nil)
   {
     lua_pushnil (L);
   }
@@ -1189,15 +1189,14 @@ public:
 template <>
 struct Stack <LuaRef>
 {
-public:
   // The value is const& to prevent a copy construction.
   //
-  static inline void push (lua_State* L, LuaRef const& v)
+  static void push (lua_State* L, LuaRef const& v)
   {
     v.push (L);
   }
 
-  static inline LuaRef get (lua_State* L, int index)
+  static LuaRef get (lua_State* L, int index)
   {
     return LuaRef (L, index, LuaRef::FromStack ());
   }
@@ -1210,10 +1209,9 @@ public:
 template <>
 struct Stack <LuaRef::Proxy>
 {
-public:
   // The value is const& to prevent a copy construction.
   //
-  static inline void push (lua_State* L, LuaRef::Proxy const& v)
+  static void push (lua_State* L, LuaRef::Proxy const& v)
   {
     v.push (L);
   }
@@ -1258,7 +1256,7 @@ inline std::ostream& operator<< (std::ostream& os, LuaRef const& ref)
 // more C++-like cast syntax
 //
 template<class T>
-inline T LuaRef_cast(LuaRef const& lr)
+T LuaRef_cast(LuaRef const& lr)
 {
   return lr.cast<T>();
 }

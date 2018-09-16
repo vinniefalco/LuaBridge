@@ -9,4 +9,5 @@ CMakeFiles/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
+.vs/
 .vscode
