@@ -1,8 +1,6 @@
 // https://github.com/vinniefalco/LuaBridge
 //
 // Copyright 2018, Dmitry Tarakanov
-// Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
-// Copyright 2007, Nathan Reed
 // SPDX-License-Identifier: MIT
 
 #include "TestBase.h"

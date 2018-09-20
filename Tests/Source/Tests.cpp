@@ -188,53 +188,6 @@ struct TestClass
   mutable T constData;
 };
 
-TEST_F (LuaBridgeTest, ClassData)
-{
-  luabridge::getGlobalNamespace (L)
-    .beginClass <TestClass <int> > ("IntClass")
-    .addConstructor <void (*) (int)> ()
-    .addData ("data", &TestClass <int>::data)
-    .addData ("constData", &TestClass <int>::constData, false)
-    .endClass ()
-    .beginClass <TestClass <std::string> > ("StringClass")
-    .addConstructor <void (*) (std::string)> ()
-    .addData ("data", &TestClass <std::string>::data)
-    .addData ("constData", &TestClass <std::string>::constData, false)
-    .endClass ()
-    ;
-
-  runLua ("result = IntClass (501)");
-  ASSERT_TRUE (result ().isUserdata ());
-  ASSERT_TRUE (result () ["data"].isNumber ());
-  ASSERT_EQ (501, result () ["data"].cast <int> ());
-  ASSERT_TRUE (result () ["data"].isNumber ());
-  ASSERT_EQ (501, result () ["constData"].cast <int> ());
-
-  ASSERT_THROW (
-    runLua ("IntClass (501).constData = 2"),
-    std::runtime_error);
-
-  runLua ("result = IntClass (501) result.data = 2");
-  ASSERT_EQ (2, result () ["data"].cast <int> ());
-  ASSERT_EQ (501, result () ["constData"].cast <int> ());
-
-  runLua ("result = StringClass ('abc')");
-  ASSERT_TRUE (result ().isUserdata ());
-  ASSERT_TRUE (result () ["data"].isString ());
-  ASSERT_EQ ("abc", result () ["data"].cast <std::string> ());
-  ASSERT_TRUE (result () ["constData"].isString ());
-  ASSERT_EQ ("abc", result () ["constData"].cast <std::string> ());
-
-  ASSERT_THROW (
-    runLua ("StringClass ('abc').constData = 'd'"),
-    std::runtime_error);
-
-  runLua ("result = StringClass ('abc') result.data = 'd'");
-  ASSERT_EQ ("d", result () ["data"].cast <std::string> ());
-  ASSERT_EQ ("abc", result () ["constData"].cast <std::string> ());
-}
-
-
 TEST_F (LuaBridgeTest, ClassFunction)
 {
   typedef TestClass <int> Inner;
