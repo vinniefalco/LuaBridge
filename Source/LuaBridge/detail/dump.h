@@ -58,25 +58,7 @@ std::string dumpLuaState(lua_State *L) {
 		}
 	}
 	return ostr.str();
-}
 
-void printStack (const char* title) const
-{
-  std::cerr << "===== Stack : " << title << " =====\n";
-  for (int i = 1; i <= lua_gettop (L); ++i)
-  {
-    std::cerr << "@" << i << " = " << luabridge::LuaRef::fromStack (L, i) << "\n";
-  }
-}
-
-void printTable (int index, const char* name) const
-{
-  auto table = LuaRef::fromStack (L, index);
-  std::cerr << "===== " << name << ": " << table << " =====\n";
-  for (auto&& pair : pairs (table))
-  {
-    std::cerr << "[" << pair.first << "] = " << pair.second << "\n";
-  }
 }
 
 } // namespace luabridge
