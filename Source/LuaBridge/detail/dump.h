@@ -58,7 +58,6 @@ std::string dumpLuaState(lua_State *L) {
 		}
 	}
 	return ostr.str();
-
 }
 
 } // namespace luabridge
