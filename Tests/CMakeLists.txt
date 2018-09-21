@@ -1,10 +1,12 @@
 set (LUABRIDGE_TEST_SOURCE_FILES
+  Source/ClassTests.cpp
   Source/IssueTests.cpp
   Source/IteratorTests.cpp
   Source/LegacyTests.cpp
   Source/ListTests.cpp
   Source/LuaRefTests.cpp
   Source/MapTests.cpp
+  Source/NamespaceTests.cpp
   Source/PerformanceTests.cpp
   Source/Tests.cpp
   Source/TestBase.h

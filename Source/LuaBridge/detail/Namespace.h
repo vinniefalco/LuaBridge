@@ -748,8 +748,8 @@ private:
       Both the get and the set functions require a T const* and T* in the first
       argument respectively.
     */
-    template <class TG, class TS>
-    Class <T>& addProperty (char const* name, TG (*get) (T const*), void (*set) (T*, TS))
+    template <class TG, class TS = TG>
+    Class <T>& addProperty (char const* name, TG (*get) (T const*), void (*set) (T*, TS) = 0)
     {
       // Add to __propget in class and const tables.
       {
@@ -775,24 +775,6 @@ private:
         rawsetfield (L, -2, name);
         lua_pop (L, 1);
       }
-
-      return *this;
-    }
-
-    // read-only
-    template <class TG>
-    Class <T>& addProperty (char const* name, TG (*get) (T const*))
-    {
-      // Add to __propget in class and const tables.
-      rawgetfield (L, -2, "__propget");
-      rawgetfield (L, -4, "__propget");
-      typedef TG (*get_t) (T const*);
-      new (lua_newuserdata (L, sizeof (get_t))) get_t (get);
-      lua_pushcclosure (L, &CFunc::Call <get_t>::f, 1);
-      lua_pushvalue (L, -1);
-      rawsetfield (L, -4, name);
-      rawsetfield (L, -2, name);
-      lua_pop (L, 2);
 
       return *this;
     }
@@ -879,10 +861,9 @@ private:
   */
   explicit Namespace (lua_State* L_)
     : L (L_)
-    , m_stackSize (0)
+    , m_stackSize (1)
   {
     lua_getglobal (L, "_G");
-    ++m_stackSize;
   }
 
   //----------------------------------------------------------------------------
@@ -1016,6 +997,11 @@ public:
   template <class T>
   Namespace& addVariable (char const* name, T* pt, bool isWritable = true)
   {
+    if (m_stackSize == 1)
+    {
+      throw std::logic_error ("Unsupported addVariable on global namespace");
+    }
+
     assert (lua_istable (L, -1));
 
     rawgetfield (L, -1, "__propget");
@@ -1049,9 +1035,14 @@ public:
 
       If the set function is omitted or null, the property is read-only.
   */
-  template <class TG, class TS>
+  template <class TG, class TS = TG>
   Namespace& addProperty (char const* name, TG (*get) (), void (*set)(TS) = 0)
   {
+    if (m_stackSize == 1)
+    {
+      throw std::logic_error ("Unsupported addProperty on global namespace");
+    }
+
     assert (lua_istable (L, -1));
 
     rawgetfield (L, -1, "__propget");

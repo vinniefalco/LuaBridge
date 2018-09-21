@@ -1,7 +1,8 @@
 //------------------------------------------------------------------------------
 /*
   https://github.com/vinniefalco/LuaBridge
-  
+
+  Copyright 2018, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright 2008, Nigel Atkinson <suprapilot+LuaCode@gmail.com>
 
@@ -269,7 +270,7 @@ public:
   template <class T>
   LuaRef& operator= (T rhs)
   {
-    LuaRef ref (rhs);
+    LuaRef ref (m_L, rhs);
     swap (ref);
     return *this;
   }
