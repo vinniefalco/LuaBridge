@@ -147,3 +147,26 @@ TEST_F (NamespaceTests, ReadOnlyProperties)
     std::runtime_error);
   ASSERT_EQ (-10, getProperty <int> ());
 }
+
+#if defined(_WINDOWS) || defined(WIN32)
+
+namespace {
+
+int __stdcall StdCall (int i)
+{
+  return i + 10;
+}
+
+} // namespace
+
+TEST_F (NamespaceTests, StdCallFunctions)
+{
+  luabridge::getGlobalNamespace (L)
+    .addFunction ("StdCall", &StdCall);
+
+  runLua ("result = StdCall (2)");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (12, result ().cast <int> ());
+}
+
+#endif // _WINDOWS || WIN32
