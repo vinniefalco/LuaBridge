@@ -184,7 +184,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8), D>
 
 /* Windows: WINAPI (a.k.a. __stdcall) function pointers. */
 
-#if defined(_WINDOWS) || defined (WIN32)
+#ifdef _M_IX86 // Windows 32bit only
 
 template <class R, class D>
 struct FuncTraits <R (__stdcall *) (), D>
@@ -303,7 +303,7 @@ struct FuncTraits <R (__stdcall *) (P1, P2, P3, P4, P5, P6, P7, P8), D>
   }
 };
 
-#endif // _WINDOWS || WIN32
+#endif // _M_IX86
 
 /* Non-const member function pointers. */
 

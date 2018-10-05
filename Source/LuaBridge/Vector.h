@@ -16,7 +16,7 @@ struct Stack <std::vector <T> >
 {
   static void push(lua_State* L, std::vector <T> const& vector)
   {
-    lua_createtable (L, vector.size (), 0);
+    lua_createtable (L, static_cast <int> (vector.size ()), 0);
     for (std::size_t i = 0; i < vector.size (); ++i)
     {
       lua_pushinteger (L, static_cast <lua_Integer> (i + 1));
