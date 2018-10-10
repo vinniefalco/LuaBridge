@@ -60,7 +60,7 @@ TEST_F (LuaRefTests, ValueAccess)
   ASSERT_EQ (42, result ().cast <int> ());
 }
 
-TEST_F (LuaRefTests, DictionaryAccess)
+TEST_F (LuaRefTests, DictionaryRead)
 {
   runLua (
     "result = {"
@@ -108,6 +108,25 @@ TEST_F (LuaRefTests, DictionaryAccess)
   ASSERT_EQ (41, fnResult.cast <int> ());
   ASSERT_TRUE (result ().isNumber ());
   ASSERT_EQ (42, result ().cast <int> ());
+}
+
+TEST_F (LuaRefTests, DictionaryWrite)
+{
+  runLua("result = {a = 5}");
+  ASSERT_TRUE(result () ["a"].isNumber());
+  ASSERT_EQ (5, result () ["a"].cast <int>());
+
+  result() ["a"] = 7;
+  ASSERT_EQ (7, result () ["a"].cast <int>());
+
+  runLua ("result = result.a");
+  ASSERT_EQ (7, result ().cast <int> ());
+
+  runLua ("result = {a = {b = 1}}");
+  ASSERT_EQ (1, result () ["a"] ["b"].cast <int>());
+
+  result () ["a"] ["b"] = 2;
+  ASSERT_EQ (2, result () ["a"] ["b"].cast <int>());
 }
 
 struct Class
