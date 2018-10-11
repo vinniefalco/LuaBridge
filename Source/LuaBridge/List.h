@@ -16,7 +16,7 @@ struct Stack <std::list <T> >
 {
   static void push(lua_State* L, std::list <T> const& list)
   {
-    lua_createtable (L, list.size (), 0);
+    lua_createtable (L, static_cast <int> (list.size ()), 0);
     typename std::list <T>::const_iterator item = list.begin();
     for (std::size_t i = 1; i <= list.size (); ++i)
     {
