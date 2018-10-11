@@ -579,8 +579,6 @@ private:
 */
 class LuaRef : public LuaRefBase <LuaRef, LuaRef>
 {
-  friend class LuaRefBase;
-
   //----------------------------------------------------------------------------
   /**
       A proxy for representing table values.
