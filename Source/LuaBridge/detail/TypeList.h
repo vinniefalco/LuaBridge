@@ -48,6 +48,7 @@
 #include <LuaBridge/detail/Stack.h>
 
 #include <string>
+#include <typeinfo>
 
 namespace luabridge {
 
