@@ -33,8 +33,6 @@
 #include <LuaBridge/detail/LuaException.h>
 #include <LuaBridge/detail/Stack.h>
 
-#include "Lua/LuaLibrary.h"
-
 #include <iostream>
 #include <string>
 #include <vector>
