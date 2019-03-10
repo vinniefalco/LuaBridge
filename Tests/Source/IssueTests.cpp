@@ -107,39 +107,3 @@ TEST_F (IssueTests, Issue160)
   ASSERT_EQ (2, v [3].cast <int> ());
   ASSERT_EQ ("abc", v [4].cast <std::string> ());
 }
-
-struct Light
-{
-  Light(const std::vector<double>& v) : values(v) {}
-  std::vector<double> values;
-};
-
-void bar (const Light*)
-{
-  int a = 9;
-}
-
-void foo (const std::vector<Light>&)
-{
-  int a = 9;
-}
-
-#include "LuaBridge/Vector.h"
-
-TEST_F (IssueTests, Issue187)
-{
-  luabridge::getGlobalNamespace(L)
-    .beginClass <Light> ("Light")
-    .addConstructor <void (*) (const std::vector<double>&)> ()
-    .endClass ()
-    .addFunction ("bar", &bar)
-    .addFunction ("foo", &foo);
-
-  runLua (
-    "arg1 = Light({1, 2})\n"
-    "arg2 = Light({3, 4})\n"
-    "args = {arg1, arg2}\n"
-    "bar (arg1)\n"
-    "foo (args)\n"
-  );
-}
