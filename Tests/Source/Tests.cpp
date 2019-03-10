@@ -261,7 +261,7 @@ TEST_F (LuaBridgeTest, ClassFunction)
     std::runtime_error);
 }
 
-TEST_F (LuaBridgeTest, ClassProperties)
+TEST_F (LuaBridgeTest, DISABLED_ClassProperties)
 {
   typedef TestClass <int> Inner;
   typedef TestClass <Inner> Outer;

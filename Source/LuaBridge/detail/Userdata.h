@@ -187,14 +187,18 @@ private:
                              void const* baseClassKey,
                              bool canBeConst)
   {
-    assert (index > 0);
+    index = index > 0 ? index : lua_absindex (L, index);
+
     Userdata* ud = 0;
 
     bool mismatch = false;
     char const* got = 0;
 
     lua_rawgetp (L, LUA_REGISTRYINDEX, baseClassKey);
-    assert (lua_istable (L, -1));
+    if (!lua_istable (L, -1))
+    {
+      throw std::logic_error ("The class is not registered in LuaBridge");
+    }
 
     // Make sure we have a userdata.
     if (lua_isuserdata (L, index))

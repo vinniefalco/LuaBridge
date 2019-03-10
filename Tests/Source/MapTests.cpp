@@ -51,12 +51,12 @@ TEST_F (MapTests, PassToFunction)
   auto foo = luabridge::getGlobal (L, "foo");
   using Int2Bool = std::map <int, bool>;
 
-  // resetResult ();
+  resetResult ();
 
   Int2Bool lvalue {{10, false}, {20, true}, {30, true}};
-  // foo (lvalue);
-  // ASSERT_TRUE (result ().isTable ());
-  // ASSERT_EQ (lvalue, result ().cast <Int2Bool> ());
+  foo (lvalue);
+  ASSERT_TRUE (result ().isTable ());
+  ASSERT_EQ (lvalue, result ().cast <Int2Bool> ());
 
   resetResult ();
 
@@ -64,4 +64,72 @@ TEST_F (MapTests, PassToFunction)
   foo (constLvalue);
   ASSERT_TRUE (result ().isTable ());
   ASSERT_EQ (constLvalue, result ().cast <Int2Bool> ());
+}
+
+namespace {
+
+struct Data
+{
+  /* explicit */ Data (int i) : i (i) {}
+
+  int i;
+};
+
+bool operator== (const Data& lhs, const Data& rhs)
+{
+  return lhs.i == rhs.i;
+}
+
+bool operator< (const Data& lhs, const Data& rhs)
+{
+  return lhs.i < rhs.i;
+}
+
+std::ostream& operator<< (std::ostream& lhs, const Data& rhs)
+{
+  lhs << "{" << rhs.i << "}";
+  return lhs;
+}
+
+std::map <Data, Data> processValues(const std::map <Data, Data>& data)
+{
+  return data;
+}
+
+std::map <Data, Data> processPointers(const std::map <Data, const Data*>& data)
+{
+  std::map <Data, Data> result;
+  for (const auto& item : data)
+  {
+    result.emplace (item.first, *item.second);
+  }
+  return result;
+}
+
+} // namespace
+
+TEST_F (MapTests, PassFromLua)
+{
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Data> ("Data")
+    .addConstructor <void (*) (int)> ()
+    .endClass ()
+    .addFunction ("processValues", &processValues)
+    .addFunction ("processPointers", &processPointers);
+
+  {
+    resetResult ();
+    runLua ("result = processValues ({[Data (-1)] = Data (2)})");
+    std::map <Data, Data> expected {{Data (-1), Data (2)}};
+    const auto actual = result ().cast <std::map <Data, Data>> ();
+    ASSERT_EQ (expected, actual);
+  }
+
+  {
+    resetResult ();
+    runLua ("result = processValues ({[Data (3)] = Data (-4)})");
+    std::map <Data, Data> expected {{Data (3), Data (-4)}};
+    const auto actual = result ().cast <std::map <Data, Data>> ();
+    ASSERT_EQ(expected, actual);
+  }
 }
