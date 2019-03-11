@@ -61,6 +61,71 @@ struct Class2 : Class <T>
 
 } // namespace
 
+TEST_F (ClassTests, PassingUnregisteredClassToLuaThrows)
+{
+  using Unregistered = Class <int>;
+
+  runLua ("function process_fn (value) end");
+
+  auto process_fn = luabridge::getGlobal (L, "process_fn");
+  ASSERT_TRUE (process_fn.isFunction ());
+
+  Unregistered value (1);
+  const Unregistered constValue (2);
+  ASSERT_THROW (process_fn (value), std::logic_error);
+  ASSERT_THROW (process_fn (constValue), std::logic_error);
+  ASSERT_THROW (process_fn (&value), std::logic_error);
+  ASSERT_THROW (process_fn (&constValue), std::logic_error);
+}
+
+namespace {
+
+Class <int>& returnRef ()
+{
+  static Class <int> value (1);
+  return value;
+}
+
+const Class <int>& returnConstRef ()
+{
+  return returnRef ();
+}
+
+Class <int>* returnPtr ()
+{
+  return &returnRef ();
+}
+
+const Class <int>* returnConstPtr ()
+{
+  return &returnRef ();
+}
+
+Class <int> returnValue ()
+{
+  return returnRef ();
+}
+
+} // namespace
+
+TEST_F(ClassTests, PassingUnregisteredClassFromLuaThrows)
+{
+  using Unregistered = Class <int>;
+
+  luabridge::getGlobalNamespace (L)
+    .addFunction ("returnRef", &returnRef)
+    .addFunction ("returnConstRef", &returnConstRef)
+    .addFunction ("returnPtr", &returnPtr)
+    .addFunction ("returnConstPtr", &returnConstPtr)
+    .addFunction ("returnValue", &returnValue);
+
+  ASSERT_THROW (runLua ("result = returnRef ()"), std::runtime_error);
+  ASSERT_THROW (runLua ("result = returnConstRef ()"), std::runtime_error);
+  ASSERT_THROW (runLua ("result = returnPtr ()"), std::runtime_error);
+  ASSERT_THROW (runLua ("result = returnConstPtr ()"), std::runtime_error);
+  ASSERT_THROW (runLua ("result = returnValue ()"), std::runtime_error);
+}
+
 TEST_F (ClassTests, Data)
 {
   using IntClass = Class2 <int>;
