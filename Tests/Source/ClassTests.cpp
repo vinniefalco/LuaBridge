@@ -18,19 +18,29 @@ struct ClassTests : TestBase
 namespace {
 
 template <class T>
-struct DataClass
+struct Class
 {
-  DataClass (T data)
+  Class (T data)
     : data (data)
   {
   }
 
-  static T getData (const DataClass* object)
+  T method (T value)
+  {
+    return value;
+  }
+
+  T constMethod (T value)
+  {
+    return value;
+  }
+
+  static T getData (const Class* object)
   {
     return object->data;
   }
 
-  static void setData (DataClass* object, T data)
+  static void setData (Class* object, T data)
   {
     object->data = data;
   }
@@ -38,17 +48,28 @@ struct DataClass
   mutable T data;
 };
 
+template <class T>
+struct Class2 : Class <T>
+{
+  using Class::Class;
+
+  T method2 (T value)
+  {
+    return value;
+  }
+};
+
 } // namespace
 
 TEST_F (ClassTests, Data)
 {
-  using IntClass = DataClass <int>;
-  using AnyClass = DataClass <luabridge::LuaRef>;
+  using IntClass = Class2 <int>;
+  using AnyClass = Class2 <luabridge::LuaRef>;
 
   luabridge::getGlobalNamespace (L)
     .beginClass <IntClass> ("IntClass")
     .addConstructor <void (*) (int)> ()
-    .addData ("data", &IntClass::data)
+    .addData ("data", &IntClass::data, true)
     .endClass ();
 
   runLua ("result = IntClass (501)");
@@ -79,8 +100,8 @@ TEST_F (ClassTests, Data)
 
 TEST_F (ClassTests, Properties)
 {
-  using IntClass = DataClass <int>;
-  using AnyClass = DataClass <luabridge::LuaRef>;
+  using IntClass = Class <int>;
+  using AnyClass = Class <luabridge::LuaRef>;
 
   luabridge::getGlobalNamespace (L)
     .beginClass <IntClass> ("IntClass")
@@ -116,8 +137,8 @@ TEST_F (ClassTests, Properties)
 
 TEST_F (ClassTests, ReadOnlyProperties)
 {
-  using IntClass = DataClass <int>;
-  using AnyClass = DataClass <luabridge::LuaRef>;
+  using IntClass = Class <int>;
+  using AnyClass = Class <luabridge::LuaRef>;
 
   luabridge::getGlobalNamespace (L)
     .beginClass <IntClass> ("IntClass")

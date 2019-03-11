@@ -100,10 +100,36 @@ TEST_F (IssueTests, Issue160)
   luabridge::LuaRef f_isConnected = luabridge::getGlobal (L, "isConnected");
 
   auto v = callFunction (f_isConnected, 2, "abc");
-  ASSERT_EQ (5, v.size ());
+  ASSERT_EQ (5u, v.size ());
   ASSERT_EQ (1, v [0].cast <int> ());
   ASSERT_EQ ("srvname", v [1].cast <std::string> ());
   ASSERT_EQ ("ip:10.0.0.1", v [2].cast <std::string> ());
   ASSERT_EQ (2, v [3].cast <int> ());
   ASSERT_EQ ("abc", v [4].cast <std::string> ());
+}
+
+struct Vector
+{
+  float x = 0;
+};
+
+struct WideVector : Vector
+{
+  WideVector (float, float, float, float w)
+  {
+    x = w;
+  }
+};
+
+TEST_F (IssueTests, Issue178)
+{
+  luabridge::getGlobalNamespace (L)
+    .beginClass <WideVector> ("WideVector")
+    .addConstructor <void (*) (float, float, float, float)> ()
+    .addData ("x", &WideVector::x, true)
+    .endClass ();
+
+  runLua ("result = WideVector (0, 1, 2, 3).x");
+
+  ASSERT_EQ (3.f, result ().cast <float> ());
 }
