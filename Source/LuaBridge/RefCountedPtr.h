@@ -2,6 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
   
+  Copyright 2019, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright 2007, Nathan Reed
 
@@ -30,6 +31,7 @@
 #pragma once
 
 #include <unordered_map>
+#include "RefCountedObject.h"
 
 namespace luabridge {
 
@@ -43,7 +45,7 @@ struct RefCountedPtrBase
   typedef std::unordered_map <const void *, int> RefCountsType;
 
 protected:
-  inline RefCountsType& getRefCounts () const
+  RefCountsType& getRefCounts () const
   {
     static RefCountsType refcounts;
     return refcounts ;
@@ -209,6 +211,18 @@ public:
 private:
   T* m_p;
 };
+
+template <class T>
+bool operator== (const RefCountedPtr <T>& lhs, const RefCountedPtr <T>& rhs)
+{
+  return lhs.get () == rhs.get ();
+}
+
+template <class T>
+bool operator!= (const RefCountedPtr <T>& lhs, const RefCountedPtr <T>& rhs)
+{
+  return lhs.get() != rhs.get();
+}
 
 //==============================================================================
 
