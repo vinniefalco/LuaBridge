@@ -110,6 +110,11 @@ TEST_F (IssueTests, Issue160)
 
 struct Vector
 {
+  float getX () const
+  {
+    return x;
+  }
+
   float x = 0;
 };
 
@@ -124,12 +129,17 @@ struct WideVector : Vector
 TEST_F (IssueTests, Issue178)
 {
   luabridge::getGlobalNamespace (L)
-    .beginClass <WideVector> ("WideVector")
-    .addConstructor <void (*) (float, float, float, float)> ()
+    .beginClass <Vector> ("Vector")
+    .addFunction ("getX", &WideVector::getX)
+    .addProperty ("X", &WideVector::getX)
     .addData ("x", &WideVector::x, true)
+    .endClass ()
+    .deriveClass <WideVector, Vector> ("WideVector")
+    .addConstructor <void (*) (float, float, float, float)> ()
     .endClass ();
 
   runLua ("result = WideVector (0, 1, 2, 3).x");
 
+  ASSERT_TRUE (result ().isNumber ());
   ASSERT_EQ (3.f, result ().cast <float> ());
 }

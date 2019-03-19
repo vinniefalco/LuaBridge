@@ -4,57 +4,34 @@
 // SPDX-License-Identifier: MIT
 
 #include "TestBase.h"
+#include "TestTypes.h"
 
 #include "LuaBridge/Vector.h"
 
 #include <vector>
 
-struct VectorTests : TestBase
+template <class T>
+struct VectorTest : TestBase
 {
 };
 
-TEST_F (VectorTests, LuaRef)
+TYPED_TEST_CASE_P (VectorTest);
+
+TYPED_TEST_P (VectorTest, LuaRef)
 {
-  {
-    runLua ("result = {1, 2, 3}");
+  using Traits = TypeTraits <TypeParam>;
 
-    std::vector <int> expected {1, 2, 3};
-    std::vector <int> actual = result ();
-    ASSERT_EQ (expected, actual);
-    ASSERT_EQ (expected, result ().cast <std::vector <int>> ());
-  }
+  this->runLua ("result = {" + Traits::list () + "}");
 
-  {
-    runLua ("result = {'a', 'b', 'c'}");
-
-    std::vector <std::string> expected {"a", "b", "c"};
-    std::vector <std::string> actual = result ();
-    ASSERT_EQ (expected, actual);
-    ASSERT_EQ (expected, result ().cast <std::vector <std::string> > ());
-  }
-
-  {
-    runLua ("result = {1, 2.3, 'abc', false}");
-
-    std::vector <luabridge::LuaRef> expected {
-      luabridge::LuaRef (L, 1),
-      luabridge::LuaRef (L, 2.3),
-      luabridge::LuaRef (L, "abc"),
-      luabridge::LuaRef (L, false),
-    };
-    std::vector <luabridge::LuaRef> actual = result ();
-    ASSERT_EQ (expected, actual);
-    ASSERT_EQ (expected, result ().cast <std::vector <luabridge::LuaRef> > ());
-  }
-
-  {
-    runLua ("result = function (t) result = t end");
-
-    std::vector <int> vector {1, 2, 3};
-    result () (vector); // Replaces result variable
-    ASSERT_EQ (vector, result ().cast <std::vector <int> > ());
-  }
+  std::vector <TypeParam> expected (Traits::values ());
+  std::vector <TypeParam> actual = this->result ();
+  ASSERT_EQ (expected, actual);
 }
+
+REGISTER_TYPED_TEST_CASE_P (VectorTest, LuaRef);
+
+INSTANTIATE_TYPED_TEST_CASE_P(VectorTest, VectorTest, TestTypes);
+
 
 namespace {
 
@@ -92,6 +69,10 @@ std::vector <Data> processPointers(const std::vector <const Data*>& data)
 }
 
 } // namespace
+
+struct VectorTests : TestBase
+{
+};
 
 TEST_F (VectorTests, PassFromLua)
 {

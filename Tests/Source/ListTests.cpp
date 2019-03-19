@@ -5,57 +5,39 @@
 
 
 #include "TestBase.h"
+#include "TestTypes.h"
 
 #include "LuaBridge/List.h"
 
 #include <list>
 
+template <class T>
+struct ListTest : TestBase
+{
+};
+
+TYPED_TEST_CASE_P (ListTest);
+
+TYPED_TEST_P (ListTest, LuaRef)
+{
+  using Traits = TypeTraits <TypeParam>;
+
+  this->runLua ("result = {" + Traits::list () + "}");
+
+  std::list <TypeParam> expected (Traits::values ());
+  std::list <TypeParam> actual = this->result ();
+  ASSERT_EQ (expected, actual);
+}
+
+REGISTER_TYPED_TEST_CASE_P (ListTest, LuaRef);
+
+INSTANTIATE_TYPED_TEST_CASE_P(ListTest, ListTest, TestTypes);
+
+
 struct ListTests : TestBase
 {
 };
 
-TEST_F (ListTests, LuaRef)
-{
-  {
-    runLua ("result = {1, 2, 3}");
-
-    std::list <int> expected {1, 2, 3};
-    std::list <int> actual = result ();
-    ASSERT_EQ (expected, actual);
-    ASSERT_EQ (expected, result ().cast <std::list <int>> ());
-  }
-
-  {
-    runLua ("result = {'a', 'b', 'c'}");
-
-    std::list <std::string> expected {"a", "b", "c"};
-    std::list <std::string> actual = result ();
-    ASSERT_EQ (expected, actual);
-    ASSERT_EQ (expected, result ().cast <std::list <std::string> > ());
-  }
-
-  {
-    runLua ("result = {1, 2.3, 'abc', false}");
-
-    std::list <luabridge::LuaRef> expected {
-      luabridge::LuaRef (L, 1),
-      luabridge::LuaRef (L, 2.3),
-      luabridge::LuaRef (L, "abc"),
-      luabridge::LuaRef (L, false),
-    };
-    std::list <luabridge::LuaRef> actual = result ();
-    ASSERT_EQ (expected, actual);
-    ASSERT_EQ (expected, result ().cast <std::list <luabridge::LuaRef> > ());
-  }
-
-  {
-    runLua ("result = function (t) result = t end");
-
-    std::list <int> list {1, 2, 3};
-    result () (list); // Replaces result variable
-    ASSERT_EQ (list, result ().cast <std::list <int> > ());
-  }
-}
 
 TEST_F (ListTests, PassToFunction)
 {

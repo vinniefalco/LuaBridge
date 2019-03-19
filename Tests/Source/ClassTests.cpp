@@ -5,6 +5,9 @@
 
 #include "TestBase.h"
 
+#include <exception>
+
+
 struct ClassTests : TestBase
 {
   template <class T>
@@ -48,17 +51,6 @@ struct Class
   mutable T data;
 };
 
-template <class T>
-struct Class2 : Class <T>
-{
-  using Class::Class;
-
-  T method2 (T value)
-  {
-    return value;
-  }
-};
-
 } // namespace
 
 TEST_F (ClassTests, PassingUnregisteredClassToLuaThrows)
@@ -72,10 +64,10 @@ TEST_F (ClassTests, PassingUnregisteredClassToLuaThrows)
 
   Unregistered value (1);
   const Unregistered constValue (2);
-  ASSERT_THROW (process_fn (value), std::logic_error);
-  ASSERT_THROW (process_fn (constValue), std::logic_error);
-  ASSERT_THROW (process_fn (&value), std::logic_error);
-  ASSERT_THROW (process_fn (&constValue), std::logic_error);
+  ASSERT_THROW (process_fn (value), std::exception);
+  ASSERT_THROW (process_fn (constValue), std::exception);
+  ASSERT_THROW (process_fn (&value), std::exception);
+  ASSERT_THROW (process_fn (&constValue), std::exception);
 }
 
 namespace {
@@ -119,17 +111,17 @@ TEST_F(ClassTests, PassingUnregisteredClassFromLuaThrows)
     .addFunction ("returnConstPtr", &returnConstPtr)
     .addFunction ("returnValue", &returnValue);
 
-  ASSERT_THROW (runLua ("result = returnRef ()"), std::runtime_error);
-  ASSERT_THROW (runLua ("result = returnConstRef ()"), std::runtime_error);
-  ASSERT_THROW (runLua ("result = returnPtr ()"), std::runtime_error);
-  ASSERT_THROW (runLua ("result = returnConstPtr ()"), std::runtime_error);
-  ASSERT_THROW (runLua ("result = returnValue ()"), std::runtime_error);
+  ASSERT_THROW (runLua ("result = returnRef ()"), std::exception);
+  ASSERT_THROW (runLua ("result = returnConstRef ()"), std::exception);
+  ASSERT_THROW (runLua ("result = returnPtr ()"), std::exception);
+  ASSERT_THROW (runLua ("result = returnConstPtr ()"), std::exception);
+  ASSERT_THROW (runLua ("result = returnValue ()"), std::exception);
 }
 
 TEST_F (ClassTests, Data)
 {
-  using IntClass = Class2 <int>;
-  using AnyClass = Class2 <luabridge::LuaRef>;
+  using IntClass = Class <int>;
+  using AnyClass = Class <luabridge::LuaRef>;
 
   luabridge::getGlobalNamespace (L)
     .beginClass <IntClass> ("IntClass")
@@ -215,7 +207,7 @@ TEST_F (ClassTests, ReadOnlyProperties)
   ASSERT_TRUE (result () ["data"].isNumber ());
   ASSERT_EQ (501, result () ["data"].cast <int> ());
 
-  ASSERT_THROW (runLua ("result.data = -2"), std::runtime_error);
+  ASSERT_THROW (runLua ("result.data = -2"), std::exception);
   ASSERT_EQ (501, result () ["data"].cast <int> ());
 
   luabridge::getGlobalNamespace (L)
@@ -231,8 +223,32 @@ TEST_F (ClassTests, ReadOnlyProperties)
   ASSERT_TRUE (result () ["data"] ["a"].isNumber ());
   ASSERT_EQ (31, result () ["data"] ["a"].cast <int> ());
 
-  ASSERT_THROW (runLua ("result.data = 'abc'"), std::runtime_error);
+  ASSERT_THROW (runLua ("result.data = 'abc'"), std::exception);
   ASSERT_TRUE (result () ["data"].isTable ());
   ASSERT_TRUE (result () ["data"] ["a"].isNumber ());
   ASSERT_EQ (31, result () ["data"] ["a"].cast <int> ());
+}
+
+TEST_F(ClassTests, DISABLED_ClassProperties2)
+{
+  typedef Class <int> Inner;
+  typedef Class <Inner> Outer;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Inner> ("Inner")
+    .addData ("data", &Inner::data)
+    .endClass ()
+    .beginClass <Outer> ("Outer")
+    .addData ("data", &Outer::data)
+    .endClass ();
+
+  Outer outer (Inner (0));
+  luabridge::setGlobal (L, &outer, "outer");
+
+  outer.data.data = 1;
+  runLua ("outer.data.data = 10");
+  ASSERT_EQ (10, outer.data.data);
+
+  runLua ("result = outer.data.data");
+  ASSERT_EQ (10, result ().cast <int> ());
 }

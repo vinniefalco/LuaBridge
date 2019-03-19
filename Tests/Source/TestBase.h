@@ -57,7 +57,10 @@ struct TestBase : public ::testing::Test
 
   void TearDown () override
   {
-    lua_close (L);
+    if (L != nullptr)
+    {
+      lua_close (L);
+    }
   }
 
   void runLua (const std::string& script)

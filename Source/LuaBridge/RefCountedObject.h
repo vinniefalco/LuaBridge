@@ -340,9 +340,6 @@ bool operator!= (ReferenceCountedObjectClass* object1, RefCountedObjectPtr<Refer
 
 //==============================================================================
 
-namespace luabridge
-{
-
 template <class T>
 struct ContainerTraits <RefCountedObjectPtr <T> >
 {
@@ -353,8 +350,6 @@ struct ContainerTraits <RefCountedObjectPtr <T> >
     return c.getObject ();
   }
 };
-
-}
 
 //==============================================================================
 

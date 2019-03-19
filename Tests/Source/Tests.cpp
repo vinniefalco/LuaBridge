@@ -260,25 +260,3 @@ TEST_F (LuaBridgeTest, ClassFunction)
     runLua ("outer:getConstPtr ().data = 90"),
     std::runtime_error);
 }
-
-TEST_F (LuaBridgeTest, DISABLED_ClassProperties)
-{
-  typedef TestClass <int> Inner;
-  typedef TestClass <Inner> Outer;
-
-  luabridge::getGlobalNamespace (L)
-    .beginClass <Inner> ("Inner")
-    .addData ("data", &Inner::data)
-    //.addProperty ("dataProperty", &)
-    .endClass ()
-    .beginClass <Outer> ("Outer")
-    .addData ("data", &Outer::data)
-    .endClass ();
-
-  Outer outer (Inner (0));
-  luabridge::setGlobal (L, &outer, "outer");
-
-  outer.data.data = 1;
-  runLua ("outer.data.data = 10");
-  ASSERT_EQ (10, outer.data.data);
-}
