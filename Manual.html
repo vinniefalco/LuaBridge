@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-<title>LuaBridge 2.0 Reference Manual</title>
+<title>LuaBridge 2.1 Reference Manual</title>
 <META HTTP-EQUIV="content-type" CONTENT="text/html; charset=iso-8859-1">
 
 <!--=========================================================================-->
@@ -562,7 +562,10 @@ care of the conversion of arguments into the appropriate data type when doing
 so is possible. This automated system works for the function's return value,
 and up to 8 parameters although more can be added by extending the templates.
 Pointers, references, and objects of class type as parameters are treated
-specially, and explained later. If we have:
+specially, and explained later.
+</p>
+<p>
+If we have:
 </p>
 
 <pre>
@@ -654,7 +657,10 @@ A class registration is opened using either <code>beginClass</code> or
 registered, a class can later be re-opened for more registrations using
 <code>beginClass</code>. However, <code>deriveClass</code> should only be
 used once. To add more registrations to an already registered derived class,
-use <code>beginClass</code> on it. These declarations:
+use <code>beginClass</code> on it.
+</p>
+<p>
+These declarations:
 </p>
 
 <pre>
@@ -673,6 +679,7 @@ struct A {
   char dataProperty;
   char getProperty () const { return dataProperty; }
   void setProperty (char v) { dataProperty = v; }
+  std::string toString () const { return dataMember; }
 
   void func1 () { }
   virtual void virtualFunc () { }
@@ -708,6 +715,7 @@ getGlobalNamespace (L)
       .addProperty ("prop", &amp;A::getProperty, &amp;A::setProperty)
       .addFunction ("func1", &amp;A::func1)
       .addFunction ("virtualFunc", &amp;A::virtualFunc)
+      .addFunction ("__tostring", &amp;A::toString)     // Metamethod
       .addCFunction ("cfunc", &amp;A::cfunc)
     .endClass ()
     .deriveClass &lt;B, A&gt; ("B")
@@ -724,6 +732,7 @@ work normally; no special syntax is needed. const methods are detected and
 const-correctness is enforced, so if a function returns a const object (or
 a container holding to a const object) to Lua, that reference to the object
 will be considered const and only const methods can be called on it.
+It is possible to register Lua metamethods (except <code>__gc</code>).
 Destructors are registered automatically for each class.
 </p>
 

@@ -6,6 +6,7 @@
 #include "TestBase.h"
 
 #include <exception>
+#include <map>
 
 
 struct ClassTests : TestBase
@@ -70,9 +71,24 @@ struct Class
     return Class <T> (data / rhs.data);
   }
 
+  Class <T> operator% (const Class <T>& rhs) const
+  {
+    return Class <T> (data % rhs.data);
+  }
+
   Class <T> operator() (T param)
   {
     return Class <T> (param);
+  }
+
+  int len () const
+  {
+    return data;
+  }
+
+  Class <T> negate () const
+  {
+    return Class <T> (-data);
   }
 
   T method (T value)
@@ -80,7 +96,7 @@ struct Class
     return value;
   }
 
-  T constMethod (T value)
+  T constMethod (T value) const
   {
     return value;
   }
@@ -276,7 +292,26 @@ TEST_F (ClassTests, ReadOnlyProperties)
   ASSERT_EQ (31, result () ["data"] ["a"].cast <int> ());
 }
 
-TEST_F(ClassTests, MetaFunction__tostring)
+TEST_F (ClassTests, Metamethod__call)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__call", &Int::operator())
+    .endClass ();
+
+  runLua ("result = Int (1) (-1)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (-1, result ().cast <Int> ().data);
+
+  runLua ("result = Int (2) (5)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (5, result ().cast <Int> ().data);
+}
+
+TEST_F (ClassTests, Metamethod__tostring)
 {
   typedef Class <int> Int;
   typedef Class <std::string> StringClass;
@@ -297,11 +332,13 @@ TEST_F(ClassTests, MetaFunction__tostring)
   runLua ("result = tostring (Int (-123))");
   ASSERT_EQ ("-123", result ().cast <std::string> ());
 
-  runLua ("result = string.format ('%s%s', String ('abc'), Int (-123))");
-  ASSERT_EQ ("abc-123", result ().cast <std::string> ());
+#if LUABRIDGEDEMO_LUA_VERSION != 501 // tostring () only
+  runLua ("result = string.format ('%s', String ('abc'))");
+  ASSERT_EQ ("abc", result ().cast <std::string> ());
+#endif
 }
 
-TEST_F(ClassTests, MetaFunction__eq)
+TEST_F (ClassTests, Metamethod__eq)
 {
   typedef Class <int> Int;
 
@@ -324,7 +361,7 @@ TEST_F(ClassTests, MetaFunction__eq)
   ASSERT_EQ (true, result ().cast <bool> ());
 }
 
-TEST_F(ClassTests, MetaFunction__lt)
+TEST_F (ClassTests, Metamethod__lt)
 {
   typedef Class <int> Int;
 
@@ -344,7 +381,7 @@ TEST_F(ClassTests, MetaFunction__lt)
   ASSERT_EQ (false, result ().cast <bool> ());
 }
 
-TEST_F(ClassTests, MetaFunction__le)
+TEST_F (ClassTests, Metamethod__le)
 {
   typedef Class <int> Int;
 
@@ -364,24 +401,7 @@ TEST_F(ClassTests, MetaFunction__le)
   ASSERT_EQ (false, result ().cast <bool> ());
 }
 
-TEST_F(ClassTests, MetaFunction__concat)
-{
-  typedef Class <std::string> String;
-
-  luabridge::getGlobalNamespace (L)
-    .beginClass <String> ("String")
-    .addConstructor <void (*) (std::string)> ()
-    .addFunction ("__concat", &String::operator+) // operator+ in C++
-    .endClass ();
-
-  ASSERT_THROW (runLua ("result = String ('a') + String ('b')"), std::exception);
-
-  runLua ("result = String ('ab') .. String ('cd')");
-  ASSERT_TRUE (result ().isUserdata ());
-  ASSERT_EQ ("abcd", result ().cast <String> ().data);
-}
-
-TEST_F(ClassTests, MetaFunction__add)
+TEST_F (ClassTests, Metamethod__add)
 {
   typedef Class <int> Int;
 
@@ -396,7 +416,7 @@ TEST_F(ClassTests, MetaFunction__add)
   ASSERT_EQ (3, result ().cast <Int> ().data);
 }
 
-TEST_F(ClassTests, MetaFunction__sub)
+TEST_F (ClassTests, Metamethod__sub)
 {
   typedef Class <int> Int;
 
@@ -411,7 +431,7 @@ TEST_F(ClassTests, MetaFunction__sub)
   ASSERT_EQ (-1, result ().cast <Int> ().data);
 }
 
-TEST_F(ClassTests, MetaFunction__mul)
+TEST_F(ClassTests, Metamethod__mul)
 {
   typedef Class <int> Int;
 
@@ -426,7 +446,7 @@ TEST_F(ClassTests, MetaFunction__mul)
   ASSERT_EQ (10, result ().cast <Int> ().data);
 }
 
-TEST_F(ClassTests, MetaFunction__div)
+TEST_F (ClassTests, Metamethod__div)
 {
   typedef Class <int> Int;
 
@@ -441,26 +461,160 @@ TEST_F(ClassTests, MetaFunction__div)
   ASSERT_EQ (5, result ().cast <Int> ().data);
 }
 
-TEST_F(ClassTests, MetaFunction__call)
+TEST_F (ClassTests, Metamethod__mod)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace(L)
+    .beginClass <Int>("Int")
+    .addConstructor <void(*) (int)>()
+    .addFunction("__mod", &Int::operator%)
+    .endClass();
+
+  runLua("result = Int (7) % Int (2)");
+  ASSERT_TRUE(result().isUserdata());
+  ASSERT_EQ(1, result().cast <Int>().data);
+}
+
+TEST_F (ClassTests, Metamethod__pow)
 {
   typedef Class <int> Int;
 
   luabridge::getGlobalNamespace (L)
     .beginClass <Int> ("Int")
     .addConstructor <void (*) (int)> ()
-    .addFunction ("__call", &Int::operator())
+    .addFunction ("__pow", &Int::operator-)
     .endClass ();
 
-  runLua ("result = Int (1) (-1)");
+  runLua ("result = Int (5) ^ Int (2)");
   ASSERT_TRUE (result ().isUserdata ());
-  ASSERT_EQ (-1, result ().cast <Int> ().data);
-
-  runLua ("result = Int (2) (5)");
-  ASSERT_TRUE (result ().isUserdata ());
-  ASSERT_EQ (5, result ().cast <Int> ().data);
+  ASSERT_EQ (3, result ().cast <Int> ().data);
 }
 
-TEST_F(ClassTests, DISABLED_ClassProperties2)
+TEST_F (ClassTests, Metamethod__unm)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__unm", &Int::negate)
+    .endClass ();
+
+  runLua ("result = -Int (-3)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (3, result ().cast <Int> ().data);
+}
+
+TEST_F (ClassTests, Metamethod__concat)
+{
+  typedef Class <std::string> String;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <String> ("String")
+    .addConstructor <void (*) (std::string)> ()
+    .addFunction ("__concat", &String::operator+)
+    .endClass ();
+
+  ASSERT_THROW (runLua ("result = String ('a') + String ('b')"), std::exception);
+
+  runLua ("result = String ('ab') .. String ('cd')");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ ("abcd", result ().cast <String> ().data);
+}
+
+TEST_F (ClassTests, Metamethod__len)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__len", &Int::len)
+    .endClass ();
+
+  runLua ("result = #Int (1)");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (1, result ().cast <int> ());
+
+  runLua("result = #Int (5)");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (5, result ().cast <int> ());
+}
+
+namespace {
+
+struct Table
+{
+  int index (const std::string& key)
+  {
+    return map.at (key);
+  }
+
+  void newIndex(const std::string& key, int value)
+  {
+    map.emplace (key, value);
+  }
+
+  std::map <std::string, int> map;
+};
+
+} // namespace
+
+TEST_F (ClassTests, Metamethod__index)
+{
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Table> ("Table")
+    .addFunction ("__index", &Table::index)
+    .endClass ();
+
+  Table t {{{"a", 1}, {"b", 2}}};
+
+  luabridge::setGlobal (L, &t, "t");
+
+  runLua ("result = t.a");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (1, result ().cast <int> ());
+
+  runLua ("result = t.b");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (2, result ().cast <int> ());
+
+  ASSERT_THROW (runLua ("result = t.c"), std::exception); // at ("c") throws
+}
+
+TEST_F (ClassTests, Metamethod__newindex)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Table> ("Table")
+    .addFunction ("__newindex", &Table::newIndex)
+    .endClass ();
+
+  Table t;
+
+  luabridge::setGlobal (L, &t, "t");
+
+  runLua ("t.a = 1\n"
+          "t ['b'] = 2");
+
+  ASSERT_EQ ((std::map <std::string, int> {{"a", 1}, {"b", 2}}), t.map);
+}
+
+TEST_F (ClassTests, Metamethod__gcForbidden)
+{
+  typedef Class <int> Int;
+
+  ASSERT_THROW (
+    luabridge::getGlobalNamespace(L)
+      .beginClass <Int>("Int")
+      .addFunction("__gc", &Int::method)
+      .endClass(),
+    std::exception);
+}
+
+TEST_F (ClassTests, DISABLED_ClassProperties2)
 {
   typedef Class <int> Inner;
   typedef Class <Inner> Outer;

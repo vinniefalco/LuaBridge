@@ -786,6 +786,11 @@ private:
     template <class MemFn>
     Class <T>& addFunction (char const* name, MemFn mf)
     {
+      static const std::string GC = "__gc";
+      if (name == GC)
+      {
+        throw std::logic_error (GC + " metamethod registration is forbidden");
+      }
       CFunc::CallMemberFunctionHelper <MemFn, FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
       return *this;
     }
