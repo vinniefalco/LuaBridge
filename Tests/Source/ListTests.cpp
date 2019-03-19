@@ -11,6 +11,19 @@
 
 #include <list>
 
+
+namespace {
+
+template <class T>
+
+std::list <T> toList (const std::vector <T>& vector)
+{
+  return {vector.begin (), vector.end ()};
+}
+
+} // namespace
+
+
 template <class T>
 struct ListTest : TestBase
 {
@@ -24,7 +37,7 @@ TYPED_TEST_P (ListTest, LuaRef)
 
   this->runLua ("result = {" + Traits::list () + "}");
 
-  std::list <TypeParam> expected (Traits::values ());
+  std::list <TypeParam> expected = toList (Traits::values ());
   std::list <TypeParam> actual = this->result ();
   ASSERT_EQ (expected, actual);
 }
