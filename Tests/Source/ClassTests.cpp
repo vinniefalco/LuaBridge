@@ -28,6 +28,53 @@ struct Class
   {
   }
 
+  std::string toString () const
+  {
+    std::ostringstream stream;
+    stream << data;
+    return stream.str ();
+  }
+
+  bool operator== (const Class <T>& rhs) const
+  {
+    return data == rhs.data;
+  }
+
+  bool operator< (const Class <T>& rhs) const
+  {
+    return data < rhs.data;
+  }
+
+  bool operator<= (const Class <T>& rhs) const
+  {
+    return data <= rhs.data;
+  }
+
+  Class <T> operator+ (const Class <T>& rhs) const
+  {
+    return Class <T> (data + rhs.data);
+  }
+
+  Class <T> operator- (const Class <T>& rhs) const
+  {
+    return Class <T> (data - rhs.data);
+  }
+
+  Class <T> operator* (const Class <T>& rhs) const
+  {
+    return Class <T> (data * rhs.data);
+  }
+
+  Class <T> operator/ (const Class <T>& rhs) const
+  {
+    return Class <T> (data / rhs.data);
+  }
+
+  Class <T> operator() (T param)
+  {
+    return Class <T> (param);
+  }
+
   T method (T value)
   {
     return value;
@@ -120,16 +167,16 @@ TEST_F(ClassTests, PassingUnregisteredClassFromLuaThrows)
 
 TEST_F (ClassTests, Data)
 {
-  using IntClass = Class <int>;
+  using Int = Class <int>;
   using AnyClass = Class <luabridge::LuaRef>;
 
   luabridge::getGlobalNamespace (L)
-    .beginClass <IntClass> ("IntClass")
+    .beginClass <Int> ("Int")
     .addConstructor <void (*) (int)> ()
-    .addData ("data", &IntClass::data, true)
+    .addData ("data", &Int::data, true)
     .endClass ();
 
-  runLua ("result = IntClass (501)");
+  runLua ("result = Int (501)");
   ASSERT_TRUE (result () ["data"].isNumber ());
   ASSERT_EQ (501, result () ["data"].cast <int> ());
 
@@ -157,16 +204,16 @@ TEST_F (ClassTests, Data)
 
 TEST_F (ClassTests, Properties)
 {
-  using IntClass = Class <int>;
+  using Int = Class <int>;
   using AnyClass = Class <luabridge::LuaRef>;
 
   luabridge::getGlobalNamespace (L)
-    .beginClass <IntClass> ("IntClass")
+    .beginClass <Int> ("Int")
     .addConstructor <void (*) (int)> ()
-    .addProperty ("data", &IntClass::getData, &IntClass::setData)
+    .addProperty ("data", &Int::getData, &Int::setData)
     .endClass ();
 
-  runLua ("result = IntClass (501)");
+  runLua ("result = Int (501)");
   ASSERT_TRUE (result () ["data"].isNumber ());
   ASSERT_EQ (501, result () ["data"].cast <int> ());
 
@@ -194,16 +241,16 @@ TEST_F (ClassTests, Properties)
 
 TEST_F (ClassTests, ReadOnlyProperties)
 {
-  using IntClass = Class <int>;
+  using Int = Class <int>;
   using AnyClass = Class <luabridge::LuaRef>;
 
   luabridge::getGlobalNamespace (L)
-    .beginClass <IntClass> ("IntClass")
+    .beginClass <Int> ("Int")
     .addConstructor <void (*) (int)> ()
-    .addProperty ("data", &IntClass::getData)
+    .addProperty ("data", &Int::getData)
     .endClass ();
 
-  runLua ("result = IntClass (501)");
+  runLua ("result = Int (501)");
   ASSERT_TRUE (result () ["data"].isNumber ());
   ASSERT_EQ (501, result () ["data"].cast <int> ());
 
@@ -227,6 +274,190 @@ TEST_F (ClassTests, ReadOnlyProperties)
   ASSERT_TRUE (result () ["data"].isTable ());
   ASSERT_TRUE (result () ["data"] ["a"].isNumber ());
   ASSERT_EQ (31, result () ["data"] ["a"].cast <int> ());
+}
+
+TEST_F(ClassTests, MetaFunction__tostring)
+{
+  typedef Class <int> Int;
+  typedef Class <std::string> StringClass;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__tostring", &Int::toString)
+    .endClass ()
+    .beginClass <StringClass> ("String")
+    .addConstructor <void (*) (std::string)> ()
+    .addFunction ("__tostring", &StringClass::toString)
+    .endClass ();
+
+  Int intValue (-123);
+  StringClass strValue ("abc");
+
+  runLua ("result = tostring (Int (-123))");
+  ASSERT_EQ ("-123", result ().cast <std::string> ());
+
+  runLua ("result = string.format ('%s%s', String ('abc'), Int (-123))");
+  ASSERT_EQ ("abc-123", result ().cast <std::string> ());
+}
+
+TEST_F(ClassTests, MetaFunction__eq)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__eq", &Int::operator==)
+    .endClass ();
+
+  runLua ("result = Int (1) == Int (1)");
+  ASSERT_EQ (true, result ().cast <bool> ());
+
+  runLua ("result = Int (1) ~= Int (1)");
+  ASSERT_EQ (false, result ().cast <bool> ());
+
+  runLua ("result = Int (1) == Int (2)");
+  ASSERT_EQ (false, result ().cast <bool> ());
+
+  runLua ("result = Int (1) ~= Int (2)");
+  ASSERT_EQ (true, result ().cast <bool> ());
+}
+
+TEST_F(ClassTests, MetaFunction__lt)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__lt", &Int::operator<)
+    .endClass ();
+
+  runLua ("result = Int (1) < Int (1)");
+  ASSERT_EQ (false, result ().cast <bool> ());
+
+  runLua ("result = Int (1) < Int (2)");
+  ASSERT_EQ (true, result ().cast <bool> ());
+
+  runLua ("result = Int (2) < Int (1)");
+  ASSERT_EQ (false, result ().cast <bool> ());
+}
+
+TEST_F(ClassTests, MetaFunction__le)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__le", &Int::operator<=)
+    .endClass ();
+
+  runLua ("result = Int (1) <= Int (1)");
+  ASSERT_EQ (true, result ().cast <bool> ());
+
+  runLua ("result = Int (1) <= Int (2)");
+  ASSERT_EQ (true, result ().cast <bool> ());
+
+  runLua ("result = Int (2) <= Int (1)");
+  ASSERT_EQ (false, result ().cast <bool> ());
+}
+
+TEST_F(ClassTests, MetaFunction__concat)
+{
+  typedef Class <std::string> String;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <String> ("String")
+    .addConstructor <void (*) (std::string)> ()
+    .addFunction ("__concat", &String::operator+) // operator+ in C++
+    .endClass ();
+
+  ASSERT_THROW (runLua ("result = String ('a') + String ('b')"), std::exception);
+
+  runLua ("result = String ('ab') .. String ('cd')");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ ("abcd", result ().cast <String> ().data);
+}
+
+TEST_F(ClassTests, MetaFunction__add)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__add", &Int::operator+)
+    .endClass ();
+
+  runLua ("result = Int (1) + Int (2)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (3, result ().cast <Int> ().data);
+}
+
+TEST_F(ClassTests, MetaFunction__sub)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__sub", &Int::operator-)
+    .endClass ();
+
+  runLua ("result = Int (1) - Int (2)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (-1, result ().cast <Int> ().data);
+}
+
+TEST_F(ClassTests, MetaFunction__mul)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__mul", &Int::operator*)
+    .endClass ();
+
+  runLua ("result = Int (-2) * Int (-5)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (10, result ().cast <Int> ().data);
+}
+
+TEST_F(ClassTests, MetaFunction__div)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__div", &Int::operator/)
+    .endClass ();
+
+  runLua ("result = Int (10) / Int (2)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (5, result ().cast <Int> ().data);
+}
+
+TEST_F(ClassTests, MetaFunction__call)
+{
+  typedef Class <int> Int;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__call", &Int::operator())
+    .endClass ();
+
+  runLua ("result = Int (1) (-1)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (-1, result ().cast <Int> ().data);
+
+  runLua ("result = Int (2) (5)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (5, result ().cast <Int> ().data);
 }
 
 TEST_F(ClassTests, DISABLED_ClassProperties2)
