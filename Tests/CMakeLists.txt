@@ -11,6 +11,7 @@ set (LUABRIDGE_TEST_SOURCE_FILES
   Source/RefCountedPtrTests.cpp
   Source/Tests.cpp
   Source/TestBase.h
+  Source/TestTypes.h
   Source/TestsMain.cpp
   Source/VectorTests.cpp
 )

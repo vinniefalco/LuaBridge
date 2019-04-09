@@ -154,7 +154,7 @@ public:
     lua_call (m_L, 1, 1);
     const char* str = lua_tostring (m_L, -1);
     lua_pop (m_L, 1);
-    return std::string(str);
+    return str;
   }
 
   //----------------------------------------------------------------------------
@@ -184,23 +184,23 @@ public:
       break;
 
     case LUA_TTABLE:
-      os << "table: " << tostring();
+      os << "table: " << tostring ();
       break;
 
     case LUA_TFUNCTION:
-      os << "function: " << tostring();
+      os << "function: " << tostring ();
       break;
 
     case LUA_TUSERDATA:
-      os << "userdata: " << tostring();
+      os << "userdata: " << tostring ();
       break;
 
     case LUA_TTHREAD:
-      os << "thread: " << tostring();
+      os << "thread: " << tostring ();
       break;
 
     case LUA_TLIGHTUSERDATA:
-      os << "lightuserdata: " << tostring();
+      os << "lightuserdata: " << tostring ();
       break;
 
     default:
@@ -715,6 +715,7 @@ class LuaRef : public LuaRefBase <LuaRef, LuaRef>
   };
 
   friend struct Stack <Proxy>;
+  friend struct Stack <Proxy&>;
 
   //----------------------------------------------------------------------------
   /**
@@ -969,8 +970,8 @@ private:
 
 //------------------------------------------------------------------------------
 /**
-    Stack specialization for LuaRef.
-*/
+ * Stack specialization for `LuaRef`.
+ */
 template <>
 struct Stack <LuaRef>
 {
@@ -989,8 +990,8 @@ struct Stack <LuaRef>
 
 //------------------------------------------------------------------------------
 /**
-    Stack specialization for Proxy.
-*/
+ * Stack specialization for `Proxy`.
+ */
 template <>
 struct Stack <LuaRef::Proxy>
 {

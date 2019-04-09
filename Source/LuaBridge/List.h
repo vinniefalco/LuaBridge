@@ -47,9 +47,4 @@ struct Stack <std::list <T> >
   }
 };
 
-template <class T>
-struct Stack <std::list <T> const&> : Stack <std::list <T> >
-{
-};
-
 } // namespace luabridge

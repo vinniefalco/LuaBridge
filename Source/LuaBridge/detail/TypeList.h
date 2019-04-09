@@ -88,7 +88,7 @@ struct TypeListValues <TypeList <Head, Tail> >
   {
   }
 
-  static std::string const tostring (bool comma = false)
+  static std::string tostring (bool comma = false)
   {
     std::string s;
 

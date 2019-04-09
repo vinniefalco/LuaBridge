@@ -2,6 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
   
+  Copyright 2019, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
@@ -27,6 +28,9 @@
 //==============================================================================
 
 #pragma once
+
+#include <string>
+
 
 namespace luabridge {
 
@@ -123,5 +127,9 @@ struct TypeTraits
   };
   /**@}*/
 };
+
+
+template <class T>
+struct Stack;
 
 } // namespace luabridge

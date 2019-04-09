@@ -1,7 +1,8 @@
 //------------------------------------------------------------------------------
 /*
   https://github.com/vinniefalco/LuaBridge
-  
+
+  Copyright 2019, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
@@ -28,9 +29,12 @@
 
 #pragma once
 
+#include <LuaBridge/detail/ClassInfo.h>
 #include <LuaBridge/detail/TypeList.h>
 
 #include <cassert>
+#include <stdexcept>
+
 
 namespace luabridge {
 
@@ -490,7 +494,7 @@ public:
 
 //============================================================================
 /**
-  Wraps a container thet references a class object.
+  Wraps a container that references a class object.
 
   The template argument C is the container type, ContainerTraits must be
   specialized on C or else a compile error will result.
@@ -631,7 +635,7 @@ struct UserdataSharedHelper <C, true>
 template <class C, bool byContainer>
 struct StackHelper
 {
-  static inline void push (lua_State* L, C const& c)
+  static void push (lua_State* L, C const& c)
   {
     UserdataSharedHelper <C,
       TypeTraits::isConst <typename ContainerTraits <C>::Type>::value>::push (L, c);
@@ -640,7 +644,7 @@ struct StackHelper
   typedef typename TypeTraits::removeConst <
     typename ContainerTraits <C>::Type>::Type T;
 
-  static inline C get (lua_State* L, int index)
+  static C get (lua_State* L, int index)
   {
     return Userdata::get <T> (L, index, true);
   }
@@ -667,27 +671,6 @@ struct StackHelper <T, false>
   }
 };
 
-//==============================================================================
-
-/**
-  Lua stack conversions for class objects passed by value.
-*/
-template <class T>
-struct Stack
-{
-public:
-  static inline void push (lua_State* L, T const& t)
-  {
-    StackHelper <T,
-      TypeTraits::isContainer <T>::value>::push (L, t);
-  }
-
-  static inline T get (lua_State* L, int index)
-  {
-    return StackHelper <T,
-      TypeTraits::isContainer <T>::value>::get (L, index);
-  }
-};
 
 //------------------------------------------------------------------------------
 /**
@@ -698,89 +681,11 @@ public:
   handling of the const and volatile qualifiers happens in UserdataPtr.
 */
 
-// pointer
-template <class T>
-struct Stack <T*>
-{
-  static inline void push (lua_State* L, T* const p)
-  {
-    UserdataPtr::push (L, p);
-  }
-
-  static inline T* const get (lua_State* L, int index)
-  {
-    return Userdata::get <T> (L, index, false);
-  }
-};
-
-// Strips the const off the right side of *
-template <class T>
-struct Stack <T* const>
-{
-  static inline void push (lua_State* L, T* const p)
-  {
-    UserdataPtr::push (L, p);
-  }
-
-  static inline T* const get (lua_State* L, int index)
-  {
-    return Userdata::get <T> (L, index, false);
-  }
-};
-
-// pointer to const
-template <class T>
-struct Stack <T const*>
-{
-  static inline void push (lua_State* L, T const* const p)
-  {
-    UserdataPtr::push (L, p);
-  }
-
-  static inline T const* const get (lua_State* L, int index)
-  {
-    return Userdata::get <T> (L, index, true);
-  }
-};
-
-// Strips the const off the right side of *
-template <class T>
-struct Stack <T const* const>
-{
-  static inline void push (lua_State* L, T const* const p)
-  {
-    UserdataPtr::push (L, p);
-  }
-
-  static inline T const* const get (lua_State* L, int index)
-  {
-    return Userdata::get <T> (L, index, true);
-  }
-};
-
-// reference
-template <class T>
-struct Stack <T&>
-{
-  static inline void push (lua_State* L, T& t)
-  {
-    UserdataPtr::push (L, &t);
-  }
-
-  static T& get (lua_State* L, int index)
-  {
-    T* const t = Userdata::get <T> (L, index, false);
-    if (!t)
-      luaL_error (L, "nil passed to reference");
-    return *t;
-  }
-};
-
 template <class C, bool byContainer>
 struct RefStackHelper
 {
-  typedef C return_type;  
-	
+  typedef C return_type;
+
   static inline void push (lua_State* L, C const& t)
   {
     UserdataSharedHelper <C,
@@ -799,38 +704,179 @@ struct RefStackHelper
 template <class T>
 struct RefStackHelper <T, false>
 {
-  typedef T const& return_type;  
-	
-	static inline void push (lua_State* L, T const& t)
-	{
-	  UserdataPtr::push (L, &t);
-	}
+  typedef T& return_type;
+
+  static void push (lua_State* L, T const& t)
+  {
+    UserdataPtr::push (L, &t);
+  }
 
   static return_type get (lua_State* L, int index)
   {
-    T const* const t = Userdata::get <T> (L, index, true);
+    T* t = Userdata::get <T> (L, index, true);
 
     if (!t)
       luaL_error (L, "nil passed to reference");
     return *t;
   }
-    
+};
+
+
+/**
+ * Voider class template. Used to force a comiler to instantiate
+ * an otherwise probably unused template parameter type T.
+ * See the C++20 std::void_t <> for details.
+ */
+template <class T>
+struct Void
+{
+  typedef void Type;
+};
+
+
+/**
+ * Trait class that selects whether to return a user registered
+ * class object by value or by reference.
+ */
+
+template <class T, class Enabler = void>
+struct UserdataGetter
+{
+  typedef T* ReturnType;
+
+  static ReturnType get (lua_State* L, int index)
+  {
+    return Userdata::get <T> (L, index, false);
+  }
+};
+
+template <class T>
+struct UserdataGetter <T, typename Void <T (*) ()>::Type>
+{
+  typedef T ReturnType;
+
+  static ReturnType get (lua_State* L, int index)
+  {
+    return StackHelper <T, TypeTraits::isContainer <T>::value>::get (L, index);
+  }
+};
+
+//==============================================================================
+
+/**
+  Lua stack conversions for class objects passed by value.
+*/
+template <class T>
+struct Stack
+{
+  typedef void IsUserdata;
+
+  typedef UserdataGetter <T> Getter;
+  typedef typename Getter::ReturnType ReturnType;
+
+  static void push (lua_State* L, T const& value)
+  {
+    StackHelper <T, TypeTraits::isContainer <T>::value>::push (L, value);
+  }
+
+  static ReturnType get (lua_State* L, int index)
+  {
+    return Getter::get (L, index);
+  }
+};
+
+
+/**
+ * Trait class indicating whether the parameter type must be
+ * a user registered class. The trait checks the existence of
+ * member type Stack <T>::IsUserdata specialization for detection.
+ */
+template <class T, class Enable = void>
+struct IsUserdata
+{
+  static const bool value = false;
+};
+
+template <class T>
+struct IsUserdata <T, typename Void <typename Stack <T>::IsUserdata>::Type>
+{
+  static const bool value = true;
+};
+
+
+/**
+ * Trait class that selects a specific push/get implemenation.
+ */
+template <class T, bool isUserdata>
+struct StackOpSelector;
+
+// pointer
+template <class T>
+struct StackOpSelector <T*, true>
+{
+  typedef T* ReturnType;
+
+  static void push (lua_State* L, T* value)
+  {
+    UserdataPtr::push (L, value);
+  }
+
+  static T* get (lua_State* L, int index)
+  {
+    return Userdata::get <T> (L, index, false);
+  }
+};
+
+// pointer to const
+template <class T>
+struct StackOpSelector <const T*, true>
+{
+  typedef const T* ReturnType;
+
+  static void push (lua_State* L, const T* value)
+  {
+    UserdataPtr::push (L, value);
+  }
+
+  static const T* get (lua_State* L, int index)
+  {
+    return Userdata::get <T> (L, index, true);
+  }
+};
+
+// reference
+template <class T>
+struct StackOpSelector <T&, true>
+{
+  typedef RefStackHelper <T, TypeTraits::isContainer <T>::value> Helper;
+  typedef typename Helper::return_type ReturnType;
+
+  static void push (lua_State* L, T& value)
+  {
+    UserdataPtr::push (L, &value);
+  }
+
+  static ReturnType get (lua_State* L, int index)
+  {
+    return Helper::get (L, index);
+  }
 };
 
 // reference to const
 template <class T>
-struct Stack <T const&>
+struct StackOpSelector <const T&, true>
 {
-  typedef RefStackHelper <T, TypeTraits::isContainer <T>::value> helper_t;
-  
-  static inline void push (lua_State* L, T const& t)
+  typedef RefStackHelper <T, TypeTraits::isContainer <T>::value> Helper;
+  typedef typename Helper::return_type ReturnType;
+
+  static void push (lua_State* L, const T& value)
   {
-    helper_t::push (L, t);
+    Helper::push (L, value);
   }
 
-  static typename helper_t::return_type get (lua_State* L, int index)
+  static ReturnType get (lua_State* L, int index)
   {
-    return helper_t::get (L, index);
+    return Helper::get (L, index);
   }
 };
 

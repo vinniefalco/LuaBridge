@@ -153,12 +153,12 @@ Class <int>* returnPtr ()
 
 const Class <int>* returnConstPtr ()
 {
-  return &returnRef ();
+  return &returnConstRef ();
 }
 
 Class <int> returnValue ()
 {
-  return returnRef ();
+  return Class <int> (2);
 }
 
 } // namespace
@@ -181,6 +181,55 @@ TEST_F(ClassTests, PassingUnregisteredClassFromLuaThrows)
   ASSERT_THROW (runLua ("result = returnValue ()"), std::exception);
 }
 
+TEST_F (ClassTests, SimpleFunctions)
+{
+  using Int = Class <int>;
+  using AnyClass = Class <luabridge::LuaRef>;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("theMethod", &Int::method)
+    .addFunction ("constMethod", &Int::constMethod)
+    .endClass ();
+
+  runLua ("object = Int (501)");
+
+  runLua ("result = object:theMethod (3)");
+  ASSERT_EQ (3, result ().cast <int> ());
+
+  runLua ("result = object:constMethod (5)");
+  ASSERT_EQ (5, result ().cast <int> ());
+}
+
+TEST_F (ClassTests, ObjectConstness)
+{
+  using Int = Class <int>;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addFunction ("theMethod", &Int::method)
+    .addFunction ("constMethod", &Int::constMethod)
+    .endClass ()
+    .addFunction ("returnRef", &returnRef)
+    .addFunction ("returnConstRef", &returnConstRef)
+    .addFunction ("returnPtr", &returnPtr)
+    .addFunction ("returnConstPtr", &returnConstPtr)
+    .addFunction ("returnValue", &returnValue);
+
+  runLua ("result = returnRef ():constMethod (10)");
+  ASSERT_EQ (10, result ().cast <int> ());
+
+  runLua ("result = returnRef ():theMethod (11)");
+  ASSERT_EQ (11, result ().cast <int> ());
+
+  runLua ("result = returnConstRef ():constMethod (12)");
+  ASSERT_EQ (12, result ().cast <int> ());
+
+  runLua ("result = returnConstRef ().theMethod"); // Don't call, just get
+  ASSERT_TRUE (result ().isNil ());
+}
+
 TEST_F (ClassTests, Data)
 {
   using Int = Class <int>;
@@ -199,6 +248,10 @@ TEST_F (ClassTests, Data)
   runLua ("result.data = 2");
   ASSERT_TRUE (result () ["data"].isNumber ());
   ASSERT_EQ (2, result () ["data"].cast <int> ());
+
+  runLua ("result = Int (42).data");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (42, result ().cast <int> ());
 
   luabridge::getGlobalNamespace (L)
     .beginNamespace ("ns")
@@ -332,9 +385,10 @@ TEST_F (ClassTests, Metamethod__tostring)
   runLua ("result = tostring (Int (-123))");
   ASSERT_EQ ("-123", result ().cast <std::string> ());
 
-#if LUABRIDGEDEMO_LUA_VERSION != 501 // tostring () only
-  runLua ("result = string.format ('%s', String ('abc'))");
-  ASSERT_EQ ("abc", result ().cast <std::string> ());
+#if LUA_VERSION_NUM >= 502
+  // Lua 5.1 string.format doesn't use __tostring
+  runLua ("result = string.format ('%s%s', String ('abc'), Int (-123))");
+  ASSERT_EQ ("abc-123", result ().cast <std::string> ());
 #endif
 }
 
@@ -614,7 +668,11 @@ TEST_F (ClassTests, Metamethod__gcForbidden)
     std::exception);
 }
 
+<<<<<<< HEAD
 TEST_F (ClassTests, DISABLED_ClassProperties2)
+=======
+TEST_F(ClassTests, EnclosedClassProperties)
+>>>>>>> Refactor stack operations
 {
   typedef Class <int> Inner;
   typedef Class <Inner> Outer;
