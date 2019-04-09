@@ -668,11 +668,7 @@ TEST_F (ClassTests, Metamethod__gcForbidden)
     std::exception);
 }
 
-<<<<<<< HEAD
-TEST_F (ClassTests, DISABLED_ClassProperties2)
-=======
 TEST_F(ClassTests, EnclosedClassProperties)
->>>>>>> Refactor stack operations
 {
   typedef Class <int> Inner;
   typedef Class <Inner> Outer;
