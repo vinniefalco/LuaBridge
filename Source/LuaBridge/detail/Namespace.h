@@ -190,6 +190,9 @@ private:
           throw std::logic_error ("missing __propget table");
         }
 
+        // It may mean that the field is in __const and it's constness violation.
+        // Don't check that, just return nil
+
         // Repeat the lookup in the __parent metafield,
         // or return nil if the field doesn't exist.
         rawgetfield (L, -1, "__parent");
@@ -446,11 +449,11 @@ private:
   /**
     Provides a class registration in a lua_State.
 
-    After contstruction the Lua stack holds these objects:
+    After construction the Lua stack holds these objects:
       -1 static table
       -2 class table
       -3 const table
-      -4 (enclosing namespace)
+      -4 enclosing namespace table
   */
   template <class T>
   class Class : public ClassBase
@@ -490,11 +493,15 @@ private:
         lua_pushvalue (L, -3);
         lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ());
       }
-      else
+      else // namespace table, static table
       {
         // Map T back from its stored tables
+
         lua_rawgetp(L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey());
+        // namespace table, static table, class table
+
         lua_rawgetp(L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey());
+        // namespace table, static table, class table, const table
 
         // Reverse the top 3 stack elements
         lua_insert (L, -3);

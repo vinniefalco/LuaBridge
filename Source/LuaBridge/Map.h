@@ -47,9 +47,4 @@ struct Stack <std::map <K, V> >
   }
 };
 
-template <class K, class V>
-struct Stack <std::map <K, V> const&> : Stack <std::map <K, V> >
-{
-};
-
 } // namespace luabridge
