@@ -30,6 +30,78 @@
 
 namespace luabridge {
 
+/**
+ * A unique key for verifying LuaBridge objects validity.
+ */
+inline void* getIdentityKey ()
+{
+  static char value;
+  return &value;
+}
+
+/**
+ * A unique key for a type name in a metatable.
+ */
+inline void* getTypeKey ()
+{
+  static char value;
+  return &value;
+}
+
+/**
+ * The key of a const table in another metatable.
+ */
+inline void* getConstKey ()
+{
+  static char value;
+  return &value;
+}
+
+/**
+ * The key of a class table in another metatable.
+ */
+inline void* getClassKey ()
+{
+  static char value;
+  return &value;
+}
+
+/**
+ * The key of a propget table in another metatable.
+ */
+inline void* getPropgetKey ()
+{
+  static char value;
+  return &value;
+}
+
+/**
+ * The key of a propset table in another metatable.
+ */
+inline void* getPropsetKey ()
+{
+  static char value;
+  return &value;
+}
+
+/**
+ * The key of a static table in another metatable.
+ */
+inline void* getStaticKey ()
+{
+  static char value;
+  return &value;
+}
+
+/**
+ * The key of a parent table in another metatable.
+ */
+inline void* getParentKey ()
+{
+  static char value;
+  return &value;
+}
+
 /** Unique Lua registry keys for a class.
 
     Each registered class inserts three keys into the registry, whose
