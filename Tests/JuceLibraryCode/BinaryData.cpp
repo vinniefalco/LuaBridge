@@ -26,8 +26,6 @@ static const unsigned char temp_b6c6a671[] =
 "FN_OPERATOR = 8\r\n"
 "NUM_FN_TYPES = 9\r\n"
 "\r\n"
-"-- test static methods of classes registered from C++\r\n"
-"A.testStaticProp = 48;          assert(A.testStaticProp == 48);\r\n"
 "-- function to print contents of a table\r\n"
 "function printtable (t)\r\n"
 "  for k, v in pairs(t) do\r\n"
