@@ -208,7 +208,6 @@ TEST_F (ClassTests, DeriveFromUnregisteredClassThrows)
     (luabridge::getGlobalNamespace (L).deriveClass <Derived, Base> ("Derived")),
     std::exception);
 
-  luabridge::debug::dumpState (L, std::cout);
   ASSERT_EQ (1, lua_gettop (L));
 }
 

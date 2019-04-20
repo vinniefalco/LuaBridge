@@ -28,8 +28,6 @@
 
 #pragma once
 
-#include "LuaBridge/detail/dump.h"
-
 #include <string>
 
 namespace luabridge {

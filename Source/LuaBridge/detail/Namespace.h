@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include <LuaBridge/detail/dump.h>
 #include <LuaBridge/detail/Security.h>
 #include <LuaBridge/detail/TypeTraits.h>
 

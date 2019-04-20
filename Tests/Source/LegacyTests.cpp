@@ -346,7 +346,7 @@ TEST_F (LegacyTests, AllTests)
     // compile-time error
     FAIL () << lua_tostring (L, -1);
   }
-  else if (lua_pcall (L, 0, 0, -2) != 0)
+  if (lua_pcall (L, 0, 0, -2) != 0)
   {
     // runtime error
     FAIL () << lua_tostring (L, -1);
