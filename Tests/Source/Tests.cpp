@@ -39,7 +39,7 @@ void printValue (lua_State* L, int index)
   std::cerr << ": " << lua_typename (L, type) << " (" << type << ")" << std::endl;
 }
 
-struct LuaBridgeTest : public TestBase
+struct LuaBridgeTest : TestBase
 {
 };
 

@@ -5,13 +5,14 @@
 
 #include "TestBase.h"
 
+
 struct NamespaceTests : TestBase
 {
   template <class T>
   T variable (const std::string& name)
   {
     runLua ("result = " + name);
-    return result ().cast <T>();
+    return result ().cast <T> ();
   }
 };
 
@@ -22,8 +23,8 @@ TEST_F (NamespaceTests, Variables)
   any ["a"] = 1;
 
   ASSERT_THROW (
-    luabridge::getGlobalNamespace (L).addVariable ("int", &int_),
-    std::logic_error);
+   luabridge::getGlobalNamespace (L).addVariable ("int", &int_),
+   std::logic_error);
 
   runLua ("result = int");
   ASSERT_TRUE (result ().isNil ());

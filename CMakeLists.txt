@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required (VERSION 3.5)
 
-project(LuaBridge)
+project (LuaBridge)
 
-add_definitions (-DBUILD_GMOCK)
+set(gtest_force_shared_crt ON CACHE BOOL "Use /MD and /MDd" FORCE)
+add_definitions(-DBUILD_GMOCK)
 add_subdirectory (third_party/gtest)
 
 add_subdirectory (Source)

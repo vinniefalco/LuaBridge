@@ -78,6 +78,3 @@ target_link_libraries (LuaBridgeTests52
   gtest
   JuceLibraryCode
 )
-
-# Fix runtime library link options by gtest macro
-fix_default_compiler_settings_()
