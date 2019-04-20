@@ -14,10 +14,10 @@ namespace luabridge {
 template <class T>
 struct Stack <std::list <T> >
 {
-  static void push(lua_State* L, std::list <T> const& list)
+  static void push (lua_State* L, std::list <T> const& list)
   {
     lua_createtable (L, static_cast <int> (list.size ()), 0);
-    typename std::list <T>::const_iterator item = list.begin();
+    typename std::list <T>::const_iterator item = list.begin ();
     for (std::size_t i = 1; i <= list.size (); ++i)
     {
       lua_pushinteger (L, static_cast <lua_Integer> (i));
@@ -27,11 +27,11 @@ struct Stack <std::list <T> >
     }
   }
 
-  static std::list <T> get(lua_State* L, int index)
+  static std::list <T> get (lua_State* L, int index)
   {
-    if (!lua_istable(L, index))
+    if (!lua_istable (L, index))
     {
-      luaL_error(L, "#%d argments must be table", index);
+      luaL_error (L, "#%d argments must be table", index);
     }
 
     std::list <T> list;

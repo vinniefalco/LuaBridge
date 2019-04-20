@@ -44,12 +44,12 @@ namespace luabridge {
 /**
     Type tag for representing LUA_TNIL.
 
-    Construct one of these using `Nil()` to represent a Lua nil. This is faster
+    Construct one of these using `Nil ()` to represent a Lua nil. This is faster
     than creating a reference in the registry to nil. Example:
 
         LuaRef t (LuaRef::createTable (L));
         ...
-        t ["k"] = Nil(); // assign nil
+        t ["k"] = Nil (); // assign nil
 */
 struct Nil
 {
@@ -147,7 +147,7 @@ public:
   /**
       converts to a string using luas tostring function
   */
-  std::string tostring() const
+  std::string tostring () const
   {
     lua_getglobal (m_L, "tostring");
     impl ().push ();
@@ -294,7 +294,7 @@ public:
     StackPop p (m_L, 1);
     impl ().push ();
 
-    // lua_gettop is used because Userdata::getClass() doesn't handle
+    // lua_gettop is used because Userdata::getClass () doesn't handle
     // negative stack indexes.
     //
     return Stack <T>::get (m_L, lua_gettop (m_L));
@@ -560,12 +560,12 @@ protected:
   lua_State* m_L;
 
 private:
-  const Impl& impl() const
+  const Impl& impl () const
   {
     return static_cast <const Impl&> (*this);
   }
 
-  Impl& impl()
+  Impl& impl ()
   {
     return static_cast <Impl&> (*this);
   }
@@ -1007,7 +1007,7 @@ struct Stack <LuaRef::Proxy>
 /**
     Create a reference to a new, empty table.
 
-    This is a syntactic abbreviation for LuaRef::newTable().
+    This is a syntactic abbreviation for LuaRef::newTable ().
 */
 inline LuaRef newTable (lua_State* L)
 {
@@ -1018,7 +1018,7 @@ inline LuaRef newTable (lua_State* L)
 /**
     Create a reference to a value in the global table.
 
-    This is a syntactic abbreviation for LuaRef::getGlobal().
+    This is a syntactic abbreviation for LuaRef::getGlobal ().
 */
 inline LuaRef getGlobal (lua_State *L, char const* name)
 {
@@ -1029,10 +1029,10 @@ inline LuaRef getGlobal (lua_State *L, char const* name)
 
 // more C++-like cast syntax
 //
-template<class T>
-T LuaRef_cast(LuaRef const& lr)
+template <class T>
+T LuaRef_cast (LuaRef const& lr)
 {
-  return lr.cast<T>();
+  return lr.cast <T> ();
 }
 
 } // namespace luabridge

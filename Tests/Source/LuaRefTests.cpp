@@ -112,21 +112,21 @@ TEST_F (LuaRefTests, DictionaryRead)
 
 TEST_F (LuaRefTests, DictionaryWrite)
 {
-  runLua("result = {a = 5}");
-  ASSERT_TRUE(result () ["a"].isNumber());
-  ASSERT_EQ (5, result () ["a"].cast <int>());
+  runLua ("result = {a = 5}");
+  ASSERT_TRUE (result () ["a"].isNumber ());
+  ASSERT_EQ (5, result () ["a"].cast <int> ());
 
-  result() ["a"] = 7;
-  ASSERT_EQ (7, result () ["a"].cast <int>());
+  result () ["a"] = 7;
+  ASSERT_EQ (7, result () ["a"].cast <int> ());
 
   runLua ("result = result.a");
   ASSERT_EQ (7, result ().cast <int> ());
 
   runLua ("result = {a = {b = 1}}");
-  ASSERT_EQ (1, result () ["a"] ["b"].cast <int>());
+  ASSERT_EQ (1, result () ["a"] ["b"].cast <int> ());
 
   result () ["a"] ["b"] = 2;
-  ASSERT_EQ (2, result () ["a"] ["b"].cast <int>());
+  ASSERT_EQ (2, result () ["a"] ["b"].cast <int> ());
 }
 
 struct Class
@@ -136,14 +136,14 @@ struct Class
 TEST_F (LuaRefTests, Comparison)
 {
   runLua (
-    "function foo() end "
+    "function foo () end "
     "local m = {} "
     "m.__eq = function (l, r) return l.a == r.a end "
     "m.__lt = function (l, r) return l.a < r.a end "
     "m.__le = function (l, r) return l.a <= r.a end "
-    "t1 = {a = 1} setmetatable(t1, m) "
-    "t2 = {a = 2} setmetatable(t2, m) "
-    "t3 = {a = 1} setmetatable(t3, m) "
+    "t1 = {a = 1} setmetatable (t1, m) "
+    "t2 = {a = 2} setmetatable (t2, m) "
+    "t3 = {a = 1} setmetatable (t3, m) "
     "t4 = {a = 2} "
   );
 
