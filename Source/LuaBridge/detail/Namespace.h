@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <LuaBridge/detail/ClassInfo.h>
 #include <LuaBridge/detail/Security.h>
 #include <LuaBridge/detail/TypeTraits.h>
 
@@ -122,7 +123,7 @@ class Namespace
       lua_rawsetp (L, -2, getIdentityKey ()); // co [identityKey] = true. Stack: ns, co
 
       lua_pushstring (L, type_name.c_str ());
-      rawsetfield (L, -2, "__type"); //
+      lua_rawsetp (L, -2, getTypeKey ()); // co [typeKey] = name. Stack: ns, co
 
       lua_pushcfunction (L, &CFunc::indexMetaMethod);
       rawsetfield (L, -2, "__index");
@@ -131,7 +132,7 @@ class Namespace
       rawsetfield (L, -2, "__newindex");
 
       lua_newtable (L);
-      rawsetfield (L, -2, "__propget");
+      lua_rawsetp (L, -2, getPropgetKey ());
 
       if (Security::hideMetatables ())
       {
@@ -154,13 +155,13 @@ class Namespace
       createConstTable (name, false); // Stack: ns, co, cl
 
       lua_newtable (L); // Stack: ns, co, cl, propset table (ps)
-      rawsetfield (L, -2, "__propset"); // cl [propsetKey] = ps. Stack: ns, co, cl
+      lua_rawsetp (L, -2, getPropsetKey ()); // cl [propsetKey] = ps. Stack: ns, co, cl
 
       lua_pushvalue (L, -2); // Stack: ns, co, cl, co
-      rawsetfield (L, -2, "__const"); // cl [constKey] = co. Stack: ns, co, cl
+      lua_rawsetp(L, -2, getConstKey ()); // cl [constKey] = co. Stack: ns, co, cl
 
       lua_pushvalue (L, -1); // Stack: ns, co, cl, cl
-      rawsetfield (L, -3, "__class"); // co [classKey] = cl. Stack: ns, co, cl
+      lua_rawsetp (L, -3, getClassKey ()); // co [classKey] = cl. Stack: ns, co, cl
     }
 
     //--------------------------------------------------------------------------
@@ -188,14 +189,14 @@ class Namespace
       lua_pushcfunction (L, &CFunc::newindexStaticMetaMethod);
       rawsetfield (L, -2, "__newindex");
 
-      lua_newtable (L);
-      rawsetfield (L, -2, "__propget");
+      lua_newtable (L); // Stack: ns, co, cl, st, proget table (pg)
+      lua_rawsetp (L, -2, getPropgetKey ()); // st [propgetKey] = pg. Stack: ns, co, cl, st
 
-      lua_newtable (L);
-      rawsetfield (L, -2, "__propset");
+      lua_newtable (L); // Stack: ns, co, cl, st, propset table (ps)
+      lua_rawsetp (L, -2, getPropsetKey ()); // st [propsetKey] = pg. Stack: ns, co, cl, st
 
-      lua_pushvalue (L, -2);
-      rawsetfield (L, -2, "__class"); // point to class table
+      lua_pushvalue (L, -2); // Stack: ns, co, cl, st, cl
+      lua_rawsetp(L, -2, getClassKey()); // st [classKey] = cl. Stack: ns, co, cl, st
 
       if (Security::hideMetatables ())
       {
@@ -369,19 +370,16 @@ class Namespace
       }
 
       assert (lua_istable (L, -1)); // Stack: ns, co, cl, st, pst
-      rawgetfield (L, -1, "__class"); // Stack: ns, co, cl, st, pst, parent cl (pcl)
+
+      lua_rawgetp (L, -1, getClassKey ()); // Stack: ns, co, cl, st, pst, parent cl (pcl)
       assert (lua_istable (L, -1));
-      rawgetfield (L, -1, "__const"); // Stack: ns, co, cl, st, pst, pcl, parent co (pco)
+
+      lua_rawgetp (L, -1, getConstKey ()); // Stack: ns, co, cl, st, pst, pcl, parent co (pco)
       assert (lua_istable (L, -1));
 
-      // co [parentKey] = pco
-      rawsetfield (L, -6, "__parent"); // Stack: ns, co, cl, st, pst, pcl
-
-      // cl [parentKey] = pcl
-      rawsetfield (L, -4, "__parent"); // Stack: ns, co, cl, st, pst
-
-      // static [parentKey] = p-static
-      rawsetfield (L, -2, "__parent"); // Stack: ns, co, cl, st
+      lua_rawsetp (L, -6, getParentKey ()); // co [parentKey] = pco. Stack: ns, co, cl, st, pst, pcl
+      lua_rawsetp (L, -4, getParentKey ()); // cl [parentKey] = pcl. Stack: ns, co, cl, st, pst
+      lua_rawsetp (L, -2, getParentKey ()); // st [parentKey] = pst. Stack: ns, co, cl, st
 
       lua_pushvalue (L, -1); // Stack: ns, co, cl, st, st
       lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getStaticKey ()); // Stack: ns, co, cl, st
@@ -719,13 +717,11 @@ private:
       lua_pushcfunction (L, &CFunc::newindexStaticMetaMethod);
       rawsetfield (L, -2, "__newindex"); // Stack: pns, ns
 
-      // ns.__propget = {}
-      lua_newtable (L);
-      rawsetfield (L, -2, "__propget"); // Stack: pns, ns
+      lua_newtable (L); // Stack: pns, ns, propget table (pg)
+      lua_rawsetp (L, -2, getPropgetKey ()); // ns [propgetKey] = pg. Stack: pns, ns
 
-      // ns.__propset = {}
-      lua_newtable (L);
-      rawsetfield (L, -2, "__propset"); // Stack: pns, ns
+      lua_newtable (L); // Stack: pns, ns, propset table (ps)
+      lua_rawsetp (L, -2, getPropsetKey ()); // ns [propsetKey] = ps. Stack: pns, ns
 
       // pns [name] = ns
       lua_pushvalue (L, -1); // Stack: pns, ns, ns

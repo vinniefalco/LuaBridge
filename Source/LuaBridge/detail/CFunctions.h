@@ -42,9 +42,9 @@ struct CFunc
     assert (lua_istable (L, tableIndex));
     assert (lua_iscfunction (L, -1)); // Stack: getter
 
-    rawgetfield (L, tableIndex, "__propget"); // Stack: getter, getters
-    lua_pushvalue (L, -2); // Stack: getter, getters, getter
-    rawsetfield (L, -2, name); // Stack: getter, getters
+    lua_rawgetp (L, tableIndex, getPropgetKey ()); // Stack: getter, propget table (pg)
+    lua_pushvalue (L, -2); // Stack: getter, pg, getter
+    rawsetfield (L, -2, name); // Stack: getter, pg
     lua_pop (L, 2); // Stack: -
   }
 
@@ -53,9 +53,9 @@ struct CFunc
     assert (lua_istable (L, tableIndex));
     assert (lua_iscfunction (L, -1)); // Stack: setter
 
-    rawgetfield (L, tableIndex, "__propset"); // Stack: setter, setters
-    lua_pushvalue (L, -2); // Stack: setter, setters, setter
-    rawsetfield (L, -2, name); // Stack: setter, setters
+    lua_rawgetp (L, tableIndex, getPropsetKey ()); // Stack: setter, propset table (ps)
+    lua_pushvalue (L, -2); // Stack: setter, ps, setter
+    rawsetfield (L, -2, name); // Stack: setter, ps
     lua_pop (L, 2); // Stack: -
   }
 
@@ -86,7 +86,7 @@ struct CFunc
       assert (lua_isnil (L, -1)); // Stack: mt, nil
       lua_pop (L, 1); // Stack: mt
 
-      rawgetfield (L, -1, "__propget"); // Stack: mt, propget table (pg)
+      lua_rawgetp (L, -1, getPropgetKey ()); // Stack: mt, propget table (pg)
       assert (lua_istable (L, -1));
 
       lua_pushvalue (L, 2); // Stack: mt, pg, field name
@@ -104,12 +104,12 @@ struct CFunc
       assert (lua_isnil (L, -1)); // Stack: mt, nil
       lua_pop (L, 1); // Stack: mt
 
-      // It may mean that the field is in __const and it's constness violation.
+      // It may mean that the field may be in const table and it's constness violation.
       // Don't check that, just return nil
 
-      // Repeat the lookup in the __parent metafield,
+      // Repeat the lookup in the parent metafield,
       // or return nil if the field doesn't exist.
-      rawgetfield (L, -1, "__parent"); // Stack: mt, parent mt | nil
+      lua_rawgetp (L, -1, getParentKey ()); // Stack: mt, parent mt | nil
 
       if (lua_isnil (L, -1)) // Stack: mt, nil
       {
@@ -117,7 +117,7 @@ struct CFunc
         return 1;
       }
 
-      // Remove metatable and repeat the search in __parent.
+      // Removethe  metatable and repeat the search in the parent one.
       assert (lua_istable (L, -1)); // Stack: mt, parent mt
       lua_remove (L, -2); // Stack: parent mt
     }
@@ -154,7 +154,7 @@ struct CFunc
 
     for (;;)
     {
-      rawgetfield (L, -1, "__propset"); // Stack: mt, propset table (ps) | nil
+      lua_rawgetp (L, -1, getPropsetKey ()); // Stack: mt, propset table (ps) | nil
 
       if (lua_isnil (L, -1)) // Stack: mt, nil
       {
@@ -183,7 +183,7 @@ struct CFunc
       assert (lua_isnil (L, -1)); // Stack: mt, nil
       lua_pop (L, 1); // Stack: mt
 
-      rawgetfield (L, -1, "__parent"); // Stack: mt, parent mt | nil
+      lua_rawgetp (L, -1, getParentKey ()); // Stack: mt, parent mt | nil
 
       if (lua_isnil (L, -1)) // Stack: mt, nil
       {
