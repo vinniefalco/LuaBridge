@@ -38,7 +38,7 @@ TEST_F (IteratorTests, DictionaryIteration)
 
   for (luabridge::Iterator iterator (result ()); !iterator.isNil (); ++iterator)
   {
-    actual.emplace(iterator.key (), iterator.value());
+    actual.emplace(iterator.key (), iterator.value ());
   }
 
   ASSERT_EQ (expected, actual);
@@ -80,7 +80,7 @@ TEST_F (IteratorTests, SequenceIteration)
 
   for (luabridge::Iterator iterator (result ()); !iterator.isNil (); ++iterator)
   {
-    actual.emplace(iterator.key (), iterator.value());
+    actual.emplace (iterator.key (), iterator.value ());
   }
 
   ASSERT_EQ (expected, actual);

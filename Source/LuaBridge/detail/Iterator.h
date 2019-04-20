@@ -2,6 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
   
+  Copyright 2018, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
@@ -32,13 +33,13 @@
 
 #include <utility>
 
+
 namespace luabridge {
 
 /** Allows table iteration.
 */
 class Iterator
 {
-private:
   lua_State* m_L;
   LuaRef m_table;
   LuaRef m_key;
@@ -79,7 +80,7 @@ public:
     return m_L;
   }
 
-  std::pair<LuaRef, LuaRef> operator* () const
+  std::pair <LuaRef, LuaRef> operator* () const
   {
     return std::make_pair (m_key, m_value);
   }
@@ -97,14 +98,14 @@ public:
 
   Iterator& operator++ ()
   {
-    if (isNil())
+    if (isNil ())
     {
       // if the iterator reaches the end, do nothing
       return *this;
     }
     else
     {
-      next();
+      next ();
       return *this;
     }
   }
@@ -145,7 +146,7 @@ public:
   const Iterator& end () const { return m_end; }
 };
 
-inline Range pairs(const LuaRef& table)
+inline Range pairs (const LuaRef& table)
 {
   return Range (Iterator (table, false), Iterator (table, true));
 }

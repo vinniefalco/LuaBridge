@@ -2,6 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
 
+  Copyright 2019, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright 2007, Nathan Reed
 
@@ -123,7 +124,7 @@ inline void dumpTable (lua_State* L, int index, std::ostream& stream, unsigned l
     dumpValue (L, -1, stream, level + 1); // Value
     lua_pop (L, 1); // Value
   }
-  putIndent(stream, level);
+  putIndent (stream, level);
   stream << "\n}";
 }
 

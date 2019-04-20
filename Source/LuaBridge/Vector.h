@@ -14,7 +14,7 @@ namespace luabridge {
 template <class T>
 struct Stack <std::vector <T> >
 {
-  static void push(lua_State* L, std::vector <T> const& vector)
+  static void push (lua_State* L, std::vector <T> const& vector)
   {
     lua_createtable (L, static_cast <int> (vector.size ()), 0);
     for (std::size_t i = 0; i < vector.size (); ++i)
@@ -25,11 +25,11 @@ struct Stack <std::vector <T> >
     }
   }
 
-  static std::vector <T> get(lua_State* L, int index)
+  static std::vector <T> get (lua_State* L, int index)
   {
-    if (!lua_istable(L, index))
+    if (!lua_istable (L, index))
     {
-      luaL_error(L, "#%d argments must be table", index);
+      luaL_error (L, "#%d argments must be table", index);
     }
 
     std::vector <T> vector;

@@ -16,11 +16,11 @@ struct Stack <std::map <K, V> >
 {
   typedef std::map <K, V> Map;
 
-  static void push(lua_State* L, const Map& map)
+  static void push (lua_State* L, const Map& map)
   {
     lua_createtable (L, 0, static_cast <int> (map.size ()));
     typedef typename Map::const_iterator ConstIter;
-    for (ConstIter i = map.begin(); i != map.end(); ++i)
+    for (ConstIter i = map.begin (); i != map.end (); ++i)
     {
       Stack <K>::push (L, i->first);
       Stack <V>::push (L, i->second);
@@ -28,11 +28,11 @@ struct Stack <std::map <K, V> >
     }
   }
 
-  static Map get(lua_State* L, int index)
+  static Map get (lua_State* L, int index)
   {
-    if (!lua_istable(L, index))
+    if (!lua_istable (L, index))
     {
-      luaL_error(L, "#%d argments must be table", index);
+      luaL_error (L, "#%d argments must be table", index);
     }
 
     Map map;

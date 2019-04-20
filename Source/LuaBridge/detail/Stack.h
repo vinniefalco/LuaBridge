@@ -333,7 +333,7 @@ struct Stack <std::string>
 {
   static void push (lua_State* L, std::string const& str)
   {
-    lua_pushlstring (L, str.data (), str.size());
+    lua_pushlstring (L, str.data (), str.size ());
   }
 
   static std::string get (lua_State* L, int index)

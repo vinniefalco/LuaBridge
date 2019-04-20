@@ -1,6 +1,6 @@
 // https://github.com/vinniefalco/LuaBridge
 //
-// Copyright 2018, Dmitry Tarakanov
+// Copyright 2019, Dmitry Tarakanov
 // SPDX-License-Identifier: MIT
 
 #include "TestBase.h"
@@ -15,7 +15,7 @@ struct ClassTests : TestBase
   T variable (const std::string& name)
   {
     runLua ("result = " + name);
-    return result ().cast <T>();
+    return result ().cast <T> ();
   }
 };
 
@@ -181,7 +181,7 @@ Class <int> returnValue ()
 
 } // namespace
 
-TEST_F(ClassTests, PassingUnregisteredClassFromLuaThrows)
+TEST_F (ClassTests, PassingUnregisteredClassFromLuaThrows)
 {
   using Unregistered = Class <int>;
 
@@ -509,7 +509,7 @@ TEST_F (ClassTests, OverriddenStaticData)
     .addStaticData ("staticData", &Base::staticData, true)
     .endClass ()
     .deriveClass <Derived, Base> ("Derived")
-    .addStaticData("staticData", &Derived::staticData, true)
+    .addStaticData ("staticData", &Derived::staticData, true)
     .endClass ();
 
   Base::staticData = 1.23f;
@@ -672,7 +672,7 @@ TEST_F (ClassTests, Metamethod__sub)
   ASSERT_EQ (-1, result ().cast <Int> ().data);
 }
 
-TEST_F(ClassTests, Metamethod__mul)
+TEST_F (ClassTests, Metamethod__mul)
 {
   typedef Class <int> Int;
 
@@ -706,15 +706,15 @@ TEST_F (ClassTests, Metamethod__mod)
 {
   typedef Class <int> Int;
 
-  luabridge::getGlobalNamespace(L)
-    .beginClass <Int>("Int")
-    .addConstructor <void(*) (int)>()
-    .addFunction("__mod", &Int::operator%)
-    .endClass();
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addFunction ("__mod", &Int::operator%)
+    .endClass ();
 
-  runLua("result = Int (7) % Int (2)");
-  ASSERT_TRUE(result().isUserdata());
-  ASSERT_EQ(1, result().cast <Int>().data);
+  runLua ("result = Int (7) % Int (2)");
+  ASSERT_TRUE (result ().isUserdata ());
+  ASSERT_EQ (1, result ().cast <Int> ().data);
 }
 
 TEST_F (ClassTests, Metamethod__pow)
@@ -778,7 +778,7 @@ TEST_F (ClassTests, Metamethod__len)
   ASSERT_TRUE (result ().isNumber ());
   ASSERT_EQ (1, result ().cast <int> ());
 
-  runLua("result = #Int (5)");
+  runLua ("result = #Int (5)");
   ASSERT_TRUE (result ().isNumber ());
   ASSERT_EQ (5, result ().cast <int> ());
 }
@@ -792,7 +792,7 @@ struct Table
     return map.at (key);
   }
 
-  void newIndex(const std::string& key, int value)
+  void newIndex (const std::string& key, int value)
   {
     map.emplace (key, value);
   }
@@ -848,14 +848,14 @@ TEST_F (ClassTests, Metamethod__gcForbidden)
   typedef Class <int> Int;
 
   ASSERT_THROW (
-    luabridge::getGlobalNamespace(L)
+    luabridge::getGlobalNamespace (L)
       .beginClass <Int> ("Int")
-      .addFunction("__gc", &Int::method)
-      .endClass(),
+      .addFunction ("__gc", &Int::method)
+      .endClass (),
     std::exception);
 }
 
-TEST_F(ClassTests, EnclosedClassProperties)
+TEST_F (ClassTests, EnclosedClassProperties)
 {
   typedef Class <int> Inner;
   typedef Class <Inner> Outer;

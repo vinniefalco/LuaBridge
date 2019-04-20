@@ -1,6 +1,6 @@
 // https://github.com/vinniefalco/LuaBridge
 //
-// Copyright 2018, Dmitry Tarakanov
+// Copyright 2019, Dmitry Tarakanov
 // SPDX-License-Identifier: MIT
 
 #include "TestBase.h"
@@ -23,8 +23,8 @@ TEST_F (NamespaceTests, Variables)
   any ["a"] = 1;
 
   ASSERT_THROW (
-   luabridge::getGlobalNamespace (L).addVariable ("int", &int_),
-   std::logic_error);
+    luabridge::getGlobalNamespace (L).addVariable ("int", &int_),
+    std::logic_error);
 
   runLua ("result = int");
   ASSERT_TRUE (result ().isNil ());
@@ -51,7 +51,7 @@ TEST_F (NamespaceTests, ReadOnlyVariables)
 {
   int int_ = -10;
   auto any = luabridge::newTable (L);
-  any["a"] = 1;
+  any ["a"] = 1;
 
   ASSERT_THROW (
     luabridge::getGlobalNamespace (L).addVariable ("int", &int_),
@@ -149,7 +149,7 @@ TEST_F (NamespaceTests, ReadOnlyProperties)
   ASSERT_EQ (-10, getProperty <int> ());
 }
 
-#if defined(_WINDOWS) || defined(WIN32)
+#if defined (_WINDOWS) || defined (WIN32)
 
 namespace {
 

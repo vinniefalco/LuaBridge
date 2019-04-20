@@ -9,6 +9,7 @@
 
 #include <map>
 
+
 struct MapTests : TestBase
 {
 };
@@ -91,12 +92,12 @@ std::ostream& operator<< (std::ostream& lhs, const Data& rhs)
   return lhs;
 }
 
-std::map <Data, Data> processValues(const std::map <Data, Data>& data)
+std::map <Data, Data> processValues (const std::map <Data, Data>& data)
 {
   return data;
 }
 
-std::map <Data, Data> processPointers(const std::map <Data, const Data*>& data)
+std::map <Data, Data> processPointers (const std::map <Data, const Data*>& data)
 {
   std::map <Data, Data> result;
   for (const auto& item : data)
@@ -130,6 +131,6 @@ TEST_F (MapTests, PassFromLua)
     runLua ("result = processValues ({[Data (3)] = Data (-4)})");
     std::map <Data, Data> expected {{Data (3), Data (-4)}};
     const auto actual = result ().cast <std::map <Data, Data>> ();
-    ASSERT_EQ(expected, actual);
+    ASSERT_EQ (expected, actual);
   }
 }

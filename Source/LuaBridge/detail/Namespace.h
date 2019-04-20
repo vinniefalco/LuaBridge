@@ -2,6 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
   
+  Copyright 2019, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright 2007, Nathan Reed
 
@@ -110,7 +111,7 @@ class Namespace
     */
     void createConstTable (const char* name, bool trueConst = true)
     {
-      std::string type_name = trueConst ? "const " : " " + std::string(name);
+      std::string type_name = trueConst ? "const " : " " + std::string (name);
 
       // Stack: namespace table (ns)
       lua_newtable (L); // Stack: ns, const table (co)
@@ -254,7 +255,7 @@ class Namespace
       clearStack ();
     }
 
-    void assertStackState() const
+    void assertStackState () const
     {
       // Stack: const table (co), class table (cl), static table (st)
       assert (lua_istable (L, -3));
@@ -792,7 +793,7 @@ public:
   {
     if (!m_parent)
     {
-      throw std::logic_error("endNamespace () called on global namespace");
+      throw std::logic_error ("endNamespace () called on global namespace");
     }
 
     clearStack ();

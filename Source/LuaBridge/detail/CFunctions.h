@@ -2,6 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
 
+  Copyright 2019, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
@@ -158,7 +159,7 @@ struct CFunc
       if (lua_isnil (L, -1)) // Stack: mt, nil
       {
         lua_pop (L, 2); // Stack: -
-        return luaL_error(L, "No member named '%s'", lua_tostring(L, 2));
+        return luaL_error (L, "No member named '%s'", lua_tostring (L, 2));
       }
 
       assert (lua_istable (L, -1));
@@ -172,7 +173,7 @@ struct CFunc
         lua_remove (L, -2); // Stack: setter
         if (pushSelf)
         {
-          lua_pushvalue(L, 1); // Stack: setter, table | userdata
+          lua_pushvalue (L, 1); // Stack: setter, table | userdata
         }
         lua_pushvalue (L, 3); // Stack: setter, table | userdata, new value
         lua_call (L, pushSelf ? 2 : 1, 0); // Stack: -
