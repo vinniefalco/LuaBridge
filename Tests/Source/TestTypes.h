@@ -1,3 +1,8 @@
+// https://github.com/vinniefalco/LuaBridge
+//
+// Copyright 2019, Dmitry Tarakanov
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <gtest/gtest.h>

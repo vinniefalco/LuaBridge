@@ -45,6 +45,7 @@
 
 #pragma once
 
+#include <LuaBridge/detail/Config.h>
 #include <LuaBridge/detail/Stack.h>
 
 #include <string>
@@ -60,7 +61,39 @@ typedef void None;
 template <typename Head, typename Tail = None>
 struct TypeList
 {
+  typedef Tail TailType;
 };
+
+template <class List>
+struct TypeListSize
+{
+  static const size_t value = TypeListSize <typename List::TailType>::value + 1;
+};
+
+template <>
+struct TypeListSize <None>
+{
+  static const size_t value = 0;
+};
+
+#ifdef LUABRIDGE_CXX11
+
+template <class... Params>
+struct MakeTypeList;
+
+template <class Param, class... Params>
+struct MakeTypeList <Param, Params...>
+{
+  using Result = TypeList <Param, typename MakeTypeList <Params...>::Result>;
+};
+
+template <>
+struct MakeTypeList <>
+{
+  using Result = None;
+};
+
+#endif
 
 /**
   A TypeList with actual values.

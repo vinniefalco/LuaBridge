@@ -1,6 +1,6 @@
 // https://github.com/vinniefalco/LuaBridge
 //
-// Copyright 2018, Dmitry Tarakanov
+// Copyright 2019, Dmitry Tarakanov
 // SPDX-License-Identifier: MIT
 
 #include "TestBase.h"
@@ -38,7 +38,7 @@ TEST_F (IssueTests, Issue87)
 
   runLua ("result = getAbstractClass ():sum (1, 2)");
   ASSERT_TRUE (result ().isNumber ());
-  ASSERT_EQ (3, result ().cast <int> ());
+  ASSERT_EQ (3, result <int> ());
 }
 
 TEST_F (IssueTests, Issue121)
@@ -141,5 +141,5 @@ TEST_F (IssueTests, Issue178)
   runLua ("result = WideVector (0, 1, 2, 3).x");
 
   ASSERT_TRUE (result ().isNumber ());
-  ASSERT_EQ (3.f, result ().cast <float> ());
+  ASSERT_EQ (3.f, result <float> ());
 }

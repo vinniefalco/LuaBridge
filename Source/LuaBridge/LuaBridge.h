@@ -1,7 +1,8 @@
 //------------------------------------------------------------------------------
 /*
   https://github.com/vinniefalco/LuaBridge
-  
+
+  Copyright 2019, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright 2007, Nathan Reed
 
@@ -34,8 +35,8 @@
 //
 
 #define LUABRIDGE_MAJOR_VERSION 2
-#define LUABRIDGE_MINOR_VERSION 0
-#define LUABRIDGE_VERSION 200
+#define LUABRIDGE_MINOR_VERSION 3
+#define LUABRIDGE_VERSION 203
 
 #ifndef LUA_VERSION_NUM
 #error "Lua headers must be included prior to LuaBridge ones"

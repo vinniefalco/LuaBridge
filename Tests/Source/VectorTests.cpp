@@ -1,6 +1,6 @@
 // https://github.com/vinniefalco/LuaBridge
 //
-// Copyright 2018, Dmitry Tarakanov
+// Copyright 2019, Dmitry Tarakanov
 // SPDX-License-Identifier: MIT
 
 #include "TestBase.h"
@@ -88,12 +88,12 @@ TEST_F (VectorTests, PassFromLua)
 
   ASSERT_EQ (
     std::vector <Data> ({-1, 2}),
-    result().cast <std::vector <Data>>());
+    result <std::vector <Data>>());
 
   resetResult ();
-  runLua("result = processValues ({Data (-3), Data (4)})");
+  runLua ("result = processValues ({Data (-3), Data (4)})");
 
   ASSERT_EQ(
     std::vector <Data> ({-3, 4}),
-    result().cast <std::vector <Data>>());
+    result <std::vector <Data>> ());
 }

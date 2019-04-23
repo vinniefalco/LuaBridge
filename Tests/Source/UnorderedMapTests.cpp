@@ -5,21 +5,54 @@
 
 #include "TestBase.h"
 
-#include "LuaBridge/Map.h"
+#include "LuaBridge/UnorderedMap.h"
 
-#include <map>
+#include <unordered_map>
 
 
-struct MapTests : TestBase
+struct UnorderedMapTests : TestBase
 {
 };
 
-TEST_F (MapTests, LuaRef)
+namespace {
+
+struct Data
+{
+  /* explicit */ Data(int i) : i(i) {}
+
+  int i;
+};
+
+} // namespace
+
+namespace std {
+
+template <>
+struct hash <Data>
+{
+  size_t operator() (const Data& value) const noexcept
+  {
+    return 0; // Don't care about hash collisions
+  }
+};
+
+template <>
+struct hash <::luabridge::LuaRef>
+{
+  size_t operator() (const ::luabridge::LuaRef& value) const
+  {
+    return 0; // Don't care about hash collisions
+  }
+};
+
+} // namespace std
+
+TEST_F (UnorderedMapTests, LuaRef)
 {
   {
     runLua ("result = {[false] = true, a = 'abc', [1] = 5, [3.14] = -1.1}");
 
-    using Map = std::map <luabridge::LuaRef, luabridge::LuaRef>;
+    using Map = std::unordered_map <luabridge::LuaRef, luabridge::LuaRef>;
     Map expected {
       {luabridge::LuaRef (L, false), luabridge::LuaRef (L, true)},
       {luabridge::LuaRef (L, 'a'), luabridge::LuaRef (L, "abc")},
@@ -34,7 +67,7 @@ TEST_F (MapTests, LuaRef)
   {
     runLua ("result = {'a', 'b', 'c'}");
 
-    using Int2Char = std::map <int, char>;
+    using Int2Char = std::unordered_map <int, char>;
     Int2Char expected {{1, 'a'}, {2, 'b'}, {3, 'c'}};
     Int2Char actual = result ();
     ASSERT_EQ (expected, actual);
@@ -42,7 +75,7 @@ TEST_F (MapTests, LuaRef)
   }
 }
 
-TEST_F (MapTests, PassToFunction)
+TEST_F (UnorderedMapTests, PassToFunction)
 {
   runLua (
     "function foo (map) "
@@ -50,7 +83,7 @@ TEST_F (MapTests, PassToFunction)
     "end");
 
   auto foo = luabridge::getGlobal (L, "foo");
-  using Int2Bool = std::map <int, bool>;
+  using Int2Bool = std::unordered_map <int, bool>;
 
   resetResult ();
 
@@ -69,13 +102,6 @@ TEST_F (MapTests, PassToFunction)
 
 namespace {
 
-struct Data
-{
-  /* explicit */ Data (int i) : i (i) {}
-
-  int i;
-};
-
 bool operator== (const Data& lhs, const Data& rhs)
 {
   return lhs.i == rhs.i;
@@ -92,14 +118,14 @@ std::ostream& operator<< (std::ostream& lhs, const Data& rhs)
   return lhs;
 }
 
-std::map <Data, Data> processValues (const std::map <Data, Data>& data)
+std::unordered_map <Data, Data> processValues (const std::unordered_map <Data, Data>& data)
 {
   return data;
 }
 
-std::map <Data, Data> processPointers (const std::map <Data, const Data*>& data)
+std::unordered_map <Data, Data> processPointers (const std::unordered_map <Data, const Data*>& data)
 {
-  std::map <Data, Data> result;
+  std::unordered_map <Data, Data> result;
   for (const auto& item : data)
   {
     result.emplace (item.first, *item.second);
@@ -109,7 +135,7 @@ std::map <Data, Data> processPointers (const std::map <Data, const Data*>& data)
 
 } // namespace
 
-TEST_F (MapTests, PassFromLua)
+TEST_F (UnorderedMapTests, PassFromLua)
 {
   luabridge::getGlobalNamespace (L)
     .beginClass <Data> ("Data")
@@ -121,16 +147,16 @@ TEST_F (MapTests, PassFromLua)
   {
     resetResult ();
     runLua ("result = processValues ({[Data (-1)] = Data (2)})");
-    std::map <Data, Data> expected {{Data (-1), Data (2)}};
-    const auto actual = result <std::map <Data, Data>> ();
+    std::unordered_map <Data, Data> expected {{Data (-1), Data (2)}};
+    const auto actual = result <std::unordered_map <Data, Data>> ();
     ASSERT_EQ (expected, actual);
   }
 
   {
     resetResult ();
     runLua ("result = processValues ({[Data (3)] = Data (-4)})");
-    std::map <Data, Data> expected {{Data (3), Data (-4)}};
-    const auto actual = result <std::map <Data, Data>> ();
+    std::unordered_map <Data, Data> expected {{Data (3), Data (-4)}};
+    const auto actual = result <std::unordered_map <Data, Data>> ();
     ASSERT_EQ (expected, actual);
   }
 }

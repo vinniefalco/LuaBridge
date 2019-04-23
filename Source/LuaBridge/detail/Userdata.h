@@ -30,7 +30,6 @@
 #pragma once
 
 #include <LuaBridge/detail/ClassInfo.h>
-#include <LuaBridge/detail/TypeList.h>
 
 #include <cassert>
 #include <stdexcept>
@@ -119,7 +118,7 @@ private:
       {
         lua_pop (L, 2);
         mismatch = true;
-      }      
+      }
     }
 
     if (!mismatch)
@@ -186,7 +185,7 @@ private:
                              void const* baseClassKey,
                              bool canBeConst)
   {
-    index = index > 0 ? index : lua_absindex (L, index);
+    index = lua_absindex (L, index);
 
     Userdata* ud = 0;
 
@@ -273,7 +272,7 @@ ud __parent (nil)
       {
         lua_pop (L, 2);
         mismatch = true;
-      }      
+      }
     }
     else
     {

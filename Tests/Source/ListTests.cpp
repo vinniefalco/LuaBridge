@@ -1,6 +1,6 @@
 // https://github.com/vinniefalco/LuaBridge
 //
-// Copyright 2018, Dmitry Tarakanov
+// Copyright 2019, Dmitry Tarakanov
 // SPDX-License-Identifier: MIT
 
 
@@ -66,12 +66,12 @@ TEST_F (ListTests, PassToFunction)
   std::list <int> lvalue {10, 20, 30};
   foo (lvalue);
   ASSERT_TRUE (result ().isTable ());
-  ASSERT_EQ (lvalue, result ().cast <std::list<int>> ());
+  ASSERT_EQ (lvalue, result <std::list<int>> ());
 
   resetResult ();
 
   const std::list <int> constLvalue = lvalue;
   foo (constLvalue);
   ASSERT_TRUE (result ().isTable ());
-  ASSERT_EQ (lvalue, result ().cast <std::list<int>> ());
+  ASSERT_EQ (lvalue, result <std::list<int>> ());
 }

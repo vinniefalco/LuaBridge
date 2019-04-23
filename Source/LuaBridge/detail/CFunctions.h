@@ -29,6 +29,9 @@
 
 #pragma once
 
+#include <LuaBridge/detail/Config.h>
+#include <LuaBridge/detail/FuncTraits.h>
+
 #include <string>
 
 namespace luabridge {
@@ -257,59 +260,20 @@ struct CFunc
       This is used for global functions, global properties, class static methods,
       and class static properties.
 
-      The function pointer is in the first upvalue.
-  */
-  template <class FnPtr,
-    class ReturnType = typename FuncTraits <FnPtr>::ReturnType>
-    struct Call
-  {
-    typedef typename FuncTraits <FnPtr>::Params Params;
-    static int f (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      FnPtr const& fnptr = *static_cast <FnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
-      try
-      {
-        ArgList <Params> args (L);
-        Stack <typename FuncTraits <FnPtr>::ReturnType>::push (L, FuncTraits <FnPtr>::call (fnptr, args));
-      }
-      catch (const std::exception& e)
-      {
-        luaL_error (L, e.what ());
-      }
-      return 1;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-      lua_CFunction to call a function with no return value.
-
-      This is used for global functions, global properties, class static methods,
-      and class static properties.
-
-      The function pointer is in the first upvalue.
+      The function pointer (lightuserdata) in the first upvalue.
   */
   template <class FnPtr>
-  struct Call <FnPtr, void>
+  struct Call
   {
     typedef typename FuncTraits <FnPtr>::Params Params;
+    typedef typename FuncTraits <FnPtr>::ReturnType ReturnType;
+
     static int f (lua_State* L)
     {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      FnPtr const& fnptr = *static_cast <FnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
+      assert (lua_islightuserdata (L, lua_upvalueindex (1)));
+      FnPtr fnptr = reinterpret_cast <FnPtr> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fnptr != 0);
-      try
-      {
-        ArgList <Params> args (L);
-        FuncTraits <FnPtr>::call (fnptr, args);
-      }
-      catch (const std::exception& e)
-      {
-        luaL_error (L, e.what ());
-      }
-      return 0;
+      return Invoke <ReturnType, Params, 1>::run (L, fnptr);
     }
   };
 
@@ -320,12 +284,12 @@ struct CFunc
       The member function pointer is in the first upvalue.
       The class userdata object is at the top of the Lua stack.
   */
-  template <class MemFnPtr,
-    class ReturnType = typename FuncTraits <MemFnPtr>::ReturnType>
-    struct CallMember
+  template <class MemFnPtr>
+  struct CallMember
   {
     typedef typename FuncTraits <MemFnPtr>::ClassType T;
     typedef typename FuncTraits <MemFnPtr>::Params Params;
+    typedef typename FuncTraits <MemFnPtr>::ReturnType ReturnType;
 
     static int f (lua_State* L)
     {
@@ -333,25 +297,16 @@ struct CFunc
       T* const t = Userdata::get <T> (L, 1, false);
       MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fnptr != 0);
-      try
-      {
-        ArgList <Params, 2> args (L);
-        Stack <ReturnType>::push (L, FuncTraits <MemFnPtr>::call (t, fnptr, args));
-      }
-      catch (const std::exception& e)
-      {
-        luaL_error (L, e.what ());
-      }
-      return 1;
+      return Invoke <ReturnType, Params, 2>::run (L, t, fnptr);
     }
   };
 
-  template <class MemFnPtr,
-    class ReturnType = typename FuncTraits <MemFnPtr>::ReturnType>
-    struct CallConstMember
+  template <class MemFnPtr>
+  struct CallConstMember
   {
     typedef typename FuncTraits <MemFnPtr>::ClassType T;
     typedef typename FuncTraits <MemFnPtr>::Params Params;
+    typedef typename FuncTraits <MemFnPtr>::ReturnType ReturnType;
 
     static int f (lua_State* L)
     {
@@ -359,73 +314,7 @@ struct CFunc
       T const* const t = Userdata::get <T> (L, 1, true);
       MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
       assert (fnptr != 0);
-      try
-      {
-        ArgList <Params, 2> args (L);
-        Stack <ReturnType>::push (L, FuncTraits <MemFnPtr>::call (t, fnptr, args));
-      }
-      catch (const std::exception& e)
-      {
-        luaL_error (L, e.what ());
-      }
-      return 1;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /**
-      lua_CFunction to call a class member function with no return value.
-
-      The member function pointer is in the first upvalue.
-      The class userdata object is at the top of the Lua stack.
-  */
-  template <class MemFnPtr>
-  struct CallMember <MemFnPtr, void>
-  {
-    typedef typename FuncTraits <MemFnPtr>::ClassType T;
-    typedef typename FuncTraits <MemFnPtr>::Params Params;
-
-    static int f (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      T* const t = Userdata::get <T> (L, 1, false);
-      MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
-      try
-      {
-        ArgList <Params, 2> args (L);
-        FuncTraits <MemFnPtr>::call (t, fnptr, args);
-      }
-      catch (const std::exception& e)
-      {
-        luaL_error (L, e.what ());
-      }
-      return 0;
-    }
-  };
-
-  template <class MemFnPtr>
-  struct CallConstMember <MemFnPtr, void>
-  {
-    typedef typename FuncTraits <MemFnPtr>::ClassType T;
-    typedef typename FuncTraits <MemFnPtr>::Params Params;
-
-    static int f (lua_State* L)
-    {
-      assert (isfulluserdata (L, lua_upvalueindex (1)));
-      T const* const t = Userdata::get <T> (L, 1, true);
-      MemFnPtr const& fnptr = *static_cast <MemFnPtr const*> (lua_touserdata (L, lua_upvalueindex (1)));
-      assert (fnptr != 0);
-      try
-      {
-        ArgList <Params, 2> args (L);
-        FuncTraits <MemFnPtr>::call (t, fnptr, args);
-      }
-      catch (const std::exception& e)
-      {
-        luaL_error (L, e.what ());
-      }
-      return 0;
+      return Invoke <ReturnType, Params, 2>::run (L, t, fnptr);
     }
   };
 
@@ -434,7 +323,7 @@ struct CFunc
       lua_CFunction to call a class member lua_CFunction.
 
       The member function pointer is in the first upvalue.
-      The class userdata object is at the top of the Lua stack.
+      The object userdata ('this') value is at top ot the Lua stack.
   */
   template <class T>
   struct CallMemberCFunction
@@ -463,6 +352,46 @@ struct CFunc
       return (t->*fnptr) (L);
     }
   };
+
+#ifdef LUABRIDGE_CXX11
+
+  //--------------------------------------------------------------------------
+  /**
+      lua_CFunction to call on a object.
+
+      The proxy function pointer (lightuserdata) is in the first upvalue.
+      The class userdata object is at the top of the Lua stack.
+  */
+  template <class FnPtr>
+  struct CallProxyFunction
+  {
+    using Params = typename FuncTraits <FnPtr>::Params;
+    using ReturnType = typename FuncTraits <FnPtr>::ReturnType;
+
+    static int f (lua_State* L)
+    {
+      assert (lua_islightuserdata (L, lua_upvalueindex (1)));
+      auto fnptr = reinterpret_cast <FnPtr> (lua_touserdata (L, lua_upvalueindex (1)));
+      assert (fnptr != 0);
+      return Invoke <ReturnType, Params, 1>::run (L, fnptr);
+    }
+  };
+
+  template <class Functor>
+  struct CallProxyFunctor
+  {
+    using Params = typename FuncTraits <Functor>::Params;
+    using ReturnType = typename FuncTraits <Functor>::ReturnType;
+
+    static int f (lua_State* L)
+    {
+      assert (isfulluserdata (L, lua_upvalueindex (1)));
+      Functor& fn = *static_cast <Functor*> (lua_touserdata (L, lua_upvalueindex (1)));
+      return Invoke <ReturnType, Params, 1>::run (L, fn);
+    }
+  };
+
+#endif
 
   //--------------------------------------------------------------------------
 
@@ -500,8 +429,19 @@ struct CFunc
   static int gcMetaMethod (lua_State* L)
   {
     Userdata* const ud = Userdata::getExact <C> (L, 1);
-    lua_getmetatable (L, 1);
     ud->~Userdata ();
+    return 0;
+  }
+
+  /**
+      __gc metamethod for an arbitrary class.
+  */
+  template <class T>
+  static int gcMetaMethodAny (lua_State* L)
+  {
+    assert (isfulluserdata (L, 1));
+    T* t = static_cast <T*> (lua_touserdata (L, 1));
+    t->~T ();
     return 0;
   }
 
