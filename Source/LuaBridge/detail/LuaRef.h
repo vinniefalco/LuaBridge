@@ -293,11 +293,7 @@ public:
   {
     StackPop p (m_L, 1);
     impl ().push ();
-
-    // lua_gettop is used because Userdata::getClass () doesn't handle
-    // negative stack indexes.
-    //
-    return Stack <T>::get (m_L, lua_gettop (m_L));
+    return Stack <T>::get (m_L, -1);
   }
 
   //----------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 // https://github.com/vinniefalco/LuaBridge
 //
-// Copyright 2018, Dmitry Tarakanov
+// Copyright 2019, Dmitry Tarakanov
 // Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 // Copyright 2007, Nathan Reed
 // SPDX-License-Identifier: MIT
@@ -18,35 +18,35 @@ TEST_F (LuaRefTests, ValueAccess)
 {
   runLua ("result = true");
   ASSERT_TRUE (result ().isBool ());
-  ASSERT_TRUE (result ().cast <bool> ());
+  ASSERT_TRUE (result <bool> ());
 
   runLua ("result = 7");
   ASSERT_TRUE (result ().isNumber ());
-  ASSERT_EQ (7u, result ().cast <unsigned char> ());
-  ASSERT_EQ (7, result ().cast <short> ());
-  ASSERT_EQ (7u, result ().cast <unsigned short> ());
-  ASSERT_EQ (7, result ().cast <int> ());
-  ASSERT_EQ (7u, result ().cast <unsigned int> ());
-  ASSERT_EQ (7, result ().cast <long> ());
-  ASSERT_EQ (7u, result ().cast <unsigned long> ());
-  ASSERT_EQ (7, result ().cast <long long> ());
-  ASSERT_EQ (7u, result ().cast <unsigned long long> ());
+  ASSERT_EQ (7u, result <unsigned char> ());
+  ASSERT_EQ (7, result <short> ());
+  ASSERT_EQ (7u, result <unsigned short> ());
+  ASSERT_EQ (7, result <int> ());
+  ASSERT_EQ (7u, result <unsigned int> ());
+  ASSERT_EQ (7, result <long> ());
+  ASSERT_EQ (7u, result <unsigned long> ());
+  ASSERT_EQ (7, result <long long> ());
+  ASSERT_EQ (7u, result <unsigned long long> ());
 
   runLua ("result = 3.14");
   ASSERT_TRUE (result ().isNumber ());
-  ASSERT_FLOAT_EQ (3.14f, result ().cast <float> ());
-  ASSERT_DOUBLE_EQ (3.14, result ().cast <double> ());
+  ASSERT_FLOAT_EQ (3.14f, result <float> ());
+  ASSERT_DOUBLE_EQ (3.14, result <double> ());
 
   runLua ("result = 'D'");
   ASSERT_TRUE (result ().isString ());
-  ASSERT_EQ ('D', result ().cast <char> ());
-  ASSERT_EQ ("D", result ().cast <std::string> ());
-  ASSERT_STREQ ("D", result ().cast <const char*> ());
+  ASSERT_EQ ('D', result <char> ());
+  ASSERT_EQ ("D", result <std::string> ());
+  ASSERT_STREQ ("D", result <const char*> ());
 
   runLua ("result = 'abc'");
   ASSERT_TRUE (result ().isString ());
-  ASSERT_EQ ("abc", result ().cast <std::string> ());
-  ASSERT_STREQ ("abc", result ().cast <char const*> ());
+  ASSERT_EQ ("abc", result <std::string> ());
+  ASSERT_STREQ ("abc", result <char const*> ());
 
   runLua ("result = function (i) "
           "  result = i + 1 "
@@ -57,7 +57,7 @@ TEST_F (LuaRefTests, ValueAccess)
   ASSERT_TRUE (fnResult.isNumber ());
   ASSERT_EQ (41, fnResult.cast <int> ());
   ASSERT_TRUE (result ().isNumber ());
-  ASSERT_EQ (42, result ().cast <int> ());
+  ASSERT_EQ (42, result <int> ());
 }
 
 TEST_F (LuaRefTests, DictionaryRead)
@@ -107,7 +107,7 @@ TEST_F (LuaRefTests, DictionaryRead)
   ASSERT_TRUE (fnResult.isNumber ());
   ASSERT_EQ (41, fnResult.cast <int> ());
   ASSERT_TRUE (result ().isNumber ());
-  ASSERT_EQ (42, result ().cast <int> ());
+  ASSERT_EQ (42, result <int> ());
 }
 
 TEST_F (LuaRefTests, DictionaryWrite)
@@ -120,7 +120,7 @@ TEST_F (LuaRefTests, DictionaryWrite)
   ASSERT_EQ (7, result () ["a"].cast <int> ());
 
   runLua ("result = result.a");
-  ASSERT_EQ (7, result ().cast <int> ());
+  ASSERT_EQ (7, result <int> ());
 
   runLua ("result = {a = {b = 1}}");
   ASSERT_EQ (1, result () ["a"] ["b"].cast <int> ());

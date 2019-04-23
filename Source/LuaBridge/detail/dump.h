@@ -44,7 +44,7 @@ inline void putIndent (std::ostream& stream, unsigned level)
   for (unsigned i = 0; i < level; ++i)
   {
     stream << "  ";
-  } 
+  }
 }
 
 inline void dumpTable (lua_State* L, int index, std::ostream& stream, unsigned level);
@@ -128,7 +128,7 @@ inline void dumpTable (lua_State* L, int index, std::ostream& stream, unsigned l
   stream << "\n}";
 }
 
-inline void dumpState (lua_State *L, std::ostream& stream)
+inline void dumpState (lua_State *L, std::ostream& stream = std::cerr)
 {
   int top = lua_gettop (L);
   for (int i = 1; i <= top; ++i)

@@ -71,17 +71,16 @@ TEST_F (RefCountedPtrTests, LastReferenceInLua)
   luabridge::setGlobal (L, object, "object");
   runLua("result = object.deleted");
   ASSERT_EQ (true, result ().isBool ());
-  ASSERT_EQ (false, result ().cast <bool> ());
+  ASSERT_EQ (false, result <bool> ());
 
   object = nullptr;
   runLua("result = object.deleted");
   ASSERT_EQ(true, result ().isBool ());
-  ASSERT_EQ(false, result ().cast <bool>());
+  ASSERT_EQ(false, result <bool>());
   ASSERT_EQ(false, deleted);
 
-  runLua ("result = nil");
-  lua_close (L);
-  L = nullptr; // Guaranteed garbage collection
+  runLua ("object = nil");
+  lua_gc (L, LUA_GCCOLLECT, 1);
 
   ASSERT_EQ (true, deleted);
 }
@@ -100,11 +99,10 @@ TEST_F (RefCountedPtrTests, LastReferenceInCpp)
   luabridge::setGlobal (L, object, "object");
   runLua("result = object.deleted");
   ASSERT_EQ (true, result ().isBool ());
-  ASSERT_EQ (false, result ().cast <bool> ());
+  ASSERT_EQ (false, result <bool> ());
 
-  runLua ("result = nil");
-  lua_close (L);
-  L = nullptr; // Guaranteed garbage collection
+  runLua ("object = nil");
+  lua_gc (L, LUA_GCCOLLECT, 1);
   ASSERT_EQ(false, deleted);
 
   object = nullptr;

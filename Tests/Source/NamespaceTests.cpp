@@ -12,7 +12,7 @@ struct NamespaceTests : TestBase
   T variable (const std::string& name)
   {
     runLua ("result = " + name);
-    return result ().cast <T> ();
+    return result <T> ();
   }
 };
 
@@ -167,7 +167,7 @@ TEST_F (NamespaceTests, StdCallFunctions)
 
   runLua ("result = StdCall (2)");
   ASSERT_TRUE (result ().isNumber ());
-  ASSERT_EQ (12, result ().cast <int> ());
+  ASSERT_EQ (12, result <int> ());
 }
 
 #endif // _WINDOWS || WIN32

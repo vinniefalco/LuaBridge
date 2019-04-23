@@ -1,6 +1,6 @@
 // https://github.com/vinniefalco/LuaBridge
 //
-// Copyright 2018, Dmitry Tarakanov
+// Copyright 2019, Dmitry Tarakanov
 // Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 // Copyright 2007, Nathan Reed
 // SPDX-License-Identifier: MIT
@@ -40,6 +40,11 @@ inline int traceback (lua_State* L)
   return 1;
 }
 
+inline int throwAtPanic (lua_State* L)
+{
+  throw std::runtime_error (lua_tostring (L, 1));
+}
+
 /// Base test class. Introduces the global 'result' variable,
 /// used for checking of C++ - Lua interoperation.
 ///
@@ -53,6 +58,7 @@ struct TestBase : public ::testing::Test
     L = luaL_newstate ();
     luaL_openlibs (L);
     lua_pushcfunction (L, &traceback);
+    lua_atpanic (L, throwAtPanic);
   }
 
   void TearDown () override
@@ -63,7 +69,7 @@ struct TestBase : public ::testing::Test
     }
   }
 
-  void runLua (const std::string& script)
+  void runLua (const std::string& script) const
   {
     if (luaL_loadstring (L, script.c_str ()) != 0)
     {
@@ -76,17 +82,18 @@ struct TestBase : public ::testing::Test
     }
   }
 
-  luabridge::LuaRef result ()
+  template <class T = luabridge::LuaRef>
+  T result () const
   {
-    return luabridge::getGlobal (L, "result");
+    return luabridge::getGlobal (L, "result").cast <T> ();
   }
 
-  void resetResult ()
+  void resetResult () const
   {
     luabridge::setGlobal (L, luabridge::LuaRef (L), "result");
   }
 
-  void printStack ()
+  void printStack () const
   {
     std::cerr << "===== Stack =====\n";
     for (int i = 1; i <= lua_gettop (L); ++i)

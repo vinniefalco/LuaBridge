@@ -1,6 +1,6 @@
 // https://github.com/vinniefalco/LuaBridge
 //
-// Copyright 2018, Dmitry Tarakanov
+// Copyright 2019, Dmitry Tarakanov
 // Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 // Copyright 2007, Nathan Reed
 // SPDX-License-Identifier: MIT
@@ -72,95 +72,95 @@ TEST_F (LuaBridgeTest, CFunction)
   {
     runLua ("result = ucharFn (255)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_EQ (255u, result ().cast <unsigned char> ());
+    ASSERT_EQ (255u, result <unsigned char> ());
   }
 
   {
     runLua ("result = boolFn (false)");
     ASSERT_EQ (true, result ().isBool ());
-    ASSERT_EQ (false, result ().cast <bool> ());
+    ASSERT_EQ (false, result <bool> ());
   }
   {
     runLua ("result = boolFn (true)");
     ASSERT_EQ (true, result ().isBool ());
-    ASSERT_EQ (true, result ().cast <bool> ());
+    ASSERT_EQ (true, result <bool> ());
   }
 
   {
     runLua ("result = shortFn (-32768)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_EQ (-32768, result ().cast <int> ());
+    ASSERT_EQ (-32768, result <int> ());
   }
 
   {
     runLua ("result = ushortFn (32767)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_EQ (32767u, result ().cast <unsigned int> ());
+    ASSERT_EQ (32767u, result <unsigned int> ());
   }
   {
     runLua ("result = intFn (-500)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_EQ (-500, result ().cast <int> ());
+    ASSERT_EQ (-500, result <int> ());
   }
 
   {
     runLua ("result = uintFn (42)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_EQ (42u, result ().cast <unsigned int> ());
+    ASSERT_EQ (42u, result <unsigned int> ());
   }
 
   {
     runLua ("result = longFn (-8000)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_EQ (-8000, result ().cast <long> ());
+    ASSERT_EQ (-8000, result <long> ());
   }
 
   {
     runLua ("result = ulongFn (9000)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_EQ (9000u, result ().cast <unsigned long> ());
+    ASSERT_EQ (9000u, result <unsigned long> ());
   }
 
   {
     runLua ("result = longlongFn (-8000)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_EQ (-8000, result ().cast <long long> ());
+    ASSERT_EQ (-8000, result <long long> ());
   }
 
   {
     runLua ("result = ulonglongFn (9000)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_EQ (9000u, result ().cast <unsigned long long> ());
+    ASSERT_EQ (9000u, result <unsigned long long> ());
   }
 
   {
     runLua ("result = floatFn (3.14)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_FLOAT_EQ (3.14f, result ().cast <float> ());
+    ASSERT_FLOAT_EQ (3.14f, result <float> ());
   }
 
   {
     runLua ("result = doubleFn (-12.3)");
     ASSERT_EQ (true, result ().isNumber ());
-    ASSERT_DOUBLE_EQ (-12.3, result ().cast <double> ());
+    ASSERT_DOUBLE_EQ (-12.3, result <double> ());
   }
 
   {
     runLua ("result = charFn ('a')");
     ASSERT_EQ (true, result ().isString ());
-    ASSERT_EQ ('a', result ().cast <char> ());
+    ASSERT_EQ ('a', result <char> ());
   }
 
   {
     runLua ("result = cstringFn ('abc')");
     ASSERT_EQ (true, result ().isString ());
-    ASSERT_STREQ ("abc", result ().cast <const char*> ());
+    ASSERT_STREQ ("abc", result <const char*> ());
   }
 
   {
     runLua ("result = stringFn ('lua')");
     ASSERT_EQ (true, result ().isString ());
-    ASSERT_EQ ("lua", result ().cast <std::string> ());
+    ASSERT_EQ ("lua", result <std::string> ());
   }
 }
 

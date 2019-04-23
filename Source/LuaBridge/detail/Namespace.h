@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 /*
   https://github.com/vinniefalco/LuaBridge
-  
+
   Copyright 2019, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
   Copyright 2007, Nathan Reed
@@ -30,12 +30,15 @@
 
 #pragma once
 
+#include <LuaBridge/detail/Config.h>
 #include <LuaBridge/detail/ClassInfo.h>
 #include <LuaBridge/detail/Security.h>
 #include <LuaBridge/detail/TypeTraits.h>
 
 #include <stdexcept>
 #include <string>
+#include <Lua/Lua.5.2.0/src/lua.h>
+#include <Lua/Lua.5.2.0/src/lua.h>
 
 namespace luabridge {
 
@@ -298,7 +301,7 @@ class Namespace
     {
       assert (lua_istable (L, -1)); // Stack: namespace table (ns)
       rawgetfield (L, -1, name); // Stack: ns, static table (st) | nil
-      
+
       if (lua_isnil (L, -1)) // Stack: ns, nil
       {
         lua_pop (L, 1); // Stack: ns
@@ -404,6 +407,16 @@ class Namespace
       Add or replace a static data member.
     */
     template <class U>
+    Class <T>& addStaticProperty (char const* name, U* pu, bool isWritable = true)
+    {
+      return addStaticData (name, pu, isWritable);
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add or replace a static data member.
+    */
+    template <class U>
     Class <T>& addStaticData (char const* name, U* pu, bool isWritable = true)
     {
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
@@ -438,15 +451,13 @@ class Namespace
     {
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
 
-      typedef U (*get_t) ();
-      new (lua_newuserdata (L, sizeof (get))) get_t (get); // Stack: co, cl, st, function ptr
-      lua_pushcclosure (L, &CFunc::Call <U (*) (void)>::f, 1); // Stack: co, cl, st, getter
+      lua_pushlightuserdata (L, reinterpret_cast <void*> (get)); // Stack: co, cl, st, function ptr
+      lua_pushcclosure (L, &CFunc::Call <U (*) ()>::f, 1); // Stack: co, cl, st, getter
       CFunc::addGetter (L, name, -2); // Stack: co, cl, st
 
       if (set != 0)
       {
-        typedef void (*set_t) (U);
-        new (lua_newuserdata (L, sizeof (set))) set_t (set); // Stack: co, cl, st, function ptr
+        lua_pushlightuserdata (L, reinterpret_cast <void*> (set)); // Stack: co, cl, st, function ptr
         lua_pushcclosure (L, &CFunc::Call <void (*) (U)>::f, 1); // Stack: co, cl, st, setter
       }
       else
@@ -468,11 +479,20 @@ class Namespace
     {
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
 
-      new (lua_newuserdata (L, sizeof (fp))) FP (fp); // co, cl, st, function ptr
+      lua_pushlightuserdata (L, reinterpret_cast <void*> (fp)); // Stack: co, cl, st, function ptr
       lua_pushcclosure (L, &CFunc::Call <FP>::f, 1); // co, cl, st, function
       rawsetfield (L, -2, name); // co, cl, st
 
       return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add or replace a lua_CFunction.
+    */
+    Class <T>& addStaticFunction (char const* name, int (*const fp) (lua_State*))
+    {
+      return addStaticCFunction (name, fp);
     }
 
     //--------------------------------------------------------------------------
@@ -494,7 +514,17 @@ class Namespace
       Add or replace a data member.
     */
     template <class U>
-    Class <T>& addData (char const* name, const U T::* mp, bool isWritable = true)
+    Class <T>& addProperty (char const* name, U T::* mp, bool isWritable = true)
+    {
+      return addData (name, mp, isWritable);
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add or replace a data member.
+    */
+    template <class U>
+    Class <T>& addData (char const* name, U T::* mp, bool isWritable = true)
     {
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
 
@@ -519,24 +549,8 @@ class Namespace
     /**
       Add or replace a property member.
     */
-    template <class TG, class TS>
-    Class <T>& addProperty (char const* name, TG (T::* get) () const, void (T::* set) (TS))
-    {
-      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
-
-      addProperty (name, get); // Add getter
-
-      typedef void (T::* set_t) (TS);
-      new (lua_newuserdata (L, sizeof (set_t))) set_t (set); // Stack: co, cl, st, function ptr
-      lua_pushcclosure (L, &CFunc::CallMember <set_t>::f, 1); // Stack: co, cl, st, setter
-      CFunc::addSetter (L, name, -3); // Stack: co, cl, st
-
-      return *this;
-    }
-
-    // read-only
-    template <class TG>
-    Class <T>& addProperty (char const* name, TG (T::* get) () const)
+    template <class TG, class TS = TG>
+    Class <T>& addProperty (char const* name, TG (T::* get) () const, void (T::* set) (TS) = 0)
     {
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
 
@@ -546,6 +560,41 @@ class Namespace
       lua_pushvalue (L, -1); // Stack: co, cl, st, getter, getter
       CFunc::addGetter (L, name, -5); // Stack: co, cl, st, getter
       CFunc::addGetter (L, name, -3); // Stack: co, cl, st
+
+      if (set != 0)
+      {
+        typedef void (T::* set_t) (TS);
+        new (lua_newuserdata (L, sizeof (set_t))) set_t (set); // Stack: co, cl, st, function ptr
+        lua_pushcclosure (L, &CFunc::CallMember <set_t>::f, 1); // Stack: co, cl, st, setter
+        CFunc::addSetter (L, name, -3); // Stack: co, cl, st
+      }
+
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add or replace a property member.
+    */
+    template <class TG, class TS = TG>
+    Class <T>& addProperty (char const* name, TG (T::* get) (lua_State*) const, void (T::* set) (TS, lua_State*) = 0)
+    {
+      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
+
+      typedef TG (T::*get_t) (lua_State*) const;
+      new (lua_newuserdata (L, sizeof (get_t))) get_t (get); // Stack: co, cl, st, funcion ptr
+      lua_pushcclosure (L, &CFunc::CallConstMember <get_t>::f, 1); // Stack: co, cl, st, getter
+      lua_pushvalue (L, -1); // Stack: co, cl, st, getter, getter
+      CFunc::addGetter (L, name, -5); // Stack: co, cl, st, getter
+      CFunc::addGetter (L, name, -3); // Stack: co, cl, st
+
+      if (set != 0)
+      {
+        typedef void (T::* set_t) (TS, lua_State*);
+        new (lua_newuserdata (L, sizeof (set_t))) set_t (set); // Stack: co, cl, st, function ptr
+        lua_pushcclosure (L, &CFunc::CallMember <set_t>::f, 1); // Stack: co, cl, st, setter
+        CFunc::addSetter (L, name, -3); // Stack: co, cl, st
+      }
 
       return *this;
     }
@@ -567,22 +616,86 @@ class Namespace
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
 
       typedef TG (*get_t) (T const*);
-      new (lua_newuserdata (L, sizeof (get_t))) get_t (get); // Stack: co, cl, st,, fn ptr
-      lua_pushcclosure (L, &CFunc::Call <get_t>::f, 1); // Stack: co, cl, st,, getter
+      lua_pushlightuserdata (L, reinterpret_cast <void*> (get)); // Stack: co, cl, st, function ptr
+      lua_pushcclosure (L, &CFunc::Call <TG (*) (const T*)>::f, 1); // Stack: co, cl, st, getter
+      lua_pushvalue (L, -1); // Stack: co, cl, st,, getter, getter
+      CFunc::addGetter (L, name, -5); // Stack: co, cl, st, getter
+      CFunc::addGetter (L, name, -3); // Stack: co, cl, st
+
+      if (set != 0)
+      {
+        lua_pushlightuserdata (L, reinterpret_cast <void*> (set)); // Stack: co, cl, st, function ptr
+        lua_pushcclosure (L, &CFunc::Call <void (*) (T*, TS)>::f, 1); // Stack: co, cl, st, setter
+        CFunc::addSetter (L, name, -3); // Stack: co, cl, st
+      }
+
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+      Add or replace a property member, by proxy C-function.
+
+      When a class is closed for modification and does not provide (or cannot
+      provide) the function signatures necessary to implement get or set for
+      a property, this will allow non-member functions act as proxies.
+
+      The object userdata ('this') value is at the index 1.
+      The new value for set function is at the index 2.
+    */
+    Class <T>& addProperty (char const* name, int (*get) (lua_State*), int (*set) (lua_State*) = 0)
+    {
+      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
+
+      lua_pushcfunction (L, get);
       lua_pushvalue (L, -1); // Stack: co, cl, st,, getter, getter
       CFunc::addGetter (L, name, -5); // Stack: co, cl, st,, getter
       CFunc::addGetter (L, name, -3); // Stack: co, cl, st,
 
       if (set != 0)
       {
-        typedef void (*set_t) (T*, TS);
-        new (lua_newuserdata (L, sizeof (set_t))) set_t (set); // Stack: co, cl, st,, fn ptr
-        lua_pushcclosure (L, &CFunc::Call <set_t>::f, 1); // Stack: co, cl, st,, setter
+        lua_pushcfunction (L, set);
         CFunc::addSetter (L, name, -3); // Stack: co, cl, st,
       }
 
       return *this;
     }
+
+#ifdef LUABRIDGE_CXX11
+    template <class TG, class TS = TG>
+    Class <T>& addProperty (char const* name,
+      std::function <TG (const T*)> get,
+      std::function <void (T*, TS)> set = nullptr)
+    {
+      using GetType = decltype (get);
+      new (lua_newuserdata (L, sizeof (get))) GetType (std::move (get)); // Stack: co, cl, st, function userdata (ud)
+      lua_newtable (L); // Stack: co, cl, st, ud, ud metatable (mt)
+      lua_pushcfunction (L, &CFunc::gcMetaMethodAny <GetType>); // Stack: co, cl, st, ud, mt, gc function
+      rawsetfield (L, -2, "__gc"); // Stack: co, cl, st, ud, mt
+      lua_setmetatable (L, -2); // Stack: co, cl, st, ud
+      lua_pushcclosure (L, &CFunc::CallProxyFunctor <GetType>::f, 1); // Stack: co, cl, st, getter
+      lua_pushvalue (L, -1); // Stack: co, cl, st, getter, getter
+      CFunc::addGetter (L, name, -4); // Stack: co, cl, st, getter
+      CFunc::addGetter (L, name, -4); // Stack: co, cl, st
+
+      if (set != nullptr)
+      {
+        using SetType = decltype (set);
+        new (lua_newuserdata (L, sizeof (set))) SetType (std::move (set)); // Stack: co, cl, st, function userdata (ud)
+        lua_newtable (L); // Stack: co, cl, st, ud, ud metatable (mt)
+        lua_pushcfunction (L, &CFunc::gcMetaMethodAny <SetType>); // Stack: co, cl, st, ud, mt, gc function
+        rawsetfield (L, -2, "__gc"); // Stack: co, cl, st, ud, mt
+        lua_setmetatable (L, -2); // Stack: co, cl, st, ud
+        lua_pushcclosure (L, &CFunc::CallProxyFunctor <SetType>::f, 1); // Stack: co, cl, st, setter
+        CFunc::addSetter (L, name, -3); // Stack: co, cl, st
+      }
+
+      return *this;
+    }
+
+#endif // LUABRIDGE_CXX11
+
+#ifndef LUABRIDGE_CXX11
 
     //--------------------------------------------------------------------------
     /**
@@ -602,6 +715,139 @@ class Namespace
       return *this;
     }
 
+#else // ifndef LUABRIDGE_CXX11
+
+    //--------------------------------------------------------------------------
+    /**
+        Add or replace a member function by std::function.
+    */
+    template <class ReturnType, class... Params>
+    Class <T>& addFunction (char const* name, std::function <ReturnType (T*, Params...)> function)
+    {
+      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
+
+      using FnType = decltype (function);
+      new (lua_newuserdata (L, sizeof (function))) FnType (std::move (function)); // Stack: co, cl, st, function userdata (ud)
+      lua_newtable (L); // Stack: co, cl, st, ud, ud metatable (mt)
+      lua_pushcfunction (L, &CFunc::gcMetaMethodAny <FnType>); // Stack: co, cl, st, ud, mt, gc function
+      rawsetfield (L, -2, "__gc"); // Stack: co, cl, st, ud, mt
+      lua_setmetatable (L, -2); // Stack: co, cl, st, ud
+      lua_pushcclosure (L, &CFunc::CallProxyFunctor <FnType>::f, 1); // Stack: co, cl, st, function
+      rawsetfield (L, -3, name); // Stack: co, cl, st
+
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+        Add or replace a const member function by std::function.
+    */
+    template <class ReturnType, class... Params>
+    Class <T>& addFunction (char const* name, std::function <ReturnType (const T*, Params...)> function)
+    {
+      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
+
+      using FnType = decltype (function);
+      new (lua_newuserdata (L, sizeof (function))) FnType (std::move (function)); // Stack: co, cl, st, function userdata (ud)
+      lua_newtable (L); // Stack: co, cl, st, ud, ud metatable (mt)
+      lua_pushcfunction (L, &CFunc::gcMetaMethodAny <FnType>); // Stack: co, cl, st, ud, mt, gc function
+      rawsetfield (L, -2, "__gc"); // Stack: co, cl, st, ud, mt
+      lua_setmetatable (L, -2); // Stack: co, cl, st, ud
+      lua_pushcclosure (L, &CFunc::CallProxyFunctor <FnType>::f, 1); // Stack: co, cl, st, function
+      lua_pushvalue (L, -1); // Stack: co, cl, st, function, function
+      rawsetfield (L, -4, name); // Stack: co, cl, st, function
+      rawsetfield (L, -4, name); // Stack: co, cl, st
+
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+        Add or replace a member function.
+    */
+    template <class ReturnType, class... Params>
+    Class <T>& addFunction (char const* name, ReturnType (T::* mf) (Params...))
+    {
+      using MemFn = ReturnType (T::*) (Params...);
+
+      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
+
+      static const std::string GC = "__gc";
+      if (name == GC)
+      {
+        throw std::logic_error (GC + " metamethod registration is forbidden");
+      }
+      CFunc::CallMemberFunctionHelper <MemFn, false>::add (L, name, mf);
+      return *this;
+    }
+
+    template <class ReturnType, class... Params>
+    Class <T>& addFunction (char const* name, ReturnType (T::* mf) (Params...) const)
+    {
+      using MemFn = ReturnType (T::*) (Params...) const;
+
+      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
+
+      static const std::string GC = "__gc";
+      if (name == GC)
+      {
+        throw std::logic_error (GC + " metamethod registration is forbidden");
+      }
+      CFunc::CallMemberFunctionHelper <MemFn, true>::add (L, name, mf);
+      return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+        Add or replace a proxy function.
+    */
+    template <class ReturnType, class... Params>
+    Class <T>& addFunction (char const* name, ReturnType (*proxyFn) (T* object, Params...))
+    {
+      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
+
+      static const std::string GC = "__gc";
+      if (name == GC)
+      {
+        throw std::logic_error (GC + " metamethod registration is forbidden");
+      }
+      using FnType = decltype (proxyFn);
+      lua_pushlightuserdata (L, reinterpret_cast <void*> (proxyFn)); // Stack: co, cl, st, function ptr
+      lua_pushcclosure (L, &CFunc::CallProxyFunction <FnType>::f, 1); // Stack: co, cl, st, function
+      rawsetfield (L, -3, name); // Stack: co, cl, st
+      return *this;
+    }
+
+    template <class ReturnType, class... Params>
+    Class <T>& addFunction (char const* name, ReturnType (*proxyFn) (const T* object, Params...))
+    {
+      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
+
+      static const std::string GC = "__gc";
+      if (name == GC)
+      {
+        throw std::logic_error (GC + " metamethod registration is forbidden");
+      }
+      using FnType = decltype (proxyFn);
+      lua_pushlightuserdata (L, reinterpret_cast <void*> (proxyFn)); // Stack: co, cl, st, function ptr
+      lua_pushcclosure (L, &CFunc::CallProxyFunction <FnType>::f, 1); // Stack: co, cl, st, function
+      lua_pushvalue (L, -1); // Stack: co, cl, st, function, function
+      rawsetfield (L, -4, name); // Stack: co, cl, st, function
+      rawsetfield (L, -4, name); // Stack: co, cl, st
+      return *this;
+    }
+
+#endif
+
+    //--------------------------------------------------------------------------
+    /**
+        Add or replace a member lua_CFunction.
+    */
+    Class <T>& addFunction (char const* name, int (T::*mfp) (lua_State*))
+    {
+      return addCFunction (name, mfp);
+    }
+
     //--------------------------------------------------------------------------
     /**
         Add or replace a member lua_CFunction.
@@ -616,6 +862,15 @@ class Namespace
       rawsetfield (L, -3, name); // Stack: co, cl, st
 
       return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+        Add or replace a const member lua_CFunction.
+    */
+    Class <T>& addFunction (char const* name, int (T::*mfp) (lua_State*) const)
+    {
+      return addCFunction (name, mfp);
     }
 
     //--------------------------------------------------------------------------
@@ -828,7 +1083,7 @@ public:
 
     return *this;
   }
-  
+
   //----------------------------------------------------------------------------
   /**
       Add or replace a property.
@@ -845,15 +1100,13 @@ public:
 
     assert (lua_istable (L, -1)); // Stack: namespace table (ns)
 
-    typedef TG (*get_t) ();
-    new (lua_newuserdata (L, sizeof (get_t))) get_t (get); // Stack: ns, field ptr
-    lua_pushcclosure (L, &CFunc::Call <TG (*) (void)>::f, 1); // Stack: ns, getter
+    lua_pushlightuserdata (L, reinterpret_cast <void*> (get)); // Stack: ns, function ptr
+    lua_pushcclosure (L, &CFunc::Call <TG (*) ()>::f, 1); // Stack: ns, getter
     CFunc::addGetter (L, name, -2);
 
     if (set != 0)
     {
-      typedef void (*set_t) (TS);
-      new (lua_newuserdata (L, sizeof (set_t))) set_t (set);
+      lua_pushlightuserdata(L, reinterpret_cast <void*> (set)); // Stack: ns, function ptr
       lua_pushcclosure (L, &CFunc::Call <void (*) (TS)>::f, 1);
     }
     else
@@ -875,7 +1128,7 @@ public:
   {
     assert (lua_istable (L, -1)); // Stack: namespace table (ns)
 
-    new (lua_newuserdata (L, sizeof (fp))) FP (fp);
+    lua_pushlightuserdata (L, reinterpret_cast <void*> (fp)); // Stack: ns, function ptr
     lua_pushcclosure (L, &CFunc::Call <FP>::f, 1); // Stack: ns, function
     rawsetfield (L, -2, name); // Stack: ns
 

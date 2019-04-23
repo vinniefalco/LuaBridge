@@ -40,6 +40,14 @@ namespace luabridge {
 template <class T>
 struct Stack;
 
+template <>
+struct Stack <void>
+{
+  static void push (lua_State* L)
+  {
+  }
+};
+
 //------------------------------------------------------------------------------
 /**
     Receive the lua_State* as an argument.
