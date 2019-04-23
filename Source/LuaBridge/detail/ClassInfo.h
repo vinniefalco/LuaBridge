@@ -31,75 +31,94 @@
 namespace luabridge {
 
 /**
- * A unique key for verifying LuaBridge objects validity.
- */
-inline void* getIdentityKey ()
-{
-  static char value;
-  return &value;
-}
-
-/**
  * A unique key for a type name in a metatable.
  */
-inline void* getTypeKey ()
+inline const void* getTypeKey ()
 {
+#ifdef _NDEBUG
   static char value;
   return &value;
+#else
+  return reinterpret_cast <void*> (0x71);
+#endif
 }
 
 /**
  * The key of a const table in another metatable.
  */
-inline void* getConstKey ()
+inline const void* getConstKey ()
 {
+#ifdef _NDEBUG
   static char value;
   return &value;
+#else
+  return reinterpret_cast <void*> (0xc07);
+#endif
 }
 
 /**
  * The key of a class table in another metatable.
  */
-inline void* getClassKey ()
+inline const void* getClassKey ()
 {
+#ifdef _NDEBUG
   static char value;
   return &value;
+#else
+  return reinterpret_cast <void*> (0xc1a);
+#endif
 }
 
 /**
  * The key of a propget table in another metatable.
  */
-inline void* getPropgetKey ()
+inline const void* getPropgetKey ()
 {
+#ifdef _NDEBUG
   static char value;
   return &value;
+#else
+  return reinterpret_cast <void*> (0x6e7);
+#endif
 }
 
 /**
  * The key of a propset table in another metatable.
  */
-inline void* getPropsetKey ()
+inline const void* getPropsetKey ()
 {
+#ifdef _NDEBUG
   static char value;
   return &value;
+#else
+  return reinterpret_cast <void*> (0x5e7);
+#endif
 }
 
 /**
  * The key of a static table in another metatable.
  */
-inline void* getStaticKey ()
+inline const void* getStaticKey ()
 {
+#ifdef _NDEBUG
   static char value;
   return &value;
+#else
+  return reinterpret_cast <void*> (0x57a);
+#endif
 }
 
 /**
  * The key of a parent table in another metatable.
  */
-inline void* getParentKey ()
+inline const void* getParentKey ()
 {
+#ifdef _NDEBUG
   static char value;
   return &value;
+#else
+  return reinterpret_cast <void*> (0xdad);
+#endif
 }
 
 /** Unique Lua registry keys for a class.

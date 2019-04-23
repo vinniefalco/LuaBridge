@@ -115,15 +115,12 @@ class Namespace
     */
     void createConstTable (const char* name, bool trueConst = true)
     {
-      std::string type_name = trueConst ? "const " : " " + std::string (name);
+      std::string type_name = std::string (trueConst ? "const " : "") + name;
 
       // Stack: namespace table (ns)
       lua_newtable (L); // Stack: ns, const table (co)
       lua_pushvalue (L, -1); // Stack: ns, co, co
       lua_setmetatable (L, -2); // co.__metatable = co. Stack: ns, co
-
-      lua_pushboolean (L, 1);
-      lua_rawsetp (L, -2, getIdentityKey ()); // co [identityKey] = true. Stack: ns, co
 
       lua_pushstring (L, type_name.c_str ());
       lua_rawsetp (L, -2, getTypeKey ()); // co [typeKey] = name. Stack: ns, co
@@ -990,6 +987,11 @@ private:
     ++m_stackSize;
   }
 
+  static int throwAtPanic (lua_State* L)
+  {
+    throw std::runtime_error (lua_tostring (L, 1));
+  }
+
 public:
   //----------------------------------------------------------------------------
   /**
@@ -1022,6 +1024,7 @@ public:
   */
   static Namespace getGlobalNamespace (lua_State* L)
   {
+    lua_atpanic (L, throwAtPanic);
     return Namespace (L);
   }
 
