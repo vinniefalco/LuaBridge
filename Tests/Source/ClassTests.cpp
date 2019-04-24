@@ -166,6 +166,105 @@ TEST_F (ClassTests, PassingUnregisteredClassToLuaThrows)
   ASSERT_THROW (process_fn (&constValue), std::exception);
 }
 
+TEST_F (ClassTests, PassWrongClassFromLuaThrows)
+{
+  using Right = Class <int, EmptyBase>;
+  using WrongBase = Class <float, EmptyBase>;
+  using Wrong = Class <int, WrongBase>;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Right> ("Right")
+    .endClass ()
+    .beginClass <WrongBase> ("WrongBase")
+    .endClass ()
+    .beginClass <Wrong> ("Wrong")
+    .addConstructor <void (*) (int)> ()
+    .endClass ()
+    .addFunction ("processRight", &Right::staticFunction);
+
+  // bad argument #1 to 'processRight' (Right expected, got Wrong)
+  ASSERT_THROW (runLua ("result = processRight (Wrong (5))"), std::exception);
+  ASSERT_TRUE (result ().isNil ());
+}
+
+TEST_F (ClassTests, PassDerivedClassInsteadOfBase)
+{
+  using Base = Class <int, EmptyBase>;
+  using Derived = Class <float, Base>;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Base> ("Base")
+    .endClass ()
+    .deriveClass <Derived, Base> ("Derived")
+    .addConstructor <void (*) (float)> ()
+    .endClass ()
+    .addFunction ("processBase", &Base::staticFunction);
+
+  runLua ("result = processBase (Derived (3.14))");
+  ASSERT_EQ (0, result <Base> ().data);
+}
+
+namespace {
+
+template <class T, class Base>
+T processNonConst (Class <T, Base>* object)
+{
+  return object->data;
+}
+
+} // namespace
+
+TEST_F (ClassTests, PassConstClassInsteadOfNonConstThrows)
+{
+  using Base = Class <int, EmptyBase>;
+  using Derived = Class <float, Base>;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Base> ("Base")
+    .endClass ()
+    .deriveClass <Derived, Base> ("Derived")
+    .endClass ()
+    .addFunction ("processNonConst", &processNonConst <float, Base>);
+
+  const Derived constObject (1.2f);
+  luabridge::setGlobal (L, &constObject, "constObject");
+
+  // bad argument #1 to 'processNonConst' (Derived expected, got const Derived)
+  ASSERT_THROW (runLua ("result = processNonConst (constObject)"), std::exception);
+  ASSERT_TRUE (result ().isNil ());
+}
+
+TEST_F (ClassTests, PassOtherTypeInsteadOfNonConstThrows)
+{
+  using Int = Class <int, EmptyBase>;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> () // Show that it does't matter
+    .endClass ()
+    .addFunction ("processNonConst", &processNonConst <int, EmptyBase>);
+
+  // bad argument #1 to 'processNonConst' (Int expected, got number)
+  ASSERT_THROW (runLua ("result = processNonConst (1)"), std::exception);
+  ASSERT_TRUE (result ().isNil ());
+}
+
+TEST_F (ClassTests, PassRegisteredClassInsteadOfUnregisteredThrows)
+{
+  using Int = Class <int, EmptyBase>;
+  using Float = Class <float, EmptyBase>;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Float> ("Float")
+    .addConstructor <void (*) (float)> ()
+    .endClass ()
+    .addFunction ("processUnregisteredInt", &Int::staticFunction);
+
+  // bad argument #1 to 'processUnregisteredInt' (unregistered class expected, got Float)
+  ASSERT_THROW (runLua ("result = processUnregisteredInt (Float (1.2))"), std::exception);
+  ASSERT_TRUE (result ().isNil ());
+}
+
 namespace {
 
 Class <int, EmptyBase>& returnRef ()

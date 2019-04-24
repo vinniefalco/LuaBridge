@@ -40,11 +40,6 @@ inline int traceback (lua_State* L)
   return 1;
 }
 
-inline int throwAtPanic (lua_State* L)
-{
-  throw std::runtime_error (lua_tostring (L, 1));
-}
-
 /// Base test class. Introduces the global 'result' variable,
 /// used for checking of C++ - Lua interoperation.
 ///
@@ -58,7 +53,6 @@ struct TestBase : public ::testing::Test
     L = luaL_newstate ();
     luaL_openlibs (L);
     lua_pushcfunction (L, &traceback);
-    lua_atpanic (L, throwAtPanic);
   }
 
   void TearDown () override

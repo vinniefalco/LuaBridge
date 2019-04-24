@@ -41,25 +41,14 @@ namespace luabridge {
 /**
   Return the identity pointer for our lightuserdata tokens.
 
-  LuaBridge metatables are tagged with a security "token." The token is a
-  lightuserdata created from the identity pointer, used as a key in the
-  metatable. The value is a boolean = true, although any value could have been
-  used.
-
   Because of Lua's dynamic typing and our improvised system of imposing C++
   class structure, there is the possibility that executing scripts may
   knowingly or unknowingly cause invalid data to get passed to the C functions
   created by LuaBridge. In particular, our security model addresses the
   following:
-
-  Notes:
     1. Scripts cannot create a userdata (ignoring the debug lib).
     2. Scripts cannot create a lightuserdata (ignoring the debug lib).
     3. Scripts cannot set the metatable on a userdata.
-    4. Our identity key is a unique pointer in the process.
-    5. Our metatables have a lightuserdata identity key / value pair.
-    6. Our metatables have "__metatable" set to a boolean = false.
-    7. Our lightuserdata is unique.
 */
 
 /**
@@ -74,7 +63,7 @@ protected:
   /**
     Get an untyped pointer to the contained class.
   */
-  inline void* const getPointer ()
+  void* const getPointer ()
   {
     return m_p;
   }
@@ -88,87 +77,9 @@ private:
     const table, or else a Lua error is raised. This is used for the
     __gc metamethod.
   */
-  static Userdata* getExactClass (lua_State* L,
-                                  int narg,
-                                  void const* classKey)
+  static Userdata* getExactClass (lua_State* L, int index, void const* classKey)
   {
-    Userdata* ud = 0;
-    int const index = lua_absindex (L, narg);
-
-    bool mismatch = false;
-    char const* got = 0;
-
-    lua_rawgetp (L, LUA_REGISTRYINDEX, classKey);
-    assert (lua_istable (L, -1));
-
-    // Make sure we have a userdata.
-    if (!lua_isuserdata (L, index))
-      mismatch = true;
-
-    // Make sure it's metatable is ours.
-    if (!mismatch)
-    {
-      lua_getmetatable (L, index);
-      lua_rawgetp (L, -1, getIdentityKey ());
-      if (lua_isboolean (L, -1))
-      {
-        lua_pop (L, 1);
-      }
-      else
-      {
-        lua_pop (L, 2);
-        mismatch = true;
-      }
-    }
-
-    if (!mismatch)
-    {
-      if (lua_rawequal (L, -1, -2))
-      {
-        // Matches class table.
-        lua_pop (L, 2);
-        ud = static_cast <Userdata*> (lua_touserdata (L, index));
-      }
-      else
-      {
-        lua_rawgetp (L, -2, getConstKey ());
-        if (lua_rawequal (L, -1, -2))
-        {
-          // Matches const table
-          lua_pop (L, 3);
-          ud = static_cast <Userdata*> (lua_touserdata (L, index));
-        }
-        else
-        {
-          // Mismatch, but its one of ours so get a type name.
-          lua_rawgetp (L, -2, getTypeKey ());
-          lua_insert (L, -4);
-          lua_pop (L, 2);
-          got = lua_tostring (L, -2);
-          mismatch = true;
-        }
-      }
-    }
-
-    if (mismatch)
-    {
-      lua_rawgetp (L, -1, getTypeKey ());
-      assert (lua_isstring (L, -1));
-      char const* const expected = lua_tostring (L, -1);
-
-      if (got == 0)
-        got = lua_typename (L, lua_type (L, index));
-
-      char const* const msg = lua_pushfstring (
-        L, "%s expected, got %s", expected, got);
-
-      if (narg > 0)
-        luaL_argerror (L, narg, msg);
-      else
-        lua_error (L);
-    }
-
-    return ud;
+    return static_cast <Userdata*> (lua_touserdata (L, lua_absindex (L, index)));
   }
 
   //--------------------------------------------------------------------------
@@ -182,120 +93,100 @@ private:
   */
   static Userdata* getClass (lua_State* L,
                              int index,
-                             void const* baseClassKey,
+                             void const* registryConstKey,
+                             void const* registryClassKey,
                              bool canBeConst)
   {
     index = lua_absindex (L, index);
 
-    Userdata* ud = 0;
-
-    bool mismatch = false;
-    char const* got = 0;
-
-    lua_rawgetp (L, LUA_REGISTRYINDEX, baseClassKey);
+    lua_getmetatable (L, index); // Stack: ot | nil
     if (!lua_istable (L, -1))
     {
-      throw std::logic_error ("The class is not registered in LuaBridge");
+      lua_rawgetp (L, LUA_REGISTRYINDEX, registryClassKey); // Stack: registry metatable (rt) | nil
+      return throwBadArg (L, index);
     }
 
-    // Make sure we have a userdata.
-    if (lua_isuserdata (L, index))
+    lua_rawgetp (L, -1, getConstKey ()); // Stack: ot | nil, const table (co) | nil
+    assert (lua_istable (L, -1) || lua_isnil (L, -1));
+
+    // If const table is NOT present, object is const. Use non-const registry table
+    // if object cannot be const, so constness validation is done automatically.
+    // E.g. nonConstFn (constObj)
+    // -> canBeConst = false, isConst = true
+    // -> 'Class' registry table, 'const Class' object table
+    // -> 'expected Class, got const Class' 
+    bool isConst = lua_isnil (L, -1); // Stack: ot | nil, nil, rt
+    if (isConst && canBeConst)
     {
-      // Make sure it's metatable is ours.
-      lua_getmetatable (L, index);
-      lua_rawgetp (L, -1, getIdentityKey ());
-      if (lua_isboolean (L, -1))
-      {
-        lua_pop (L, 1);
-
-        // If const table is present, object is NOT const.
-        lua_rawgetp (L, -1, getConstKey ());
-        assert (lua_istable (L, -1) || lua_isnil (L, -1));
-        bool const isConst = lua_isnil (L, -1);
-        lua_pop (L, 1);
-
-        // Replace the class table with the const table if needed.
-        if (isConst)
-        {
-          lua_rawgetp (L, -2, getConstKey());
-          assert (lua_istable (L, -1));
-          lua_replace (L, -3);
-        }
-
-        for (;;)
-        {
-          if (lua_rawequal (L, -1, -2))
-          {
-            lua_pop (L, 2);
-
-            // Match, now check const-ness.
-            if (isConst && !canBeConst)
-            {
-              luaL_argerror (L, index, "cannot be const");
-            }
-            else
-            {
-              ud = static_cast <Userdata*> (lua_touserdata (L, index));
-              break;
-            }
-          }
-          else
-          {
-            // Replace current metatable with it's base class.
-            lua_rawgetp (L, -1, getParentKey ());
-/*
-ud
-class metatable
-ud metatable
-ud __parent (nil)
-*/
-
-            if (lua_isnil (L, -1))
-            {
-              lua_remove (L, -1);
-              // Mismatch, but its one of ours so get a type name.
-              lua_rawgetp (L, -1, getTypeKey ());
-              lua_insert (L, -3);
-              lua_pop (L, 1);
-              got = lua_tostring (L, -2);
-              mismatch = true;
-              break;
-            }
-            else
-            {
-              lua_remove (L, -2);
-            }
-          }
-        }
-      }
-      else
-      {
-        lua_pop (L, 2);
-        mismatch = true;
-      }
+      lua_rawgetp (L, LUA_REGISTRYINDEX, registryConstKey); // Stack: ot, nil, rt
     }
     else
     {
-      mismatch = true;
+      lua_rawgetp (L, LUA_REGISTRYINDEX, registryClassKey); // Stack: ot, co, rt
     }
 
-    if (mismatch)
+    lua_insert (L, -3); // Stack: rt, ot, co | nil
+    lua_pop (L, 1); // Stack: rt, ot
+
+    for (;;)
     {
-      assert (lua_istable (L, -1));
-      lua_rawgetp (L, -1, getTypeKey ());
-      assert (lua_isstring (L, -1));
-      char const* const expected = lua_tostring (L, -1);
+      if (lua_rawequal (L, -1, -2))
+      {
+        lua_pop (L, 2); // Stack: -
+        return static_cast <Userdata*> (lua_touserdata (L, index));
+      }
 
-      if (got == 0)
-        got = lua_typename (L, lua_type (L, index));
+      // Replace current metatable with it's base class.
+      lua_rawgetp (L, -1, getParentKey ()); // Stack: rt, ot, parent ot (pot) | nil
 
-      char const* const msg = lua_pushfstring (
-        L, "%s expected, got %s", expected, got);
+      if (lua_isnil (L, -1)) // Stack: rt, ot, nil
+      {
+        // Drop the object metatable because it may be some parent metatable
+        lua_pop (L, 2); // Stack: rt
+        return throwBadArg (L, index);
+      }
 
-      luaL_argerror (L, index, msg);
+      lua_remove (L, -2); // Stack: rt, pot
     }
 
-    return ud;
+    // no return
+  }
+
+  static Userdata* throwBadArg (lua_State* L, int index)
+  {
+    assert (lua_istable (L, -1) || lua_isnil (L, -1)); // Stack: rt | nil
+
+    const char* expected = 0;
+    if (lua_isnil (L, -1)) // Stack: nil
+    {
+      expected = "unregistered class";
+    }
+    else
+    {
+      lua_rawgetp (L, -1, getTypeKey ()); // Stack: rt, registry type
+      expected = lua_tostring (L, -1);
+    }
+
+    const char* got = 0;
+    if (lua_isuserdata (L, index))
+    {
+      lua_getmetatable (L, index); // Stack: ..., ot | nil
+      if (lua_istable (L, -1)) // Stack: ..., ot
+      {
+        lua_rawgetp (L, -1, getTypeKey ()); // Stack: ..., ot, object type | nil
+        if (lua_isstring (L, -1))
+        {
+          got = lua_tostring (L, -1);
+        }
+      }
+    }
+    if (!got)
+    {
+      got = lua_typename (L, lua_type (L, index));
+    }
+
+    luaL_argerror (L, index, lua_pushfstring (L, "%s expected, got %s", expected, got));
+    return 0;
   }
 
 public:
@@ -325,9 +216,11 @@ public:
   {
     if (lua_isnil (L, index))
       return 0;
-    else
-      return static_cast <T*> (getClass (L, index,
-        ClassInfo <T>::getClassKey (), canBeConst)->getPointer ());
+
+    return static_cast <T*> (getClass (
+      L, index, ClassInfo <T>::getConstKey (),
+      ClassInfo <T>::getClassKey (),
+      canBeConst)->getPointer ());
   }
 };
 
@@ -412,45 +305,17 @@ private:
   UserdataPtr operator= (UserdataPtr const&);
 
 private:
-  /** Push non-const pointer to object using metatable key.
+  /** Push a pointer to object using metatable key.
   */
-  static void push (lua_State* L, void* const p, void const* const key)
+  static void push (lua_State* L, const void* p, void const* const key)
   {
-    if (p)
+    new (lua_newuserdata (L, sizeof (UserdataPtr))) UserdataPtr (const_cast <void*> (p));
+    lua_rawgetp (L, LUA_REGISTRYINDEX, key);
+    if (!lua_istable (L, -1))
     {
-      new (lua_newuserdata (L, sizeof (UserdataPtr))) UserdataPtr (p);
-      lua_rawgetp (L, LUA_REGISTRYINDEX, key);
-      if (!lua_istable (L, -1))
-      {
-        throw std::logic_error ("The class is not registered in LuaBridge");
-      }
-      lua_setmetatable (L, -2);
+      throw std::logic_error ("The class is not registered in LuaBridge");
     }
-    else
-    {
-      lua_pushnil (L);
-    }
-  }
-
-  /** Push const pointer to object using metatable key.
-  */
-  static void push (lua_State* L, void const* const p, void const* const key)
-  {
-    if (p)
-    {
-      new (lua_newuserdata (L, sizeof (UserdataPtr)))
-        UserdataPtr (const_cast <void*> (p));
-      lua_rawgetp (L, LUA_REGISTRYINDEX, key);
-      if (!lua_istable (L, -1))
-      {
-        throw std::logic_error ("The class is not registered in LuaBridge");
-      }
-      lua_setmetatable (L, -2);
-    }
-    else
-    {
-      lua_pushnil (L);
-    }
+    lua_setmetatable (L, -2);
   }
 
   explicit UserdataPtr (void* const p)
@@ -466,7 +331,7 @@ public:
   /** Push non-const pointer to object.
   */
   template <class T>
-  static inline void push (lua_State* const L, T* const p)
+  static void push (lua_State* const L, T* const p)
   {
     if (p)
       push (L, p, ClassInfo <T>::getClassKey ());
@@ -477,7 +342,7 @@ public:
   /** Push const pointer to object.
   */
   template <class T>
-  static inline void push (lua_State* const L, T const* const p)
+  static void push (lua_State* const L, T const* const p)
   {
     if (p)
       push (L, p, ClassInfo <T>::getConstKey ());
