@@ -2,7 +2,7 @@
 <img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
 </a><br>
 
-# LuaBridge 2.2
+# LuaBridge 2.3
 
 [LuaBridge][1] is a lightweight and dependency-free library for mapping data,
 functions, and classes back and forth between C++ and [Lua][2] (a powerful,
@@ -26,7 +26,37 @@ LuaBridge offers the following features:
 
 Please read the [LuaBridge Reference Manual][5] for more details on the API.
 
-## LuaBridge Demo and Unit Tests
+## Unit Tests
+
+Unit test build requires a CMake and C++11 compliant compiler.
+
+There are 4 unit test flavors:
+* `Tests51` - uses Lua 5.1, with C++11 features
+* `Tests51L` - uses Lua 5.1, no C++11 features
+* `Tests52` - uses Lua 5.2, with C++11 features
+* `Tests52L` - uses Lua 5.2, no C++11 features
+
+On Linux/MacOS:
+```bash
+clone --recurse-submodules git@github.com:vinniefalco/LuaBridge.git
+cd LuaBridge
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=<Debug|RelWithDebInfo|Release> ..
+make -j
+```
+
+On Windows:
+```cmd
+clone --recurse-submodules git@github.com:vinniefalco/LuaBridge.git
+cd LuaBridge
+mkdir build
+cd build
+cmake -G 'Visual Studio 14 2015|Visual Studio 15 2017' ..
+# Generated MSVS solution is LuaBridge.sln
+```
+
+# LuaBridge Demo
 
 LuaBridge provides both a command line program and a stand-alone graphical
 program for compiling and running the test suite. The graphical program brings

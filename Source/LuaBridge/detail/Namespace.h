@@ -1056,11 +1056,21 @@ public:
       Add or replace a variable.
   */
   template <class T>
+  Namespace& addProperty (char const* name, T* pt, bool isWritable = true)
+  {
+    return addVariable (name, pt, isWritable);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Add or replace a variable.
+  */
+  template <class T>
   Namespace& addVariable (char const* name, T* pt, bool isWritable = true)
   {
     if (!m_parent)
     {
-      throw std::logic_error ("addVariable () called on global namespace");
+      throw std::logic_error ("addProperty () called on global namespace");
     }
 
     assert (lua_istable (L, -1)); // Stack: namespace table (ns)
@@ -1133,6 +1143,15 @@ public:
     rawsetfield (L, -2, name); // Stack: ns
 
     return *this;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Add or replace a lua_CFunction.
+  */
+  Namespace& addFunction (char const* name, int (*const fp) (lua_State*))
+  {
+    return addCFunction (name, fp);
   }
 
   //----------------------------------------------------------------------------
