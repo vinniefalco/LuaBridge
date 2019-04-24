@@ -675,7 +675,7 @@ TEST_F (ClassProperties, FieldPointers)
   luabridge::getGlobalNamespace (L)
     .beginClass <Int> ("Int")
     .addConstructor <void (*) (int)> ()
-    .addData ("data", &Int::data, true)
+    .addProperty ("data", &Int::data, true)
     .endClass ();
 
   runLua ("result = Int (501)");
@@ -1227,7 +1227,7 @@ TEST_F (ClassStaticProperties, FieldPointers)
 
   luabridge::getGlobalNamespace (L)
     .beginClass <Int> ("Int")
-    .addStaticData ("staticData", &Int::staticData, true)
+    .addStaticProperty ("staticData", &Int::staticData, true)
     .endClass ();
 
   Int::staticData = 10;
@@ -1246,7 +1246,7 @@ TEST_F (ClassStaticProperties, FieldPointers_ReadOnly)
 
   luabridge::getGlobalNamespace (L)
     .beginClass <Int> ("Int")
-    .addStaticData ("staticData", &Int::staticData, false)
+    .addStaticProperty ("staticData", &Int::staticData, false)
     .endClass ();
 
   Int::staticData = 10;
@@ -1266,7 +1266,7 @@ TEST_F (ClassStaticProperties, FieldPointers_Derived)
 
   luabridge::getGlobalNamespace (L)
     .beginClass <Base> ("Base")
-    .addStaticData ("staticData", &Base::staticData, true)
+    .addStaticProperty ("staticData", &Base::staticData, true)
     .endClass ()
     .deriveClass <Derived, Base> ("Derived")
     .endClass ();
@@ -1290,10 +1290,10 @@ TEST_F (ClassStaticProperties, FieldPointers_Overridden)
 
   luabridge::getGlobalNamespace (L)
     .beginClass <Base> ("Base")
-    .addStaticData ("staticData", &Base::staticData, true)
+    .addStaticProperty ("staticData", &Base::staticData, true)
     .endClass ()
     .deriveClass <Derived, Base> ("Derived")
-    .addStaticData ("staticData", &Derived::staticData, true)
+    .addStaticProperty ("staticData", &Derived::staticData, true)
     .endClass ();
 
   Base::staticData = 1.23f;
@@ -1647,10 +1647,10 @@ TEST_F (ClassTests, EnclosedClassProperties)
 
   luabridge::getGlobalNamespace (L)
     .beginClass <Inner> ("Inner")
-    .addData ("data", &Inner::data)
+    .addProperty ("data", &Inner::data)
     .endClass ()
     .beginClass <Outer> ("Outer")
-    .addData ("data", &Outer::data)
+    .addProperty ("data", &Outer::data)
     .endClass ();
 
   Outer outer (Inner (0));

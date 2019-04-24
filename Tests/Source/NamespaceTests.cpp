@@ -23,7 +23,7 @@ TEST_F (NamespaceTests, Variables)
   any ["a"] = 1;
 
   ASSERT_THROW (
-    luabridge::getGlobalNamespace (L).addVariable ("int", &int_),
+    luabridge::getGlobalNamespace (L).addProperty ("int", &int_),
     std::logic_error);
 
   runLua ("result = int");
@@ -31,8 +31,8 @@ TEST_F (NamespaceTests, Variables)
 
   luabridge::getGlobalNamespace (L)
     .beginNamespace ("ns")
-    .addVariable ("int", &int_)
-    .addVariable ("any", &any)
+    .addProperty ("int", &int_)
+    .addProperty ("any", &any)
     .endNamespace ();
 
   ASSERT_EQ (-10, variable <int> ("ns.int"));
@@ -54,7 +54,7 @@ TEST_F (NamespaceTests, ReadOnlyVariables)
   any ["a"] = 1;
 
   ASSERT_THROW (
-    luabridge::getGlobalNamespace (L).addVariable ("int", &int_),
+    luabridge::getGlobalNamespace (L).addProperty ("int", &int_),
     std::logic_error);
 
   runLua ("result = int");
@@ -62,8 +62,8 @@ TEST_F (NamespaceTests, ReadOnlyVariables)
 
   luabridge::getGlobalNamespace (L)
     .beginNamespace ("ns")
-    .addVariable ("int", &int_, false)
-    .addVariable ("any", &any, false)
+    .addProperty ("int", &int_, false)
+    .addProperty ("any", &any, false)
     .endNamespace ();
 
   ASSERT_EQ (-10, variable <int> ("ns.int"));
