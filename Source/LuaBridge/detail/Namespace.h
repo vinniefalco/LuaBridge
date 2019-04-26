@@ -37,24 +37,80 @@
 
 #include <stdexcept>
 #include <string>
-#include <Lua/Lua.5.2.0/src/lua.h>
-#include <Lua/Lua.5.2.0/src/lua.h>
 
 namespace luabridge {
+
+namespace detail {
+
+/**
+ * Base for class and namespace registration.
+ * Maintains Lua stack in the proper state.
+ * Once beginNamespace, beginClass or deriveClass is called the parent
+ * object upon its destruction may no longer clear the Lua stack.
+ * Then endNamespace or endClass is called, a new parent is created
+ * and the child transfers the responsibility for clearing stack to it.
+ * So there can be maximum one "active" registrar object.
+ */
+class Registrar
+{
+protected:
+  lua_State* const L;
+  int mutable m_stackSize;
+
+  Registrar (lua_State* L)
+    : L (L)
+    , m_stackSize (0)
+  {
+  }
+
+  Registrar (const Registrar& rhs)
+    : L (rhs.L)
+    , m_stackSize (rhs.m_stackSize)
+  {
+    rhs.m_stackSize = 0;
+  }
+
+  Registrar(Registrar& rhs)
+    : L (rhs.L)
+    , m_stackSize (rhs.m_stackSize)
+  {
+    rhs.m_stackSize = 0;
+  }
+
+  Registrar& operator= (const Registrar& rhs)
+  {
+    Registrar tmp (rhs);
+    std::swap (m_stackSize, tmp.m_stackSize);
+    return *this;
+  }
+
+  ~Registrar ()
+  {
+    if (m_stackSize > 0)
+    {
+      assert (m_stackSize <= lua_gettop (L));
+      lua_pop (L, m_stackSize);
+    }
+  }
+
+  void assertIsActive () const
+  {
+    if (m_stackSize == 0)
+    {
+      throw std::logic_error ("Unable to continue registration");
+    }
+  }
+};
+
+} // namespace detail
 
 /** Provides C++ to Lua registration capabilities.
 
     This class is not instantiated directly, call `getGlobalNamespace` to start
     the registration process.
 */
-class Namespace
+class Namespace : public detail::Registrar
 {
-  Namespace& operator= (Namespace const& other);
-
-  lua_State* const L;
-  Namespace* m_parent;
-  int mutable m_stackSize;
-
   //============================================================================
   /**
     Error reporting.
@@ -90,25 +146,20 @@ class Namespace
   }
 #endif
 
-  void clearStack ()
-  {
-    assert (m_stackSize <= lua_gettop (L));
-    lua_pop (L, m_stackSize);
-    m_stackSize = 0;
-  }
-
   /**
     Factored base to reduce template instantiations.
   */
-  class ClassBase
+  class ClassBase : public detail::Registrar
   {
-    ClassBase& operator= (ClassBase const& other);
+  public:
+    ClassBase (Namespace& parent)
+      : Registrar (parent)
+    {
+    }
+
+    using Registrar::operator=;
 
   protected:
-    lua_State* const L;
-    Namespace& m_parent;
-    int mutable m_stackSize;
-
     //--------------------------------------------------------------------------
     /**
       Create the const table.
@@ -231,44 +282,12 @@ class Namespace
       return 1;
     }
 
-    //--------------------------------------------------------------------------
-    explicit ClassBase (Namespace& parent)
-      : L (parent.L)
-      , m_parent (parent)
-      , m_stackSize (0)
-    {
-    }
-
-    //--------------------------------------------------------------------------
-    /**
-      Copy Constructor.
-    */
-    ClassBase (ClassBase const& other)
-      : L (other.L)
-      , m_parent (other.m_parent)
-      , m_stackSize (other.m_stackSize)
-    {
-      other.m_stackSize = 0;
-    }
-
-    ~ClassBase ()
-    {
-      clearStack ();
-    }
-
     void assertStackState () const
     {
       // Stack: const table (co), class table (cl), static table (st)
       assert (lua_istable (L, -3));
       assert (lua_istable (L, -2));
       assert (lua_istable (L, -1));
-    }
-
-    void clearStack ()
-    {
-      assert (m_stackSize <= lua_gettop (L));
-      lua_pop (L, m_stackSize);
-      m_stackSize = 0;
     }
   };
 
@@ -294,7 +313,8 @@ class Namespace
     /**
       Register a new class or add to an existing class registration.
     */
-    Class (char const* name, Namespace& parent) : ClassBase (parent)
+    Class (char const* name, Namespace& parent)
+      : ClassBase (parent)
     {
       assert (lua_istable (L, -1)); // Stack: namespace table (ns)
       rawgetfield (L, -1, name); // Stack: ns, static table (st) | nil
@@ -393,10 +413,12 @@ class Namespace
     /**
       Continue registration in the enclosing namespace.
     */
-    Namespace& endClass ()
+    Namespace endClass ()
     {
-      clearStack ();
-      return m_parent;
+      assert (m_stackSize > 3);
+      m_stackSize -= 3;
+      lua_pop (L, 3);
+      return Namespace (*this);
     }
 
     //--------------------------------------------------------------------------
@@ -612,7 +634,6 @@ class Namespace
     {
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
 
-      typedef TG (*get_t) (T const*);
       lua_pushlightuserdata (L, reinterpret_cast <void*> (get)); // Stack: co, cl, st, function ptr
       lua_pushcclosure (L, &CFunc::Call <TG (*) (const T*)>::f, 1); // Stack: co, cl, st, getter
       lua_pushvalue (L, -1); // Stack: co, cl, st,, getter, getter
@@ -927,12 +948,11 @@ private:
   /**
       Open the global namespace for registrations.
   */
-  explicit Namespace (lua_State* L_)
-    : L (L_)
-    , m_parent (NULL)
-    , m_stackSize (1)
+  explicit Namespace (lua_State* L)
+    : Registrar (L)
   {
     lua_getglobal (L, "_G");
+    ++m_stackSize;
   }
 
   //----------------------------------------------------------------------------
@@ -943,9 +963,7 @@ private:
       The parent namespace is at the top of the Lua stack.
   */
   Namespace (char const* name, Namespace& parent)
-    : L (parent.L)
-    , m_parent (&parent)
-    , m_stackSize (0)
+    : Registrar (parent)
   {
     assert (lua_istable (L, -1)); // Stack: parent namespace (pns)
 
@@ -987,37 +1005,23 @@ private:
     ++m_stackSize;
   }
 
+  //----------------------------------------------------------------------------
+  /**
+      Close the class and continue the namespace registrations.
+  */
+  explicit Namespace (ClassBase& child)
+    : Registrar (child)
+  {
+  }
+
+  using Registrar::operator=;
+
   static int throwAtPanic (lua_State* L)
   {
     throw std::runtime_error (lua_tostring (L, 1));
   }
 
 public:
-  //----------------------------------------------------------------------------
-  /**
-      Copy Constructor.
-
-      Ownership of the stack is transferred to the new object. This happens
-      when the compiler emits temporaries to hold these objects while chaining
-      registrations across namespaces.
-  */
-  Namespace (Namespace const& other)
-    : L (other.L)
-    , m_parent (other.m_parent)
-    , m_stackSize (other.m_stackSize)
-  {
-    other.m_stackSize = 0;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
-      Closes this namespace registration.
-  */
-  ~Namespace ()
-  {
-    clearStack ();
-  }
-
   //----------------------------------------------------------------------------
   /**
       Open the global namespace.
@@ -1034,6 +1038,7 @@ public:
   */
   Namespace beginNamespace (char const* name)
   {
+    assertIsActive ();
     return Namespace (name, *this);
   }
 
@@ -1043,15 +1048,17 @@ public:
 
       Do not use this on the global namespace.
   */
-  Namespace& endNamespace ()
+  Namespace endNamespace ()
   {
-    if (!m_parent)
+    if (m_stackSize == 1)
     {
       throw std::logic_error ("endNamespace () called on global namespace");
     }
 
-    clearStack ();
-    return *m_parent;
+    assert (m_stackSize > 1);
+    --m_stackSize;
+    lua_pop (L, 1);
+    return Namespace (*this);
   }
 
   //----------------------------------------------------------------------------
@@ -1071,7 +1078,7 @@ public:
   template <class T>
   Namespace& addVariable (char const* name, T* pt, bool isWritable = true)
   {
-    if (!m_parent)
+    if (m_stackSize == 1)
     {
       throw std::logic_error ("addProperty () called on global namespace");
     }
@@ -1106,7 +1113,7 @@ public:
   template <class TG, class TS = TG>
   Namespace& addProperty (char const* name, TG (*get) (), void (*set) (TS) = 0)
   {
-    if (!m_parent)
+    if (m_stackSize == 1)
     {
       throw std::logic_error ("addProperty () called on global namespace");
     }
@@ -1178,6 +1185,7 @@ public:
   template <class T>
   Class <T> beginClass (char const* name)
   {
+    assertIsActive ();
     return Class <T> (name, *this);
   }
 
@@ -1191,6 +1199,7 @@ public:
   template <class Derived, class Base>
   Class <Derived> deriveClass (char const* name)
   {
+    assertIsActive ();
     return Class <Derived> (name, *this, ClassInfo <Base>::getStaticKey ());
   }
 };
