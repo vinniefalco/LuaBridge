@@ -149,7 +149,75 @@ TEST_F (NamespaceTests, ReadOnlyProperties)
   ASSERT_EQ (-10, getProperty <int> ());
 }
 
-#if defined (_WINDOWS) || defined (WIN32)
+namespace {
+struct Class {};
+}
+
+TEST_F (NamespaceTests, LuaStackIntegrity)
+{
+  ASSERT_EQ (1, lua_gettop (L)); // Stack: ...
+
+  {
+    auto ns2 = luabridge::getGlobalNamespace (L)
+      .beginNamespace ("namespace")
+      .beginNamespace ("ns2");
+
+    ASSERT_EQ (4, lua_gettop (L)); // Stack: ..., global namespace table (gns), namespace table (ns), ns2
+
+    ns2.endNamespace (); // Stack: ...
+    ASSERT_EQ (1, lua_gettop (L)); // Stack: ...
+  }
+  ASSERT_EQ (1, lua_gettop (L)); // Stack: ...
+
+  {
+    auto globalNs = luabridge::getGlobalNamespace (L);
+    ASSERT_EQ (2, lua_gettop (L)); // Stack: ..., gns
+
+    {
+      auto ns = luabridge::getGlobalNamespace (L)
+        .beginNamespace ("namespace");
+      // both globalNs an ns are active
+      ASSERT_EQ (4, lua_gettop (L)); // Stack: ..., gns, gns, ns
+    }
+    ASSERT_EQ (2, lua_gettop (L)); // Stack: ..., gns
+
+    {
+      auto ns = globalNs
+        .beginNamespace ("namespace");
+      // globalNs became inactive
+      ASSERT_EQ (3, lua_gettop (L)); // Stack: ..., gns, ns
+    }
+    ASSERT_EQ (1, lua_gettop (L)); // Stack: ...
+
+    ASSERT_THROW (globalNs.beginNamespace ("namespace"), std::exception);
+
+    ASSERT_THROW (globalNs.beginClass <Class> ("Class"), std::exception);
+  }
+
+  {
+    auto globalNs = luabridge::getGlobalNamespace (L)
+      .beginNamespace ("namespace")
+      .endNamespace ();
+    // globalNs is active
+    ASSERT_EQ (2, lua_gettop (L)); // Stack: ..., gns
+  }
+  ASSERT_EQ (1, lua_gettop (L)); // StacK: ...
+
+  {
+    auto cls = luabridge::getGlobalNamespace (L)
+      .beginNamespace ("namespace")
+      .beginClass <Class> ("Class");
+    ASSERT_EQ (6, lua_gettop (L)); // Stack: ..., gns, ns, const table, class table, static table
+    {
+      auto ns = cls.endClass ();
+      ASSERT_EQ (3, lua_gettop (L)); // Stack: ..., gns, ns
+    }
+    ASSERT_EQ (1, lua_gettop (L)); // Stack: ...
+  }
+  ASSERT_EQ (1, lua_gettop (L)); // StacK: ..., gns
+}
+
+#ifdef _M_IX86 // Windows 32bit only
 
 namespace {
 
@@ -170,4 +238,4 @@ TEST_F (NamespaceTests, StdCallFunctions)
   ASSERT_EQ (12, result <int> ());
 }
 
-#endif // _WINDOWS || WIN32
+#endif // _M_IX86
