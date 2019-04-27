@@ -70,12 +70,15 @@ protected:
     rhs.m_stackSize = 0;
   }
 
+#ifndef _MSC_VER
+  // MS compiler thinks it's the 2nd copy ctor
   Registrar(Registrar& rhs)
     : L (rhs.L)
     , m_stackSize (rhs.m_stackSize)
   {
     rhs.m_stackSize = 0;
   }
+#endif // ifndef _MSC_VER
 
   Registrar& operator= (const Registrar& rhs)
   {
@@ -152,7 +155,7 @@ class Namespace : public detail::Registrar
   class ClassBase : public detail::Registrar
   {
   public:
-    ClassBase (Namespace& parent)
+    explicit ClassBase (Namespace& parent)
       : Registrar (parent)
     {
     }
