@@ -350,16 +350,17 @@ class Namespace : public detail::Registrar
       else
       {
         assert (lua_istable (L, -1)); // Stack: ns, st
+        ++m_stackSize;
 
         // Map T back from its stored tables
 
         lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ()); // Stack: ns, st, co
         lua_insert (L, -2); // Stack: ns, co, st
+        ++m_stackSize;
 
         lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ()); // Stack: ns, co, st, cl
         lua_insert (L, -2); // Stack: ns, co, cl, st
-
-        m_stackSize = 3;
+        ++m_stackSize;
       }
     }
 
