@@ -214,7 +214,16 @@ TEST_F (NamespaceTests, LuaStackIntegrity)
     }
     ASSERT_EQ (1, lua_gettop (L)); // Stack: ...
   }
-  ASSERT_EQ (1, lua_gettop (L)); // StacK: ..., gns
+  ASSERT_EQ (1, lua_gettop (L)); // StacK: ...
+
+  // Test class continuation
+  {
+    auto cls = luabridge::getGlobalNamespace (L)
+      .beginNamespace ("namespace")
+      .beginClass <Class> ("Class");
+    ASSERT_EQ (6, lua_gettop (L)); // Stack: ..., gns, ns, const table, class table, static table
+  }
+  ASSERT_EQ (1, lua_gettop (L)); // Stack: ...
 }
 
 #ifdef _M_IX86 // Windows 32bit only
