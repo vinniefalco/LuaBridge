@@ -1663,3 +1663,70 @@ TEST_F (ClassTests, EnclosedClassProperties)
   runLua ("result = outer.data.data");
   ASSERT_EQ (10, result <int> ());
 }
+
+//namespace {
+
+struct InnerClass
+{
+  ~InnerClass()
+  {
+    ++destructorCallCount;
+  }
+
+  static unsigned destructorCallCount;
+};
+
+unsigned InnerClass::destructorCallCount;
+
+struct OuterClass
+{
+  OuterClass()
+  {
+    throw std::runtime_error ("Exception");
+  }
+
+  ~OuterClass()
+  {
+    ++destructorCallCount;
+  }
+
+  static unsigned destructorCallCount;
+  InnerClass inner;
+};
+
+unsigned OuterClass::destructorCallCount;
+
+//} // namespace
+
+TEST_F (ClassTests, DestructorIsNotCalledIfConstructorThrows)
+{
+  luabridge::getGlobalNamespace(L)
+    .beginClass <OuterClass> ("OuterClass")
+    .addConstructor <void (*) ()> ()
+    .endClass ();
+
+  InnerClass::destructorCallCount = 0;
+  OuterClass::destructorCallCount = 0;
+  ASSERT_THROW (runLua ("result = OuterClass ()"), std::exception);
+  ASSERT_EQ (1, InnerClass::destructorCallCount);
+
+  lua_close (L);
+  L = nullptr;
+  ASSERT_EQ (1, InnerClass::destructorCallCount);
+  ASSERT_EQ (0, OuterClass::destructorCallCount);
+}
+
+TEST_F (ClassTests, DestructorIsCalledOnce)
+{
+  luabridge::getGlobalNamespace(L)
+    .beginClass <InnerClass> ("InnerClass")
+    .addConstructor <void (*) ()> ()
+    .endClass ();
+
+  InnerClass::destructorCallCount = 0;
+  runLua ("result = InnerClass ()");
+
+  lua_close (L);
+  L = nullptr;
+  ASSERT_EQ (1, InnerClass::destructorCallCount);
+}
