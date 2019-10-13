@@ -240,26 +240,21 @@ private:
 
   char m_storage [sizeof (T)];
 
-  inline T* getObject ()
-  {
-    // If this fails to compile it means you forgot to provide
-    // a Container specialization for your container!
-    //
-    return reinterpret_cast <T*> (&m_storage [0]);
-  }
-
 private:
   /**
     Used for placement construction.
   */
   UserdataValue ()
   {
-    m_p = getObject ();
+    m_p = 0;
   }
 
   ~UserdataValue ()
   {
-    getObject ()->~T ();
+    if (getPointer () != 0)
+    {
+      getObject ()->~T ();
+    }
   }
 
 public:
@@ -269,7 +264,7 @@ public:
     The caller is responsible for calling placement new using the
     returned uninitialized storage.
   */
-  static void* place (lua_State* const L)
+  static UserdataValue <T>* place (lua_State* const L)
   {
     UserdataValue <T>* const ud = new (
       lua_newuserdata (L, sizeof (UserdataValue <T>))) UserdataValue <T> ();
@@ -279,7 +274,7 @@ public:
       throw std::logic_error ("The class is not registered in LuaBridge");
     }
     lua_setmetatable (L, -2);
-    return ud->getPointer ();
+    return ud;
   }
 
   /**
@@ -288,7 +283,25 @@ public:
   template <class U>
   static inline void push (lua_State* const L, U const& u)
   {
-    new (place (L)) U (u);
+    UserdataValue <T>* ud = place (L);
+    new (ud->getObject ()) U (u);
+    ud->commit ();
+  }
+
+  /**
+    Confirm object construction.
+  */
+  void commit ()
+  {
+    m_p = getObject ();
+  }
+
+  T* getObject ()
+  {
+    // If this fails to compile it means you forgot to provide
+    // a Container specialization for your container!
+    //
+    return reinterpret_cast <T*> (&m_storage [0]);
   }
 };
 

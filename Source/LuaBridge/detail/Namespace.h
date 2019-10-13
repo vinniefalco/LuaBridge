@@ -282,7 +282,9 @@ class Namespace : public detail::Registrar
     static int ctorPlacementProxy (lua_State* L)
     {
       ArgList <Params, 2> args (L);
-      Constructor <T, Params>::call (UserdataValue <T>::place (L), args);
+      UserdataValue <T>* value = UserdataValue <T>::place (L);
+      Constructor <T, Params>::call (value->getObject (), args);
+      value->commit ();
       return 1;
     }
 

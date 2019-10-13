@@ -1,3 +1,7 @@
+## Version 2.4.1
+
+* Do not call the object destructor then its constructor throws.
+
 ## Version 2.4
 
 * String stack get specialization doesn't change the stack value anymore.
