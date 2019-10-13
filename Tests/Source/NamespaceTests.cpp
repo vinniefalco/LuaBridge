@@ -150,6 +150,67 @@ TEST_F (NamespaceTests, ReadOnlyProperties)
 }
 
 namespace {
+
+template <class T>
+struct Storage
+{
+  static T value;
+};
+
+template <class T>
+T Storage <T>::value;
+
+template <class T>
+int getDataC (lua_State* L)
+{
+  luabridge::Stack <T>::push (L, Storage <T>::value);
+  return 1;
+}
+
+template <class T>
+int setDataC (lua_State* L)
+{
+  Storage <T>::value = luabridge::Stack <T>::get (L, -1);
+  return 0;
+}
+
+} // namespace
+
+TEST_F (NamespaceTests, Properties_ProxyCFunctions)
+{
+  luabridge::getGlobalNamespace (L)
+    .beginNamespace ("ns")
+    .addProperty ("value", &getDataC <int>, &setDataC <int>)
+    .endNamespace ();
+
+  Storage <int>::value = 1;
+  runLua ("ns.value = 2");
+  ASSERT_EQ (2, Storage <int>::value);
+
+  Storage <int>::value = 3;
+  runLua ("result = ns.value");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (3, result ().cast <int> ());
+}
+
+TEST_F (NamespaceTests, Properties_ProxyCFunctions_ReadOnly)
+{
+  luabridge::getGlobalNamespace (L)
+    .beginNamespace ("ns")
+    .addProperty ("value", &getDataC <int>)
+    .endNamespace ();
+
+  Storage <int>::value = 1;
+  ASSERT_THROW (runLua ("ns.value = 2"), std::exception);
+  ASSERT_EQ (1, Storage <int>::value);
+
+  Storage <int>::value = 3;
+  runLua ("result = ns.value");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (3, result ().cast <int> ());
+}
+
+namespace {
 struct Class {};
 }
 
