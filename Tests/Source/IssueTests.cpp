@@ -143,3 +143,38 @@ TEST_F (IssueTests, Issue178)
   ASSERT_TRUE (result ().isNumber ());
   ASSERT_EQ (3.f, result <float> ());
 }
+
+enum class MyEnum
+{
+  VALUE0,
+  VALUE1,
+};
+
+template <typename T>
+struct EnumWrapper
+{
+    static typename std::enable_if<std::is_enum<T>::value, void>::type push(lua_State* L, T value)
+    {
+        lua_pushnumber (L, static_cast<std::size_t> (value));
+    }
+
+    static typename std::enable_if<std::is_enum<T>::value, T>::type get(lua_State* L, int index)
+    {
+        return static_cast <T> (lua_tointeger (L, index));
+    }
+};
+
+namespace luabridge {
+
+template <>
+struct luabridge::Stack <MyEnum> : EnumWrapper <MyEnum>
+{
+};
+
+} // namespace luabridge
+
+TEST_F (IssueTests, Issue127)
+{
+  runLua ("result = 1");
+  ASSERT_EQ (MyEnum::VALUE1, result <MyEnum> ());
+}
