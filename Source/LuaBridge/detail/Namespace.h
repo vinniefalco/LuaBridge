@@ -1145,37 +1145,6 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-	  Add or replace a property.
-
-	  If the set function is omitted or null, the property is read-only.
-  */
-  Namespace& addProperty (char const* name, int (*get) (lua_State*), int (*set) (lua_State*) = 0)
-  {
-	if (m_stackSize == 1)
-	{
-	  throw std::logic_error ("addProperty () called on global namespace");
-	}
-
-	assert (lua_istable (L, -1)); // Stack: namespace table (ns)
-	lua_pushcfunction (L, get); // Stack: ns, getter
-	CFunc::addGetter (L, name, -2); // Stack: ns
-	if (set != 0)
-	{
-	  lua_pushcfunction(L, set); // Stack: ns, setter
-	  CFunc::addSetter(L, name, -2); // Stack: ns
-	}
-	else
-	{
-	  lua_pushstring(L, name); // Stack: ns, name
-	  lua_pushcclosure(L, &CFunc::readOnlyError, 1); // Stack: ns, name, readOnlyError
-	  CFunc::addSetter(L, name, -2); // Stack: ns
-	}
-
-	return *this;
-  }
-
-  //----------------------------------------------------------------------------
-  /**
       Add or replace a property.
       If the set function is omitted or null, the property is read-only.
   */
