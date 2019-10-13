@@ -32,6 +32,7 @@
 
 #include <LuaBridge/detail/Config.h>
 #include <LuaBridge/detail/ClassInfo.h>
+#include <LuaBridge/detail/LuaException.h>
 #include <LuaBridge/detail/Security.h>
 #include <LuaBridge/detail/TypeTraits.h>
 
@@ -1020,11 +1021,6 @@ private:
 
   using Registrar::operator=;
 
-  static int throwAtPanic (lua_State* L)
-  {
-    throw std::runtime_error (lua_tostring (L, 1));
-  }
-
 public:
   //----------------------------------------------------------------------------
   /**
@@ -1032,7 +1028,7 @@ public:
   */
   static Namespace getGlobalNamespace (lua_State* L)
   {
-    lua_atpanic (L, throwAtPanic);
+    enableExceptions (L);
     return Namespace (L);
   }
 

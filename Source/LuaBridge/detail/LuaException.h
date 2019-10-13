@@ -102,6 +102,13 @@ public:
   }
 
   //----------------------------------------------------------------------------
+  /**
+      Initializes error handling. Subsequent Lua errors are translated to C++ exceptions.
+  */
+  static void enableExceptions (lua_State* L)
+  {
+    lua_atpanic (L, throwAtPanic);
+  }
 
 protected:
   void whatFromStack ()
@@ -117,6 +124,21 @@ protected:
       m_what = "missing error";
     }
   }
+
+private:
+  static int throwAtPanic (lua_State* L)
+  {
+    throw LuaException (L, -1);
+  }
 };
+
+//----------------------------------------------------------------------------
+/**
+    Initializes error handling. Subsequent Lua errors are translated to C++ exceptions.
+*/
+static void enableExceptions (lua_State* L)
+{
+  LuaException::enableExceptions (L);
+}
 
 } // namespace luabridge

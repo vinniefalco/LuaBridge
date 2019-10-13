@@ -6,6 +6,7 @@
 #pragma once
 
 #include <LuaBridge/detail/Stack.h>
+#include <LuaBridge/detail/dump.h>
 
 #include <map>
 

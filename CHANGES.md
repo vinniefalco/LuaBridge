@@ -1,6 +1,8 @@
 ## Version 2.4
 
+* String stack get specialization doesn't change the stack value anymore.
 * Added namespace addProperty accepting C-functions.
+* Introduce enableExceptions function.
 
 ## Version 2.3.2
 
