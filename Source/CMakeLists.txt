@@ -35,8 +35,8 @@ target_sources (LuaBridge INTERFACE
 )
 target_include_directories (LuaBridge INTERFACE .)
 
-if (MSVC)
-  add_custom_target (LuaBridgeLibrary SOURCES
+if (MSVC AND CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+  add_custom_target (LuaBridgeSources SOURCES
     ${LUABRIDGE_HEADERS}
     ${LUABRIDGE_DETAIL_HEADERS}
   )
