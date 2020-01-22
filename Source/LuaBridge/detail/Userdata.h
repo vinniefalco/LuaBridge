@@ -63,7 +63,7 @@ protected:
   /**
     Get an untyped pointer to the contained class.
   */
-  void* const getPointer ()
+  void* getPointer ()
   {
     return m_p;
   }
