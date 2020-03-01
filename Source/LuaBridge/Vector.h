@@ -29,7 +29,7 @@ struct Stack <std::vector <T> >
   {
     if (!lua_istable (L, index))
     {
-      luaL_error (L, "#%d argments must be table", index);
+      luaL_error (L, "#%d argument must be a table", index);
     }
 
     std::vector <T> vector;
@@ -43,6 +43,11 @@ struct Stack <std::vector <T> >
       lua_pop (L, 1);
     }
     return vector;
+  }
+
+  static bool isInstance (lua_State* L, int index)
+  {
+    return lua_istable (L, index);
   }
 };
 

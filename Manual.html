@@ -986,6 +986,7 @@ struct Stack
 {
   static void push (lua_State* L, T t);
   static T get (lua_State* L, int index);
+  static bool isInstance (lua_State* L, int index);
 };
 </pre>
 
@@ -1012,7 +1013,7 @@ values. These basic types are supported:
 
 <p>
 User-defined types which are convertible to one of the basic types are
-possible, simply provide a <code>Stack&lt;&gt;</code> specialization in the
+possible, simply provide a <code>Stack &lt;&gt;</code> specialization in the
 <code>luabridge</code> namespace for your user-defined type, modeled after
 the existing types. For example, here is a specialization for a
 <code>juce::String</code>:
@@ -1030,6 +1031,11 @@ struct Stack &lt;juce::String&gt;
   static juce::String get (lua_State* L, int index)
   {
     return juce::String (luaL_checkstring (L, index));
+  }
+
+  static bool isInstance (lua_State* L, int index)
+  {
+    return lua_type (L, index) == LUA_TSTRING;
   }
 };
 </pre>
@@ -1140,10 +1146,10 @@ A a;
 push (L, &amp;a);             // pointer to 'a', C++ lifetime
 lua_setglobal (L, "a");
 
-push (L, (A const*)&amp;a);   // pointer to 'a const', C++ lifetime
+push (L, (A const*) &amp;a);   // pointer to 'a const', C++ lifetime
 lua_setglobal (L, "ac");
 
-push &lt;A const*> (L, &amp;a);  // equivalent to push (L, (A const*)&amp;a)
+push &lt;A const*&gt; (L, &amp;a);  // equivalent to push (L, (A const*) &amp;a)
 lua_setglobal (L, "ac2");
 
 push (L, new A);          // compiles, but will leak memory

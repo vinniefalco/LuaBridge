@@ -331,12 +331,12 @@ class Namespace : public detail::Registrar
 
         createConstTable (name); // Stack: ns, const table (co)
         lua_pushcfunction (L, &CFunc::gcMetaMethod <T>); // Stack: ns, co, function
-        rawsetfield (L, -2, "__gc"); // Stack: ns, co
+        rawsetfield (L, -2, "__gc"); // co ["__gc"] = function. Stack: ns, co
         ++m_stackSize;
 
         createClassTable (name); // Stack: ns, co, class table (cl)
         lua_pushcfunction (L, &CFunc::gcMetaMethod <T>); // Stack: ns, co, cl, function
-        rawsetfield (L, -2, "__gc"); // Stack: ns, co, cl
+        rawsetfield (L, -2, "__gc"); // cl ["__gc"] = function. Stack: ns, co, cl
         ++m_stackSize;
 
         createStaticTable (name); // Stack: ns, co, cl, st
@@ -378,12 +378,12 @@ class Namespace : public detail::Registrar
 
       createConstTable (name); // Stack: ns, const table (co)
       lua_pushcfunction (L, &CFunc::gcMetaMethod <T>); // Stack: ns, co, function
-      rawsetfield (L, -2, "__gc"); // Stack: ns, co
+      rawsetfield (L, -2, "__gc"); // co ["__gc"] = function. Stack: ns, co
       ++m_stackSize;
 
       createClassTable (name); // Stack: ns, co, class table (cl)
       lua_pushcfunction (L, &CFunc::gcMetaMethod <T>); // Stack: ns, co, cl, function
-      rawsetfield (L, -2, "__gc"); // Stack: ns, co, cl
+      rawsetfield (L, -2, "__gc"); // cl ["__gc"] = function. Stack: ns, co, cl
       ++m_stackSize;
 
       createStaticTable (name); // Stack: ns, co, cl, st

@@ -67,6 +67,11 @@ struct Stack <Nil>
   {
     lua_pushnil (L);
   }
+
+  static bool isInstance (lua_State* L, int index)
+  {
+    return lua_type (L, index) == LUA_TTABLE;
+  }
 };
 
 /**
