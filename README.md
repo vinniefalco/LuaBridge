@@ -36,24 +36,38 @@ There are 4 unit test flavors:
 * `Tests52` - uses Lua 5.2, with C++11 features
 * `Tests52L` - uses Lua 5.2, no C++11 features
 
-On Linux/MacOS:
+Build using Make on Linux/MacOS:
 ```bash
 clone --recurse-submodules git@github.com:vinniefalco/LuaBridge.git
 cd LuaBridge
-mkdir build
+cmake -DCMAKE_BUILD_TYPE=Debug -B build
+# or cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -B build
+# or cmake -DCMAKE_BUILD_TYPE=Release -B build
 cd build
-cmake -DCMAKE_BUILD_TYPE=<Debug|RelWithDebInfo|Release> ..
 make -j
 ```
 
-On Windows:
+Generate XCode project on MacOS:
+```bash
+clone --recurse-submodules git@github.com:vinniefalco/LuaBridge.git
+cd LuaBridge
+cmake -G Xcode -B build
+# Generates XCode project build/LuaBridge.xcodeproj
+```
+
+Generate MSVS solution on Windows:
 ```cmd
 clone --recurse-submodules git@github.com:vinniefalco/LuaBridge.git
 cd LuaBridge
 mkdir build
 cd build
-cmake -G 'Visual Studio 14 2015|Visual Studio 15 2017' ..
-# Generated MSVS solution is LuaBridge.sln
+cmake -G "Visual Studio 15 2017 Win64" -B build
+# or cmake -G "Visual Studio 14 2015" -B build
+# or cmake -G "Visual Studio 15 2017 Win64" -B build
+# or cmake -G "Visual Studio 15 2017" -B build
+# or cmake -G "Visual Studio 15 2019" -A Win64 -B build
+# or cmake -G "Visual Studio 15 2019" -B build
+# Generates MSVS solution build/LuaBridge.sln
 ```
 
 # LuaBridge Demo
