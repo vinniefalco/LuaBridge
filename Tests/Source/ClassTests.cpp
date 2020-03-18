@@ -157,13 +157,10 @@ TEST_F (ClassTests, IsInstance)
 
   luabridge::getGlobalNamespace (L)
     .beginClass <BaseClass> ("BaseClass")
-    .addConstructor <void (*) ()> ()
     .endClass ()
     .deriveClass <DerivedClass, BaseClass> ("DerivedClass")
-    .addConstructor <void (*) ()> ()
     .endClass ()
     .beginClass <OtherClass> ("OtherClass")
-    .addConstructor <void (*) ()> ()
     .endClass ();
 
   BaseClass base;

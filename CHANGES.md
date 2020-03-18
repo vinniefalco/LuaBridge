@@ -1,3 +1,7 @@
+## Version 2.5
+
+* Introduce isInstance method and a convenience function template.
+
 ## Version 2.4.1
 
 * Do not call the object destructor then its constructor throws.
