@@ -167,7 +167,7 @@ struct EnumWrapper
 namespace luabridge {
 
 template <>
-struct luabridge::Stack <MyEnum> : EnumWrapper <MyEnum>
+struct Stack <MyEnum> : EnumWrapper <MyEnum>
 {
 };
 

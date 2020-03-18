@@ -31,7 +31,7 @@ struct Stack <std::list <T> >
   {
     if (!lua_istable (L, index))
     {
-      luaL_error (L, "#%d argments must be table", index);
+      luaL_error (L, "#%d argument must be a table", index);
     }
 
     std::list <T> list;
@@ -44,6 +44,11 @@ struct Stack <std::list <T> >
       lua_pop (L, 1);
     }
     return list;
+  }
+
+  static bool isInstance (lua_State* L, int index)
+  {
+    return lua_istable (L, index);
   }
 };
 

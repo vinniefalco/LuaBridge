@@ -33,7 +33,7 @@ struct Stack <std::map <K, V> >
   {
     if (!lua_istable (L, index))
     {
-      luaL_error (L, "#%d argments must be table", index);
+      luaL_error (L, "#%d argument must be a table", index);
     }
 
     Map map;
@@ -45,6 +45,11 @@ struct Stack <std::map <K, V> >
       lua_pop (L, 1);
     }
     return map;
+  }
+
+  static bool isInstance (lua_State* L, int index)
+  {
+    return lua_istable (L, index);
   }
 };
 

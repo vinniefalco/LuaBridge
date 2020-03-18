@@ -38,16 +38,6 @@ private:
 
 //------------------------------------------------------------------------------
 /**
-Push an object onto the Lua stack.
-*/
-template <class T>
-inline void push(lua_State* L, T t)
-{
-  Stack <T>::push(L, t);
-}
-
-//------------------------------------------------------------------------------
-/**
 Set a global value in the lua_State.
 
 @note This works on any type specialized by `Stack`, including `LuaRef` and

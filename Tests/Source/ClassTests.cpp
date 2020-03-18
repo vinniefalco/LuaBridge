@@ -149,6 +149,42 @@ T Class <T, Base>::staticData = {};
 
 } // namespace
 
+TEST_F (ClassTests, IsInstance)
+{
+  using BaseClass = Class <int, EmptyBase>;
+  using OtherClass = Class <float, EmptyBase>;
+  using DerivedClass = Class <float, BaseClass>;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <BaseClass> ("BaseClass")
+    .endClass ()
+    .deriveClass <DerivedClass, BaseClass> ("DerivedClass")
+    .endClass ()
+    .beginClass <OtherClass> ("OtherClass")
+    .endClass ();
+
+  BaseClass base;
+  luabridge::push (L, base);
+
+  DerivedClass derived;
+  luabridge::push (L, derived);
+
+  OtherClass other;
+  luabridge::push (L, other);
+
+  ASSERT_TRUE (luabridge::isInstance <BaseClass> (L, -3));
+  ASSERT_FALSE (luabridge::isInstance <DerivedClass> (L, -3)); // BaseClass is not DerivedClass
+  ASSERT_FALSE (luabridge::isInstance <OtherClass> (L, -3));
+
+  ASSERT_TRUE (luabridge::isInstance <BaseClass> (L, -2));
+  ASSERT_TRUE (luabridge::isInstance <DerivedClass> (L, -2)); // DerivedClass is BaseClass
+  ASSERT_FALSE (luabridge::isInstance <OtherClass> (L, -2));
+
+  ASSERT_FALSE (luabridge::isInstance <BaseClass> (L, -1));
+  ASSERT_FALSE (luabridge::isInstance <DerivedClass> (L, -1));
+  ASSERT_TRUE (luabridge::isInstance <OtherClass> (L, -1));
+}
+
 TEST_F (ClassTests, PassingUnregisteredClassToLuaThrows)
 {
   using Unregistered = Class <int, EmptyBase>;
@@ -309,12 +345,7 @@ TEST_F (ClassTests, PassingUnregisteredClassFromLuaThrows)
 {
   using Unregistered = Class <int, EmptyBase>;
 
-  luabridge::getGlobalNamespace (L)
-    .addFunction ("returnRef", &returnRef)
-    .addFunction ("returnConstRef", &returnConstRef)
-    .addFunction ("returnPtr", &returnPtr)
-    .addFunction ("returnConstPtr", &returnConstPtr)
-    .addFunction ("returnValue", &returnValue);
+  addHelperFunctions (L);
 
   ASSERT_THROW (runLua ("result = returnRef ()"), std::exception);
   ASSERT_THROW (runLua ("result = returnConstRef ()"), std::exception);
