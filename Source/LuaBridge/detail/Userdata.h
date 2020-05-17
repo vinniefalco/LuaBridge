@@ -77,7 +77,7 @@ private:
     const table, or else a Lua error is raised. This is used for the
     __gc metamethod.
   */
-  static Userdata* getExactClass (lua_State* L, int index, void const* classKey)
+  static Userdata* getExactClass (lua_State* L, int index, void const* /*classKey*/)
   {
     return static_cast <Userdata*> (lua_touserdata (L, lua_absindex (L, index)));
   }
