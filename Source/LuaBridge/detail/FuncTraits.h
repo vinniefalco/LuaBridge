@@ -2,7 +2,7 @@
 /*
   https://github.com/vinniefalco/LuaBridge
 
-  Copyright 2019, Dmitry Tarakanov
+  Copyright 2020, Dmitry Tarakanov
   Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 
   License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
@@ -271,7 +271,7 @@ struct FuncTraits <R (*) () LUABRIDGE_THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef None Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -284,7 +284,7 @@ struct FuncTraits <R (*) (P1) LUABRIDGE_THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -297,7 +297,7 @@ struct FuncTraits <R (*) (P1, P2) LUABRIDGE_THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -310,7 +310,7 @@ struct FuncTraits <R (*) (P1, P2, P3) LUABRIDGE_THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -323,7 +323,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4) LUABRIDGE_THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -336,7 +336,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5) LUABRIDGE_THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -349,7 +349,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6) LUABRIDGE_THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5,  TypeList <P6> > > > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -362,7 +362,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7) LUABRIDGE_THROWSPEC, D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -375,7 +375,7 @@ struct FuncTraits <R (*) (P1, P2, P3, P4, P5, P6, P7, P8) LUABRIDGE_THROWSPEC, D
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -392,7 +392,7 @@ struct FuncTraits <R (__stdcall *) (), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef None Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -405,7 +405,7 @@ struct FuncTraits <R (__stdcall *) (P1), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -418,7 +418,7 @@ struct FuncTraits <R (__stdcall *) (P1, P2), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -431,7 +431,7 @@ struct FuncTraits <R (__stdcall *) (P1, P2, P3), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -444,7 +444,7 @@ struct FuncTraits <R (__stdcall *) (P1, P2, P3, P4), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -457,7 +457,7 @@ struct FuncTraits <R (__stdcall *) (P1, P2, P3, P4, P5), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -470,7 +470,7 @@ struct FuncTraits <R (__stdcall *) (P1, P2, P3, P4, P5, P6), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -483,7 +483,7 @@ struct FuncTraits <R (__stdcall *) (P1, P2, P3, P4, P5, P6, P7), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -496,7 +496,7 @@ struct FuncTraits <R (__stdcall *) (P1, P2, P3, P4, P5, P6, P7, P8), D>
   typedef D DeclType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (D fp, TypeListValues <Params> tvl)
+  static R call (D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (fp, tvl);
   }
@@ -515,7 +515,7 @@ struct FuncTraits <R (T::*) () LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef None Params;
-  static R call (T* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -530,7 +530,7 @@ struct FuncTraits <R (T::*) (P1) LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -545,7 +545,7 @@ struct FuncTraits <R (T::*) (P1, P2) LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (T* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -560,7 +560,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -575,7 +575,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -590,7 +590,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -605,7 +605,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -620,7 +620,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -635,7 +635,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) LUABRIDGE_THROWSPEC
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -652,7 +652,7 @@ struct FuncTraits <R (T::*) () const LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef None Params;
-  static R call (T const* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T const* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -667,7 +667,7 @@ struct FuncTraits <R (T::*) (P1) const LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1> Params;
-  static R call (T const* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T const* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -682,7 +682,7 @@ struct FuncTraits <R (T::*) (P1, P2) const LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2> > Params;
-  static R call (T const* obj, R (T::*fp) (P1, P2) const, TypeListValues <Params> tvl)
+  static R call (T const* obj, R (T::*fp) (P1, P2) const, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -697,7 +697,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3) const LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3> > > Params;
-  static R call (T const* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T const* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -712,7 +712,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4) const LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4> > > > Params;
-  static R call (T const* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T const* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -727,7 +727,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5) const LUABRIDGE_THROWSPEC, D>
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5> > > > > Params;
-  static R call (T const* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T const* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -742,7 +742,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6) const LUABRIDGE_THROWSPEC, 
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > Params;
-  static R call (T const* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T const* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -757,7 +757,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7) const LUABRIDGE_THROWSP
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > Params;
-  static R call (T const* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T const* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -772,7 +772,7 @@ struct FuncTraits <R (T::*) (P1, P2, P3, P4, P5, P6, P7, P8) const LUABRIDGE_THR
   typedef T ClassType;
   typedef R ReturnType;
   typedef TypeList <P1, TypeList <P2, TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, TypeList <P8> > > > > > > > Params;
-  static R call (T const* obj, D fp, TypeListValues <Params> tvl)
+  static R call (T const* obj, D fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -828,7 +828,7 @@ struct FuncTraits <R (T::*) (ParamList...)>
   using ReturnType = R;
   using Params = typename MakeTypeList <ParamList...>::Result;
 
-  static R call (ClassType* obj, const DeclType& fp, TypeListValues <Params> tvl)
+  static R call (ClassType* obj, const DeclType& fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
@@ -846,7 +846,7 @@ struct FuncTraits <R (T::*) (ParamList...) const>
   using ReturnType = R;
   using Params = typename MakeTypeList <ParamList...>::Result;
 
-  static R call (const ClassType* obj, const DeclType& fp, TypeListValues <Params> tvl)
+  static R call (const ClassType* obj, const DeclType& fp, TypeListValues <Params>& tvl)
   {
     return doCall <R> (obj, fp, tvl);
   }
