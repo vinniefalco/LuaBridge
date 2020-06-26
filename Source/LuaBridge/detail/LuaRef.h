@@ -306,11 +306,11 @@ public:
       Type check
   */
   template <class T>
-  bool isInstance() const
+  bool isInstance () const
   {
-    StackPop p(m_L, 1);
-    impl().push();
-    return Stack <T>::isInstance(m_L, -1);
+    StackPop p (m_L, 1);
+    impl ().push ();
+    return Stack <T>::isInstance (m_L, -1);
   }
 
   //----------------------------------------------------------------------------
