@@ -156,7 +156,11 @@ private:
   {
     index = lua_absindex (L, index);
 
-    lua_getmetatable (L, index); // Stack: object metatable (ot) | nil
+    int result = lua_getmetatable (L, index); // Stack: object metatable (ot) | nothing
+    if (result == 0)
+    {
+      return false; // Nothing was pushed on the stack
+    }
     if (!lua_istable (L, -1))
     {
       lua_pop (L, 1); // Stack: -

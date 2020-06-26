@@ -303,6 +303,18 @@ public:
 
   //----------------------------------------------------------------------------
   /**
+      Type check
+  */
+  template <class T>
+  bool isInstance () const
+  {
+    StackPop p (m_L, 1);
+    impl ().push ();
+    return Stack <T>::isInstance (m_L, -1);
+  }
+
+  //----------------------------------------------------------------------------
+  /**
       Universal implicit conversion operator.
 
       NOTE: Visual Studio 2010 and 2012 have a bug where this function
