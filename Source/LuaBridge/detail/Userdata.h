@@ -57,7 +57,7 @@ namespace luabridge {
 class Userdata
 {
 protected:
-  void* m_p; // subclasses must set this
+  void* m_p = nullptr; // subclasses must set this
 
   //--------------------------------------------------------------------------
   /**
