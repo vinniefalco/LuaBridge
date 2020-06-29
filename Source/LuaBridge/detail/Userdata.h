@@ -59,7 +59,7 @@ class Userdata
 protected:
   void* m_p; // subclasses must set this
 
-  Userdata() : m_p(nullptr)
+  Userdata() : m_p (0)
   {	  
   }
 	
