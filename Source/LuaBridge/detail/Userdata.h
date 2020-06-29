@@ -59,6 +59,10 @@ class Userdata
 protected:
   void* m_p; // subclasses must set this
 
+  Userdata() : m_p (0)
+  {	  
+  }
+	
   //--------------------------------------------------------------------------
   /**
     Get an untyped pointer to the contained class.
