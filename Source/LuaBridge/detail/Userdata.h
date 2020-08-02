@@ -375,6 +375,7 @@ private:
     lua_rawgetp (L, LUA_REGISTRYINDEX, key);
     if (!lua_istable (L, -1))
     {
+      lua_pop (L, 1); // possibly: a nil
       throw std::logic_error ("The class is not registered in LuaBridge");
     }
     lua_setmetatable (L, -2);
