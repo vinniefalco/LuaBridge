@@ -4,6 +4,7 @@ set (LUABRIDGE_HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/Map.h
   ${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/RefCountedObject.h
   ${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/RefCountedPtr.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/SharedPtr.h
   ${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/UnorderedMap.h
   ${CMAKE_CURRENT_SOURCE_DIR}/LuaBridge/Vector.h
 )

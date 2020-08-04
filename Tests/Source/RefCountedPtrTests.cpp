@@ -33,6 +33,12 @@ struct RefCounted : luabridge::RefCountedObject
     deleted = true;
   }
 
+  RefCounted(RefCounted&&) = delete;
+  RefCounted(const RefCounted&) = delete;
+
+  RefCounted& operator=(RefCounted&&) = delete;
+  RefCounted& operator=(const RefCounted&) = delete;
+
   bool isDeleted () const
   {
     return deleted;
