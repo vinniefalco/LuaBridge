@@ -512,6 +512,31 @@ class Namespace : public detail::Registrar
       return *this;
     }
 
+#ifdef LUABRIDGE_CXX11
+
+    //--------------------------------------------------------------------------
+    /**
+      Add or replace a static member function by std::function.
+    */
+    template <class ReturnType, class... Params>
+    Class <T>& addStaticFunction (char const* name, std::function <ReturnType (Params...)> function)
+    {
+      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
+
+      using FnType = decltype (function);
+      new (lua_newuserdata (L, sizeof (function))) FnType (std::move (function)); // Stack: co, cl, st, function userdata (ud)
+      lua_newtable (L); // Stack: co, cl, st, ud, ud metatable (mt)
+      lua_pushcfunction (L, &CFunc::gcMetaMethodAny <FnType>); // Stack: co, cl, st, ud, mt, gc function
+      rawsetfield (L, -2, "__gc"); // Stack: co, cl, st, ud, mt
+      lua_setmetatable (L, -2); // Stack: co, cl, st, ud
+      lua_pushcclosure (L, &CFunc::CallProxyFunctor <FnType>::f, 1); // Stack: co, cl, st, function
+      rawsetfield (L, -2, name); // Stack: co, cl, st
+
+      return *this;
+    }
+
+#endif // LUABRIDGE_CXX11
+
     //--------------------------------------------------------------------------
     /**
       Add or replace a lua_CFunction.
@@ -1171,7 +1196,9 @@ public:
     return *this;
   }
 
-//----------------------------------------------------------------------------
+#ifndef LUABRIDGE_CXX11
+
+  //----------------------------------------------------------------------------
   /**
       Add or replace a free function.
   */
@@ -1186,6 +1213,48 @@ public:
 
     return *this;
   }
+
+#else // ifndef LUABRIDGE_CXX11
+
+  //----------------------------------------------------------------------------
+  /**
+      Add or replace a namespace function by std::function.
+  */
+  template <class ReturnType, class... Params>
+  Namespace& addFunction (char const* name, std::function <ReturnType (Params...)> function)
+  {
+    assert (lua_istable (L, -1)); // Stack: namespace table (ns)
+
+    using FnType = decltype (function);
+    new (lua_newuserdata (L, sizeof (function))) FnType (std::move (function)); // Stack: ns, function userdata (ud)
+    lua_newtable (L); // Stack: ns, ud, ud metatable (mt)
+    lua_pushcfunction (L, &CFunc::gcMetaMethodAny <FnType>); // Stack: ns, ud, mt, gc function
+    rawsetfield (L, -2, "__gc"); // Stack: ns, ud, mt
+    lua_setmetatable (L, -2); // Stack: ns, ud
+    lua_pushcclosure (L, &CFunc::CallProxyFunctor <FnType>::f, 1); // Stack: ns, function
+    rawsetfield (L, -2, name); // Stack: ns
+
+    return *this;
+  }
+
+  //----------------------------------------------------------------------------
+  /**
+      Add or replace a free function.
+  */
+  template <class ReturnType, class... Params>
+  Namespace& addFunction (char const* name, ReturnType (*fp) (Params...))
+  {
+    assert (lua_istable (L, -1)); // Stack: namespace table (ns)
+
+    using FnType = decltype (fp);
+    lua_pushlightuserdata (L, reinterpret_cast <void*> (fp)); // Stack: ns, function ptr
+    lua_pushcclosure (L, &CFunc::Call <FnType>::f, 1); // Stack: ns, function
+    rawsetfield (L, -2, name); // Stack: ns
+
+    return *this;
+  }
+
+#endif // ifndef LUABRIDGE_CXX11
 
   //----------------------------------------------------------------------------
   /**
