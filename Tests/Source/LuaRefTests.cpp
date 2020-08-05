@@ -247,6 +247,64 @@ TEST_F (LuaRefTests, Assignment)
   ASSERT_TRUE (b1 == b2);
 }
 
+TEST_F (LuaRefTests, IsInstance)
+{
+  struct Base
+  {
+  };
+
+  struct Derived : Base
+  {
+  };
+
+  struct Other
+  {
+  };
+
+  struct Unknown : Base
+  {
+  };
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Base> ("Base")
+    .addConstructor <void (*) ()> ()
+    .endClass ()
+    .deriveClass <Derived, Base> ("Derived")
+    .addConstructor <void (*) ()> ()
+    .endClass ()
+    .beginClass <Other> ("Other")
+    .addConstructor <void (*) ()> ()
+    .endClass ();
+
+  runLua ("result = Base ()");
+  ASSERT_TRUE (result ().isInstance <Base> ());
+  ASSERT_FALSE (result ().isInstance <Derived> ());
+  ASSERT_FALSE (result ().isInstance <Other> ());
+  ASSERT_FALSE (result ().isInstance <Unknown> ());
+  ASSERT_TRUE (result ().isUserdata ());
+
+  runLua ("result = Derived ()");
+  ASSERT_TRUE (result ().isInstance <Base> ());
+  ASSERT_TRUE (result ().isInstance <Derived> ());
+  ASSERT_FALSE (result ().isInstance <Other> ());
+  ASSERT_FALSE (result ().isInstance <Unknown> ());
+  ASSERT_TRUE (result ().isUserdata ());
+
+  runLua ("result = Other ()");
+  ASSERT_FALSE (result ().isInstance <Base> ());
+  ASSERT_FALSE (result ().isInstance <Derived> ());
+  ASSERT_TRUE (result ().isInstance <Other> ());
+  ASSERT_FALSE (result ().isInstance <Unknown> ());
+  ASSERT_TRUE (result ().isUserdata ());
+
+  runLua ("result = 3.14");
+  ASSERT_FALSE (result ().isInstance <Base> ());
+  ASSERT_FALSE (result ().isInstance <Derived> ());
+  ASSERT_FALSE (result ().isInstance <Other> ());
+  ASSERT_FALSE (result ().isInstance <Unknown> ());
+  ASSERT_FALSE (result ().isUserdata ());
+}
+
 TEST_F (LuaRefTests, Print)
 {
   {
