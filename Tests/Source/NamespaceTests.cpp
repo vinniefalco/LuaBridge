@@ -5,6 +5,9 @@
 
 #include "TestBase.h"
 
+#ifdef LUABRIDGE_CXX11
+#include <functional>
+#endif
 
 struct NamespaceTests : TestBase
 {
@@ -286,6 +289,40 @@ TEST_F (NamespaceTests, LuaStackIntegrity)
   }
   ASSERT_EQ (1, lua_gettop (L)); // Stack: ...
 }
+
+namespace {
+
+template <class T>
+T Function (T param)
+{
+  return param;
+}
+
+} // namespace
+
+TEST_F (NamespaceTests, Functions)
+{
+  luabridge::getGlobalNamespace (L)
+    .addFunction ("Function", &Function <double>);
+
+  runLua ("result = Function (3.14)");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (3.14, result <double> ());
+}
+
+#ifdef LUABRIDGE_CXX11
+
+TEST_F (NamespaceTests, StdFunctions)
+{
+  luabridge::getGlobalNamespace (L)
+    .addFunction ("Function", std::function <int (int)> (&Function <int>));
+
+  runLua ("result = Function (12)");
+  ASSERT_TRUE (result ().isNumber ());
+  ASSERT_EQ (12, result <int> ());
+}
+
+#endif // LUABRIDGE_CXX11
 
 #ifdef _M_IX86 // Windows 32bit only
 

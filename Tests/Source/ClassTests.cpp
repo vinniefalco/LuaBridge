@@ -6,6 +6,9 @@
 #include "TestBase.h"
 
 #include <exception>
+#ifdef LUABRIDGE_CXX11
+#include <functional>
+#endif
 #include <map>
 #include <memory>
 
@@ -1247,6 +1250,24 @@ TEST_F (ClassStaticFunctions, Functions_Overridden)
   runLua ("result = Derived.staticFunction (Derived (123))");
   ASSERT_EQ (123, result <Derived> ().data);
 }
+
+#ifdef LUABRIDGE_CXX11
+
+TEST_F (ClassStaticFunctions, StdFunctions)
+{
+  using Int = Class <int, EmptyBase>;
+
+  luabridge::getGlobalNamespace (L)
+    .beginClass <Int> ("Int")
+    .addConstructor <void (*) (int)> ()
+    .addStaticFunction ("static", std::function <Int (Int)> (&Int::staticFunction))
+    .endClass ();
+
+  runLua ("result = Int.static (Int (35))");
+  ASSERT_EQ (35, result <Int> ().data);
+}
+
+#endif // LUABRIDGE_CXX11
 
 struct ClassStaticProperties : ClassTests
 {
