@@ -12,7 +12,7 @@
 namespace luabridge {
 
 template <class T>
-struct Stack <std::vector <T> >
+struct Stack <std::vector <T>>
 {
   static void push (lua_State* L, std::vector <T> const& vector)
   {

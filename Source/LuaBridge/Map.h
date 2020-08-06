@@ -13,7 +13,7 @@
 namespace luabridge {
 
 template <class K, class V>
-struct Stack <std::map <K, V> >
+struct Stack <std::map <K, V>>
 {
   typedef std::map <K, V> Map;
 

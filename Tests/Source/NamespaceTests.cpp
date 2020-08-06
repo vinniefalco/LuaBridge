@@ -5,9 +5,7 @@
 
 #include "TestBase.h"
 
-#ifdef LUABRIDGE_CXX11
 #include <functional>
-#endif
 
 struct NamespaceTests : TestBase
 {
@@ -310,8 +308,6 @@ TEST_F (NamespaceTests, Functions)
   ASSERT_EQ (3.14, result <double> ());
 }
 
-#ifdef LUABRIDGE_CXX11
-
 TEST_F (NamespaceTests, StdFunctions)
 {
   luabridge::getGlobalNamespace (L)
@@ -321,8 +317,6 @@ TEST_F (NamespaceTests, StdFunctions)
   ASSERT_TRUE (result ().isNumber ());
   ASSERT_EQ (12, result <int> ());
 }
-
-#endif // LUABRIDGE_CXX11
 
 #ifdef _M_IX86 // Windows 32bit only
 

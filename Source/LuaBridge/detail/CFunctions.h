@@ -354,8 +354,6 @@ struct CFunc
     }
   };
 
-#ifdef LUABRIDGE_CXX11
-
   //--------------------------------------------------------------------------
   /**
       lua_CFunction to call on a object.
@@ -391,8 +389,6 @@ struct CFunc
       return Invoke <ReturnType, Params, 1>::run (L, fn);
     }
   };
-
-#endif
 
   //--------------------------------------------------------------------------
 

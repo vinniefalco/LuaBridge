@@ -79,18 +79,5 @@ macro (add_test_app LUABRIDGE_TEST_NAME LUABRIDGE_TEST_LUA_LIBRARY)
 
 endmacro (add_test_app)
 
-
-# C++11
-
 add_test_app (Tests51 Lua51)
-
 add_test_app (Tests52 Lua52)
-
-
-# Pre C++11
-
-add_test_app (Tests51L Lua51)
-target_compile_definitions (Tests51L PRIVATE LUABRIDGE_NO_CXX11)
-
-add_test_app (Tests52L Lua52)
-target_compile_definitions (Tests52L PRIVATE LUABRIDGE_NO_CXX11)

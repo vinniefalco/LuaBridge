@@ -49,7 +49,7 @@ namespace luabridge {
     looks like this:
 
         template <class T>
-        struct ContainerTraits <ContainerType <T> >
+        struct ContainerTraits <ContainerType <T>>
         {
           typedef typename T Type;
 
@@ -95,7 +95,7 @@ struct TypeTraits
     static yes& test (...);
  
   public:
-    static const bool value = sizeof (test <ContainerTraits <T> >(0)) == sizeof (yes);
+    static const bool value = sizeof (test <ContainerTraits <T>>(0)) == sizeof (yes);
   };
 
   /** Determine if T is const qualified.

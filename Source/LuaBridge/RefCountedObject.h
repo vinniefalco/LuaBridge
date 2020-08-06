@@ -190,7 +190,6 @@ public:
         referencedObject->incReferenceCount();
   }
 
-#ifdef LUABRIDGE_CXX11
   /**
     Takes-over the object from another pointer.
 
@@ -201,7 +200,6 @@ public:
   {
     other.referencedObject = 0;
   }
-#endif
 
   /** Copies another pointer.
       This will increment the object's reference-count (if it is non-null).
@@ -242,7 +240,6 @@ public:
     return operator= (static_cast <ReferenceCountedObjectClass*> (other.getObject()));
   }
 
-#ifdef LUABRIDGE_CXX11
   /**
     Takes-over the object from another pointer.
 
@@ -254,7 +251,6 @@ public:
     std::swap (referencedObject, other.referencedObject);
     return *this;
   }
-#endif
 
   /** Changes this pointer to point at a different object.
       The reference count of the old object is decremented, and it might be
@@ -370,7 +366,7 @@ bool operator!= (ReferenceCountedObjectClass* object1, RefCountedObjectPtr<Refer
 //==============================================================================
 
 template <class T>
-struct ContainerTraits <RefCountedObjectPtr <T> >
+struct ContainerTraits <RefCountedObjectPtr <T>>
 {
   typedef T Type;
 

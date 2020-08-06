@@ -78,8 +78,6 @@ struct TypeListSize <None>
   static const size_t value = 0;
 };
 
-#ifdef LUABRIDGE_CXX11
-
 template <class... Params>
 struct MakeTypeList;
 
@@ -94,8 +92,6 @@ struct MakeTypeList <>
 {
   using Result = None;
 };
-
-#endif
 
 /**
   A TypeList with actual values.
@@ -113,7 +109,7 @@ struct TypeListValues
   TypeListValues recursive template definition.
 */
 template <typename Head, typename Tail>
-struct TypeListValues <TypeList <Head, Tail> >
+struct TypeListValues <TypeList <Head, Tail>>
 {
   Head hd;
   TypeListValues <Tail> tl;
@@ -141,7 +137,7 @@ struct TypeListValues <TypeList <Head, Tail> >
 // on the referenced object hanging around for the lifetime of the list.
 
 template <typename Head, typename Tail>
-struct TypeListValues <TypeList <Head&, Tail> >
+struct TypeListValues <TypeList <Head&, Tail>>
 {
   Head hd;
   TypeListValues <Tail> tl;
@@ -165,7 +161,7 @@ struct TypeListValues <TypeList <Head&, Tail> >
 };
 
 template <typename Head, typename Tail>
-struct TypeListValues <TypeList <Head const&, Tail> >
+struct TypeListValues <TypeList <Head const&, Tail>>
 {
   Head hd;
   TypeListValues <Tail> tl;
@@ -208,10 +204,10 @@ struct ArgList <None, Start> : public TypeListValues <None>
 
 template <typename Head, typename Tail, int Start>
 struct ArgList <TypeList <Head, Tail>, Start>
-  : public TypeListValues <TypeList <Head, Tail> >
+  : public TypeListValues <TypeList <Head, Tail>>
 {
   ArgList (lua_State* L)
-    : TypeListValues <TypeList <Head, Tail> > (Stack <Head>::get (L, Start),
+    : TypeListValues <TypeList <Head, Tail>> (Stack <Head>::get (L, Start),
                                             ArgList <Tail, Start + 1> (L))
   {
   }

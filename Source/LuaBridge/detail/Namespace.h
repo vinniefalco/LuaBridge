@@ -541,8 +541,6 @@ class Namespace : public detail::Registrar
       return *this;
     }
 
-#ifdef LUABRIDGE_CXX11
-
     //--------------------------------------------------------------------------
     /**
       Add or replace a static member function by std::function.
@@ -563,8 +561,6 @@ class Namespace : public detail::Registrar
 
       return *this;
     }
-
-#endif // LUABRIDGE_CXX11
 
     //--------------------------------------------------------------------------
     /**
@@ -741,7 +737,6 @@ class Namespace : public detail::Registrar
       return *this;
     }
 
-#ifdef LUABRIDGE_CXX11
     template <class TG, class TS = TG>
     Class <T>& addProperty (char const* name,
       std::function <TG (const T*)> get,
@@ -772,30 +767,6 @@ class Namespace : public detail::Registrar
 
       return *this;
     }
-
-#endif // LUABRIDGE_CXX11
-
-#ifndef LUABRIDGE_CXX11
-
-    //--------------------------------------------------------------------------
-    /**
-        Add or replace a member function.
-    */
-    template <class MemFn>
-    Class <T>& addFunction (char const* name, MemFn mf)
-    {
-      assertStackState (); // Stack: const table (co), class table (cl), static table (st)
-
-      static const std::string GC = "__gc";
-      if (name == GC)
-      {
-        throw std::logic_error (GC + " metamethod registration is forbidden");
-      }
-      CFunc::CallMemberFunctionHelper <MemFn, detail::FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
-      return *this;
-    }
-
-#else // ifndef LUABRIDGE_CXX11
 
     //--------------------------------------------------------------------------
     /**
@@ -916,8 +887,6 @@ class Namespace : public detail::Registrar
       rawsetfield (L, -4, name); // Stack: co, cl, st
       return *this;
     }
-
-#endif
 
     //--------------------------------------------------------------------------
     /**
@@ -1261,30 +1230,6 @@ public:
     return *this;
   }
 
-#ifndef LUABRIDGE_CXX11
-
-  //----------------------------------------------------------------------------
-  /**
-      Add or replace a function.
-
-      @param name The function name.
-      @param fp   A pointer to a function.
-      @returns This namespace registration object.
-  */
-  template <class FP>
-  Namespace& addFunction (char const* name, FP const fp)
-  {
-    assert (lua_istable (L, -1)); // Stack: namespace table (ns)
-
-    lua_pushlightuserdata (L, reinterpret_cast <void*> (fp)); // Stack: ns, function ptr
-    lua_pushcclosure (L, &CFunc::Call <FP>::f, 1); // Stack: ns, function
-    rawsetfield (L, -2, name); // Stack: ns
-
-    return *this;
-  }
-
-#else // ifndef LUABRIDGE_CXX11
-
   //----------------------------------------------------------------------------
   /**
       Add or replace a namespace function by std::function.
@@ -1322,8 +1267,6 @@ public:
 
     return *this;
   }
-
-#endif // ifndef LUABRIDGE_CXX11
 
   //----------------------------------------------------------------------------
   /**
