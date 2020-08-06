@@ -3,6 +3,7 @@
 * Added namespace `addFunction()` accepting `std::function` (C++11 only).
 * Added class `addStaticFunction()` accepting `std::function` (C++11 only).
 * Update the Doxygen documentation.
+* Add brief API reference into the manual.
 * Hide non-public `luabridge` members into the `detail` namespace.
 * Fix stack cleanup by `LuaRef::isInstance()` method.
 
