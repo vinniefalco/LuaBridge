@@ -1,6 +1,13 @@
+## Version 2.6
+
+* Added namespace addFunction accepting std::function (C++11 only).
+* Added class addStaticFunction accepting std::function (C++11 only).
+
 ## Version 2.5
 
-* Introduce isInstance method and a convenience function template.
+* Introduce stack isInstance method.
+* Introduce LuaRef isInstance method.
+* Added a convenience isInstance function template.
 
 ## Version 2.4.1
 

@@ -36,6 +36,7 @@
 #endif
 
 namespace luabridge {
+namespace detail {
 
 /**
   Since the throw specification is part of a function signature, the FuncTraits
@@ -938,5 +939,7 @@ struct Invoke <void, Params, startParam>
     }
   }
 };
+
+} // namespace detail
 
 } // namespace luabridge

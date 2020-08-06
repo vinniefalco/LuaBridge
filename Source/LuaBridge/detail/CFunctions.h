@@ -35,6 +35,7 @@
 #include <string>
 
 namespace luabridge {
+namespace detail {
 
 // We use a structure so we can define everything in the header.
 //
@@ -491,5 +492,7 @@ struct CFunc
     return 0;
   }
 };
+
+} // namespace detail
 
 } // namespace luabridge

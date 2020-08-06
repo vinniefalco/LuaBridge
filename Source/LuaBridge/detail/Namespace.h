@@ -115,13 +115,15 @@ protected:
 */
 class Namespace : public detail::Registrar
 {
+  typedef detail::CFunc CFunc;
+
   //============================================================================
+#if 0
   /**
     Error reporting.
 
     VF: This function looks handy, why aren't we using it?
   */
-#if 0
   static int luaError (lua_State* L, std::string message)
   {
     assert (lua_isstring (L, lua_upvalueindex (1)));
@@ -178,7 +180,7 @@ class Namespace : public detail::Registrar
       lua_setmetatable (L, -2); // co.__metatable = co. Stack: ns, co
 
       lua_pushstring (L, type_name.c_str ());
-      lua_rawsetp (L, -2, getTypeKey ()); // co [typeKey] = name. Stack: ns, co
+      lua_rawsetp (L, -2, detail::getTypeKey ()); // co [typeKey] = name. Stack: ns, co
 
       lua_pushcfunction (L, &CFunc::indexMetaMethod);
       rawsetfield (L, -2, "__index");
@@ -187,7 +189,7 @@ class Namespace : public detail::Registrar
       rawsetfield (L, -2, "__newindex");
 
       lua_newtable (L);
-      lua_rawsetp (L, -2, getPropgetKey ());
+      lua_rawsetp (L, -2, detail::getPropgetKey ());
 
       if (Security::hideMetatables ())
       {
@@ -210,13 +212,13 @@ class Namespace : public detail::Registrar
       createConstTable (name, false); // Stack: ns, co, cl
 
       lua_newtable (L); // Stack: ns, co, cl, propset table (ps)
-      lua_rawsetp (L, -2, getPropsetKey ()); // cl [propsetKey] = ps. Stack: ns, co, cl
+      lua_rawsetp (L, -2, detail::getPropsetKey ()); // cl [propsetKey] = ps. Stack: ns, co, cl
 
       lua_pushvalue (L, -2); // Stack: ns, co, cl, co
-      lua_rawsetp(L, -2, getConstKey ()); // cl [constKey] = co. Stack: ns, co, cl
+      lua_rawsetp(L, -2, detail::getConstKey ()); // cl [constKey] = co. Stack: ns, co, cl
 
       lua_pushvalue (L, -1); // Stack: ns, co, cl, cl
-      lua_rawsetp (L, -3, getClassKey ()); // co [classKey] = cl. Stack: ns, co, cl
+      lua_rawsetp (L, -3, detail::getClassKey ()); // co [classKey] = cl. Stack: ns, co, cl
     }
 
     //--------------------------------------------------------------------------
@@ -245,13 +247,13 @@ class Namespace : public detail::Registrar
       rawsetfield (L, -2, "__newindex");
 
       lua_newtable (L); // Stack: ns, co, cl, st, proget table (pg)
-      lua_rawsetp (L, -2, getPropgetKey ()); // st [propgetKey] = pg. Stack: ns, co, cl, st
+      lua_rawsetp (L, -2, detail::getPropgetKey ()); // st [propgetKey] = pg. Stack: ns, co, cl, st
 
       lua_newtable (L); // Stack: ns, co, cl, st, propset table (ps)
-      lua_rawsetp (L, -2, getPropsetKey ()); // st [propsetKey] = pg. Stack: ns, co, cl, st
+      lua_rawsetp (L, -2, detail::getPropsetKey ()); // st [propsetKey] = pg. Stack: ns, co, cl, st
 
       lua_pushvalue (L, -2); // Stack: ns, co, cl, st, cl
-      lua_rawsetp(L, -2, getClassKey()); // st [classKey] = cl. Stack: ns, co, cl, st
+      lua_rawsetp(L, -2, detail::getClassKey()); // st [classKey] = cl. Stack: ns, co, cl, st
 
       if (Security::hideMetatables ())
       {
@@ -268,9 +270,9 @@ class Namespace : public detail::Registrar
     static int ctorContainerProxy (lua_State* L)
     {
       typedef typename ContainerTraits <C>::Type T;
-      ArgList <Params, 2> args (L);
-      T* const p = Constructor <T, Params>::call (args);
-      UserdataSharedHelper <C, false>::push (L, p);
+      detail::ArgList <Params, 2> args (L);
+      T* const p = detail::Constructor <T, Params>::call (args);
+      detail::UserdataSharedHelper <C, false>::push (L, p);
       return 1;
     }
 
@@ -281,9 +283,9 @@ class Namespace : public detail::Registrar
     template <class Params, class T>
     static int ctorPlacementProxy (lua_State* L)
     {
-      ArgList <Params, 2> args (L);
-      UserdataValue <T>* value = UserdataValue <T>::place (L);
-      Constructor <T, Params>::call (value->getObject (), args);
+      detail::ArgList <Params, 2> args (L);
+      detail::UserdataValue <T>* value = detail::UserdataValue <T>::place (L);
+      detail::Constructor <T, Params>::call (value->getObject (), args);
       value->commit ();
       return 1;
     }
@@ -314,10 +316,15 @@ class Namespace : public detail::Registrar
   template <class T>
   class Class : public ClassBase
   {
+    typedef detail::CFunc CFunc;
+
   public:
     //==========================================================================
     /**
       Register a new class or add to an existing class registration.
+
+      @param name   The new class name.
+      @param parent A parent namespace object.
     */
     Class (char const* name, Namespace& parent)
       : ClassBase (parent)
@@ -344,11 +351,11 @@ class Namespace : public detail::Registrar
 
         // Map T back to its tables.
         lua_pushvalue (L, -1); // Stack: ns, co, cl, st, st
-        lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getStaticKey ()); // Stack: ns, co, cl, st
+        lua_rawsetp (L, LUA_REGISTRYINDEX, detail::getStaticRegistryKey <T> ()); // Stack: ns, co, cl, st
         lua_pushvalue (L, -2); // Stack: ns, co, cl, st, cl
-        lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ()); // Stack: ns, co, cl, st
+        lua_rawsetp (L, LUA_REGISTRYINDEX, detail::getClassRegistryKey <T> ()); // Stack: ns, co, cl, st
         lua_pushvalue (L, -3); // Stack: ns, co, cl, st, co
-        lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ()); // Stack: ns, co, cl, st
+        lua_rawsetp (L, LUA_REGISTRYINDEX, detail::getConstRegistryKey <T> ()); // Stack: ns, co, cl, st
       }
       else
       {
@@ -357,11 +364,11 @@ class Namespace : public detail::Registrar
 
         // Map T back from its stored tables
 
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ()); // Stack: ns, st, co
+        lua_rawgetp (L, LUA_REGISTRYINDEX, detail::getConstRegistryKey <T> ()); // Stack: ns, st, co
         lua_insert (L, -2); // Stack: ns, co, st
         ++m_stackSize;
 
-        lua_rawgetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ()); // Stack: ns, co, st, cl
+        lua_rawgetp (L, LUA_REGISTRYINDEX, detail::getClassRegistryKey <T> ()); // Stack: ns, co, st, cl
         lua_insert (L, -2); // Stack: ns, co, cl, st
         ++m_stackSize;
       }
@@ -370,6 +377,10 @@ class Namespace : public detail::Registrar
     //==========================================================================
     /**
       Derive a new class.
+
+      @param name     The class name.
+      @param parent A parent namespace object.
+      @param staticKey 
     */
     Class (char const* name, Namespace& parent, void const* const staticKey)
       : ClassBase (parent)
@@ -398,27 +409,29 @@ class Namespace : public detail::Registrar
 
       assert (lua_istable (L, -1)); // Stack: ns, co, cl, st, pst
 
-      lua_rawgetp (L, -1, getClassKey ()); // Stack: ns, co, cl, st, pst, parent cl (pcl)
+      lua_rawgetp (L, -1, detail::getClassKey ()); // Stack: ns, co, cl, st, pst, parent cl (pcl)
       assert (lua_istable (L, -1));
 
-      lua_rawgetp (L, -1, getConstKey ()); // Stack: ns, co, cl, st, pst, pcl, parent co (pco)
+      lua_rawgetp (L, -1, detail::getConstKey ()); // Stack: ns, co, cl, st, pst, pcl, parent co (pco)
       assert (lua_istable (L, -1));
 
-      lua_rawsetp (L, -6, getParentKey ()); // co [parentKey] = pco. Stack: ns, co, cl, st, pst, pcl
-      lua_rawsetp (L, -4, getParentKey ()); // cl [parentKey] = pcl. Stack: ns, co, cl, st, pst
-      lua_rawsetp (L, -2, getParentKey ()); // st [parentKey] = pst. Stack: ns, co, cl, st
+      lua_rawsetp (L, -6, detail::getParentKey ()); // co [parentKey] = pco. Stack: ns, co, cl, st, pst, pcl
+      lua_rawsetp (L, -4, detail::getParentKey ()); // cl [parentKey] = pcl. Stack: ns, co, cl, st, pst
+      lua_rawsetp (L, -2, detail::getParentKey ()); // st [parentKey] = pst. Stack: ns, co, cl, st
 
       lua_pushvalue (L, -1); // Stack: ns, co, cl, st, st
-      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getStaticKey ()); // Stack: ns, co, cl, st
+      lua_rawsetp (L, LUA_REGISTRYINDEX, detail::getStaticRegistryKey <T> ()); // Stack: ns, co, cl, st
       lua_pushvalue (L, -2); // Stack: ns, co, cl, st, cl
-      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getClassKey ()); // Stack: ns, co, cl, st
+      lua_rawsetp (L, LUA_REGISTRYINDEX, detail::getClassRegistryKey <T> ()); // Stack: ns, co, cl, st
       lua_pushvalue (L, -3); // Stack: ns, co, cl, st, co
-      lua_rawsetp (L, LUA_REGISTRYINDEX, ClassInfo <T>::getConstKey ()); // Stack: ns, co, cl, st
+      lua_rawsetp (L, LUA_REGISTRYINDEX, detail::getConstRegistryKey <T> ()); // Stack: ns, co, cl, st
     }
 
     //--------------------------------------------------------------------------
     /**
       Continue registration in the enclosing namespace.
+
+      @returns A parent registration object.
     */
     Namespace endClass ()
     {
@@ -430,30 +443,42 @@ class Namespace : public detail::Registrar
 
     //--------------------------------------------------------------------------
     /**
-      Add or replace a static data member.
+      Add or replace a static property.
+
+      @tparam U          The type of the property.
+      @param  name       The property name.
+      @param  value      A property value pointer.
+      @param  isWritable True for a read-write, false for read-only property.
+      @returns This class registration object.
     */
     template <class U>
-    Class <T>& addStaticProperty (char const* name, U* pu, bool isWritable = true)
+    Class <T>& addStaticProperty (char const* name, U* value, bool isWritable = true)
     {
-      return addStaticData (name, pu, isWritable);
+      return addStaticData (name, value, isWritable);
     }
 
     //--------------------------------------------------------------------------
     /**
-      Add or replace a static data member.
+      Add or replace a static property.
+
+      @tparam U          The type of the property.
+      @param  name       The property name.
+      @param  value      A property value pointer.
+      @param  isWritable True for a read-write, false for read-only property.
+      @returns This class registration object.
     */
     template <class U>
-    Class <T>& addStaticData (char const* name, U* pu, bool isWritable = true)
+    Class <T>& addStaticData (char const* name, U* value, bool isWritable = true)
     {
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
 
-      lua_pushlightuserdata (L, pu); // Stack: co, cl, st, pointer
+      lua_pushlightuserdata (L, value); // Stack: co, cl, st, pointer
       lua_pushcclosure (L, &CFunc::getVariable <U>, 1); // Stack: co, cl, st, getter
       CFunc::addGetter (L, name, -2); // Stack: co, cl, st
 
       if (isWritable)
       {
-        lua_pushlightuserdata (L, pu); // Stack: co, cl, st, ps, pointer
+        lua_pushlightuserdata (L, value); // Stack: co, cl, st, ps, pointer
         lua_pushcclosure (L, &CFunc::setVariable <U>, 1); // Stack: co, cl, st, ps, setter
       }
       else
@@ -467,11 +492,15 @@ class Namespace : public detail::Registrar
     }
 
     //--------------------------------------------------------------------------
-    /**
-      Add or replace a static property member.
-
-      If the set function is null, the property is read-only.
-    */
+    /// Add or replace a static property member.
+    ///
+    /// @tparam U          The type of the property.
+    /// @param  name       The property name.
+    /// @param  get        A property getter function pointer.
+    /// @param  set        A property setter function pointer, optional, nullable.
+    ///                    Omit or pass nullptr for a read-only property.
+    /// @returns This class registration object.
+    ///
     template <class U>
     Class <T>& addStaticProperty (char const* name, U (*get) (), void (*set) (U) = 0)
     {
@@ -515,6 +544,10 @@ class Namespace : public detail::Registrar
     //--------------------------------------------------------------------------
     /**
       Add or replace a lua_CFunction.
+
+      @param name The name of the function.
+      @param fp   A C-function pointer.
+      @returns This class registration object.
     */
     Class <T>& addStaticFunction (char const* name, int (*const fp) (lua_State*))
     {
@@ -536,9 +569,6 @@ class Namespace : public detail::Registrar
     }
 
     //--------------------------------------------------------------------------
-    /**
-      Add or replace a data member.
-    */
     template <class U>
     Class <T>& addProperty (char const* name, U T::* mp, bool isWritable = true)
     {
@@ -736,7 +766,7 @@ class Namespace : public detail::Registrar
       {
         throw std::logic_error (GC + " metamethod registration is forbidden");
       }
-      CFunc::CallMemberFunctionHelper <MemFn, FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
+      CFunc::CallMemberFunctionHelper <MemFn, detail::FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
       return *this;
     }
 
@@ -932,7 +962,7 @@ class Namespace : public detail::Registrar
     {
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
 
-      lua_pushcclosure (L, &ctorContainerProxy <typename FuncTraits <MemFn>::Params, C>, 0);
+      lua_pushcclosure (L, &ctorContainerProxy <typename detail::FuncTraits <MemFn>::Params, C>, 0);
       rawsetfield (L, -2, "__call");
 
       return *this;
@@ -943,7 +973,7 @@ class Namespace : public detail::Registrar
     {
       assertStackState (); // Stack: const table (co), class table (cl), static table (st)
 
-      lua_pushcclosure (L, &ctorPlacementProxy <typename FuncTraits <MemFn>::Params, T>, 0);
+      lua_pushcclosure (L, &ctorPlacementProxy <typename detail::FuncTraits <MemFn>::Params, T>, 0);
       rawsetfield (L, -2, "__call");
 
       return *this;
@@ -954,6 +984,8 @@ private:
   //----------------------------------------------------------------------------
   /**
       Open the global namespace for registrations.
+
+      @param L A Lua state.
   */
   explicit Namespace (lua_State* L)
     : Registrar (L)
@@ -965,9 +997,11 @@ private:
   //----------------------------------------------------------------------------
   /**
       Open a namespace for registrations.
-
       The namespace is created if it doesn't already exist.
-      The parent namespace is at the top of the Lua stack.
+
+      @param name   The namespace name.
+      @param parent The parent namespace object.
+      @pre The parent namespace is at the top of the Lua stack.
   */
   Namespace (char const* name, Namespace& parent)
     : Registrar (parent)
@@ -995,10 +1029,10 @@ private:
       rawsetfield (L, -2, "__newindex"); // Stack: pns, ns
 
       lua_newtable (L); // Stack: pns, ns, propget table (pg)
-      lua_rawsetp (L, -2, getPropgetKey ()); // ns [propgetKey] = pg. Stack: pns, ns
+      lua_rawsetp (L, -2, detail::getPropgetKey ()); // ns [propgetKey] = pg. Stack: pns, ns
 
       lua_newtable (L); // Stack: pns, ns, propset table (ps)
-      lua_rawsetp (L, -2, getPropsetKey ()); // ns [propsetKey] = ps. Stack: pns, ns
+      lua_rawsetp (L, -2, detail::getPropsetKey ()); // ns [propsetKey] = ps. Stack: pns, ns
 
       // pns [name] = ns
       lua_pushvalue (L, -1); // Stack: pns, ns, ns
@@ -1015,6 +1049,8 @@ private:
   //----------------------------------------------------------------------------
   /**
       Close the class and continue the namespace registrations.
+
+      @param child A child class registration object.
   */
   explicit Namespace (ClassBase& child)
     : Registrar (child)
@@ -1026,7 +1062,13 @@ private:
 public:
   //----------------------------------------------------------------------------
   /**
-      Open the global namespace.
+    Retrieve the global namespace.
+    It is recommended to put your namespace inside the global namespace, and
+    then add your classes and functions to it, rather than adding many classes
+    and functions directly to the global namespace.
+
+    @param L A Lua state.
+    @returns A namespace registration object.
   */
   static Namespace getGlobalNamespace (lua_State* L)
   {
@@ -1037,6 +1079,9 @@ public:
   //----------------------------------------------------------------------------
   /**
       Open a new or existing namespace for registrations.
+
+      @param name The namespace name.
+      @returns A namespace registration object.
   */
   Namespace beginNamespace (char const* name)
   {
@@ -1047,8 +1092,9 @@ public:
   //----------------------------------------------------------------------------
   /**
       Continue namespace registration in the parent.
-
       Do not use this on the global namespace.
+
+      @returns A parent namespace registration object.
   */
   Namespace endNamespace ()
   {
@@ -1065,20 +1111,30 @@ public:
 
   //----------------------------------------------------------------------------
   /**
-      Add or replace a variable.
+      Add or replace a property.
+
+      @param name       The property name.
+      @param value      A value pointer.
+      @param isWritable True for a read-write, false for read-only property.
+      @returns This namespace registration object.
   */
   template <class T>
-  Namespace& addProperty (char const* name, T* pt, bool isWritable = true)
+  Namespace& addProperty (char const* name, T* value, bool isWritable = true)
   {
-    return addVariable (name, pt, isWritable);
+    return addVariable (name, value, isWritable);
   }
 
   //----------------------------------------------------------------------------
   /**
-      Add or replace a variable.
+      Add or replace a property.
+
+      @param name       The property name.
+      @param value      A value pointer.
+      @param isWritable True for a read-write, false for read-only property.
+      @returns This namespace registration object.
   */
   template <class T>
-  Namespace& addVariable (char const* name, T* pt, bool isWritable = true)
+  Namespace& addVariable (char const* name, T* value, bool isWritable = true)
   {
     if (m_stackSize == 1)
     {
@@ -1087,13 +1143,13 @@ public:
 
     assert (lua_istable (L, -1)); // Stack: namespace table (ns)
 
-    lua_pushlightuserdata (L, pt); // Stack: ns, pointer
+    lua_pushlightuserdata (L, value); // Stack: ns, pointer
     lua_pushcclosure (L, &CFunc::getVariable <T>, 1); // Stack: ns, getter
     CFunc::addGetter (L, name, -2); // Stack: ns
 
     if (isWritable)
     {
-      lua_pushlightuserdata (L, pt); // Stack: ns, pointer
+      lua_pushlightuserdata (L, value); // Stack: ns, pointer
       lua_pushcclosure (L, &CFunc::setVariable <T>, 1); // Stack: ns, setter
     }
     else
@@ -1109,8 +1165,12 @@ public:
   //----------------------------------------------------------------------------
   /**
       Add or replace a property.
-
       If the set function is omitted or null, the property is read-only.
+
+      @param name       The property name.
+      @param get  A pointer to a property getter function.
+      @param set  A pointer to a property setter function, optional.
+      @returns This namespace registration object.
   */
   template <class TG, class TS = TG>
   Namespace& addProperty (char const* name, TG (*get) (), void (*set) (TS) = 0)
@@ -1145,6 +1205,11 @@ public:
   /**
       Add or replace a property.
       If the set function is omitted or null, the property is read-only.
+
+      @param name The property name.
+      @param get  A pointer to a property getter function.
+      @param set  A pointer to a property setter function, optional.
+      @returns This namespace registration object.
   */
   Namespace& addProperty (char const* name, int (*get) (lua_State*), int (*set) (lua_State*) = 0)
   {
@@ -1173,7 +1238,11 @@ public:
 
 //----------------------------------------------------------------------------
   /**
-      Add or replace a free function.
+      Add or replace a function.
+
+      @param name The function name.
+      @param fp   A pointer to a function.
+      @returns This namespace registration object.
   */
   template <class FP>
   Namespace& addFunction (char const* name, FP const fp)
@@ -1190,6 +1259,10 @@ public:
   //----------------------------------------------------------------------------
   /**
       Add or replace a lua_CFunction.
+
+      @param name The function name.
+      @param fp   A C-function pointer.
+      @returns This namespace registration object.
   */
   Namespace& addFunction (char const* name, int (*const fp) (lua_State*))
   {
@@ -1199,6 +1272,10 @@ public:
   //----------------------------------------------------------------------------
   /**
       Add or replace a lua_CFunction.
+
+      @param name The function name.
+      @param fp   A C-function pointer.
+      @returns This namespace registration object.
   */
   Namespace& addCFunction (char const* name, int (*const fp) (lua_State*))
   {
@@ -1213,6 +1290,9 @@ public:
   //----------------------------------------------------------------------------
   /**
       Open a new or existing class for registrations.
+
+      @param name The class name.
+      @returns A class registration object.
   */
   template <class T>
   Class <T> beginClass (char const* name)
@@ -1224,25 +1304,29 @@ public:
   //----------------------------------------------------------------------------
   /**
       Derive a new class for registrations.
+      Call deriveClass() only once.
+      To continue registrations for the class later, use beginClass().
 
-      To continue registrations for the class later, use beginClass ().
-      Do not call deriveClass () again.
+      @param name The class name.
+      @returns A class registration object.
   */
   template <class Derived, class Base>
   Class <Derived> deriveClass (char const* name)
   {
     assertIsActive ();
-    return Class <Derived> (name, *this, ClassInfo <Base>::getStaticKey ());
+    return Class <Derived> (name, *this, detail::getStaticRegistryKey <Base> ());
   }
 };
 
 //------------------------------------------------------------------------------
 /**
     Retrieve the global namespace.
-
     It is recommended to put your namespace inside the global namespace, and
     then add your classes and functions to it, rather than adding many classes
     and functions directly to the global namespace.
+
+    @param L A Lua state.
+    @returns A namespace registration object.
 */
 inline Namespace getGlobalNamespace (lua_State* L)
 {

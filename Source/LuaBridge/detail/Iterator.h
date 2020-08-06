@@ -75,27 +75,49 @@ public:
     }
   }
 
+  /// Return an associated Lua state.
+  ///
+  /// @returns A Lua state.
+  ///
   lua_State* state () const
   {
     return m_L;
   }
 
+  /// Dereference the iterator.
+  ///
+  /// @returns A key-value pair for a current table entry.
+  ///
   std::pair <LuaRef, LuaRef> operator* () const
   {
     return std::make_pair (m_key, m_value);
   }
 
+  /// Return the value referred by the iterator.
+  ///
+  /// @returns A value for the current table entry.
+  ///
   LuaRef operator-> () const
   {
     return m_value;
   }
 
+  /// Compare two iterators.
+  ///
+  /// @param rhs Another iterator.
+  /// @returns True if iterators point to the same entry of the same table,
+  ///         false otherwise.
+  ///
   bool operator!= (const Iterator& rhs) const
   {
     assert (m_L == rhs.m_L);
     return !m_table.rawequal (rhs.m_table) || !m_key.rawequal (rhs.m_key);
   }
 
+  /// Move the iterator to the next table entry.
+  ///
+  /// @returns This iterator.
+  ///
   Iterator& operator++ ()
   {
     if (isNil ())
@@ -110,16 +132,29 @@ public:
     }
   }
 
+  /// Check if the iterator points after the last table entry.
+  ///
+  /// @returns True if there are no more table entries to iterate,
+  ///         false otherwise.
+  ///
   bool isNil () const
   {
     return m_key.isNil ();
   }
 
+  /// Return the key for the current table entry.
+  ///
+  /// @returns A reference to the entry key.
+  ///
   LuaRef key () const
   {
     return m_key;
   }
 
+  /// Return the key for the current table entry.
+  ///
+  /// @returns A reference to the entry value.
+  ///
   LuaRef value () const
   {
     return m_value;
@@ -129,6 +164,8 @@ private:
   // Don't use postfix increment, it is less efficient
   Iterator operator++ (int);
 };
+
+namespace detail {
 
 class Range
 {
@@ -146,9 +183,15 @@ public:
   const Iterator& end () const { return m_end; }
 };
 
-inline Range pairs (const LuaRef& table)
+} // namespace detail
+
+/// Return a range for the Lua table reference.
+///
+/// @returns A range suitable for range-based for statement.
+///
+inline detail::Range pairs (const LuaRef& table)
 {
-  return Range (Iterator (table, false), Iterator (table, true));
+  return detail::Range (Iterator (table, false), Iterator (table, true));
 }
 
 } // namespace luabridge

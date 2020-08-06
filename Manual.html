@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-<title>LuaBridge 2.5 Reference Manual</title>
+<title>LuaBridge 2.6 Reference Manual</title>
 <META HTTP-EQUIV="content-type" CONTENT="text/html; charset=iso-8859-1">
 
 <!--=========================================================================-->
@@ -134,7 +134,7 @@ pre.split + pre.split {
 
 <header>
 <hr>
-<h1>LuaBridge 2.5 Reference Manual</h1>
+<h1>LuaBridge 2.6 Reference Manual</h1>
 <hr>
 </header>
 
@@ -143,63 +143,65 @@ Official repository is located at
 <a href="https://github.com/vinniefalco/LuaBridge">https://github.com/vinniefalco/LuaBridge</a>.
 <br>
 Copyright &copy; 2012 Vinnie Falco. Freely available under the terms of the
-<A HREF="http://www.opensource.org/licenses/mit-license.html">MIT License</A>.
+<a href="http://www.opensource.org/licenses/mit-license.html">MIT License</a>.
 </small>
 
 <nav>
-<H2>Contents</H2>
+<h2>Contents</h2>
 <UL id="toc" style="padding: 0">
-<LI><A href="#s1">1 - Introduction</A>
-<UL>
-  <LI><A href="#s1.1">1.1 - Design</A>
-  <LI><A href="#s1.2">1.2 - Repository</A>
-  <LI><A href="#s1.3">1.3 - License and Credits</A>
-</UL>
-<P>
-<LI><A href="#s2">2 - Accessing C++ from Lua</A>
-<UL>
-  <LI><A href="#s2.1">2.1 - Namespaces</A>
-  <LI><A href="#s2.2">2.2 - Data, Properties, Functions, and CFunctions</A>
-  <LI><A href="#s2.3">2.3 - Class Objects</A>
-  <LI><A href="#s2.4">2.4 - Property Member Proxies</A>
-  <LI><A href="#s2.5">2.5 - Function Member Proxies</A>
-  <LI><A href="#s2.6">2.6 - Constructors</A>
-  <LI><A href="#s2.7">2.7 - Lua Stack</A>
-  <LI><A href="#s2.8">2.8 - lua_State</A>
-</UL>
+<li><A href="#s1">1 - Introduction</A>
+<ul>
+  <li><A href="#s1.1">1.1 - Design</A>
+  <li><A href="#s1.2">1.2 - Repository</A>
+  <li><A href="#s1.3">1.3 - License and Credits</A>
+</ul>
 <p>
-<LI><A href="#s3">3 - Passing Objects</A>
-<UL>
-  <LI><A href="#s3.1">3.1 - C++ Lifetime</A>
-  <LI><A href="#s3.2">3.2 - Lua Lifetime</A>
-  <LI><A href="#s3.3">3.3 - Pointers, References, and Pass by Value</A>
-  <LI><A href="#s3.4">3.4 - Shared Lifetime</A>
-  <UL>
-    <LI><A href="#s3.4.1">3.4.1 - Class RefCountedObjectPtr</A>
-    <LI><A href="#s3.4.2">3.4.2 - Class RefCountedPtr</A>
-    <LI><A href="#s3.4.3">3.4.3 - User-defined Containers</A>
-    <LI><A href="#s3.4.4">3.4.4 - Container Constructors</A>
-  </UL>
-  <LI><A href="#s3.5">3.5 - Mixing Lifetimes</A>
-  <LI><A href="#s3.6">3.6 - Convenience Functions</A>
-</UL>
-<P>
-<LI><A href="#s4">4 - Accessing Lua from C++</A>
-<UL>
-  <LI><A href="#s4.1">4.1 - Class LuaRef</A>
-  <UL>
-    <LI><A href="#s4.1.1">4.1.1 - Type Conversions</A>
-    <LI><A href="#s4.1.2">4.1.2 - Visual Studio 2010, 2012</A>
-  </UL>
-  <LI><A href="#s4.2">4.2 - Table Proxies</A>
-  <LI><A href="#s4.3">4.3 - Calling Lua</A>
-  <UL>
-    <LI><A href="#s4.3.1">4.3.1 - Class LuaException</A>
-  </UL>
-</uL>
-<P>
-<LI><A href="#s5">5 - Security</A>
-</UL>
+<li><A href="#s2">2 - Accessing C++ from Lua</A>
+<ul>
+  <li><A href="#s2.1">2.1 - Namespaces</A>
+  <li><A href="#s2.2">2.2 - Data, Properties, Functions, and CFunctions</A>
+  <li><A href="#s2.3">2.3 - Class Objects</A>
+  <li><A href="#s2.4">2.4 - Property Member Proxies</A>
+  <li><A href="#s2.5">2.5 - Function Member Proxies</A>
+  <li><A href="#s2.6">2.6 - Constructors</A>
+  <li><A href="#s2.7">2.7 - Lua Stack</A>
+  <li><A href="#s2.8">2.8 - lua_State</A>
+</ul>
+<p>
+<li><A href="#s3">3 - Passing Objects</A>
+<ul>
+  <li><A href="#s3.1">3.1 - C++ Lifetime</A>
+  <li><A href="#s3.2">3.2 - Lua Lifetime</A>
+  <li><A href="#s3.3">3.3 - Pointers, References, and Pass by Value</A>
+  <li><A href="#s3.4">3.4 - Shared Lifetime</A>
+  <ul>
+    <li><A href="#s3.4.1">3.4.1 - Class RefCountedObjectPtr</A>
+    <li><A href="#s3.4.2">3.4.2 - Class RefCountedPtr</A>
+    <li><A href="#s3.4.3">3.4.3 - User-defined Containers</A>
+    <li><A href="#s3.4.4">3.4.4 - Container Constructors</A>
+  </ul>
+  <li><A href="#s3.5">3.5 - Mixing Lifetimes</A>
+  <li><A href="#s3.6">3.6 - Convenience Functions</A>
+</ul>
+<p>
+<li><A href="#s4">4 - Accessing Lua from C++</A>
+<ul>
+  <li><A href="#s4.1">4.1 - Class LuaRef</A>
+  <ul>
+    <li><A href="#s4.1.1">4.1.1 - Type Conversions</A>
+    <li><A href="#s4.1.2">4.1.2 - Visual Studio 2010, 2012</A>
+  </ul>
+  <li><A href="#s4.2">4.2 - Table Proxies</A>
+  <li><A href="#s4.3">4.3 - Calling Lua</A>
+  <ul>
+    <li><A href="#s4.3.1">4.3.1 - Class LuaException</A>
+  </ul>
+</ul>
+<p>
+<li><A href="#s5">5 - Security</A>
+<p>
+<li><a href="#appendix">Appendix - API Reference</a>
+</ul>
 </nav>
 
 <!--========================================================================-->
@@ -317,23 +319,11 @@ LuaBridge does not support:
 <p>
 The official repository is located at
 <a href="https://github.com/vinniefalco/LuaBridge">https://github.com/vinniefalco/LuaBridge</a>.
-The branches are organized as follows:
 </p>
 
-<table>
-<tr>
-  <td><b>master</b></td>
-  <td>Tagged, stable release versions.</td>
-</tr>
-<tr>
-  <td><b>release</b></td>
-  <td>A temporarily created branch that holds a release candidate for review.</td>
-</tr>
-<tr>
-  <td><b>develop</b></td>
-  <td>Contains work in progress, possibly unfinished or with bugs.</td>
-</tr>
-</table>
+<p>
+The <b>master</b> branch contains published library versions. Release versions are marked with tags.
+</p>
 
 <p>
 These repositories are also available:
@@ -834,8 +824,7 @@ getGlobalNamespace (L)
 </pre>
 
 <p>
-With a C++11 compilant compiler it is possible to use <code>std::function</code>
-instances as proxies:
+It is also possible to use <code>std::function &lt;&gt;</code> instances as proxies:
 </p>
 
 <pre>
@@ -903,8 +892,7 @@ getGlobalNamespace (L)
 </pre>
 
 <p>
-With a C++11 compilant compiler it is possible to use <code>std::function</code>
-instances as proxies:
+It is also possible to use <code>std::function &lt;&gt;</code> instances as proxies:
 </p>
 
 <pre>
@@ -935,11 +923,13 @@ these statements register constructors for the given classes:
 </p>
 
 <pre>
-struct A {
+struct A
+{
   A ();
 };
 
-struct B {
+struct B
+{
   explicit B (char const* s, int nChars);
 };
 
@@ -1680,31 +1670,6 @@ passString (v.cast &lt;std::string&gt; ());
 
 <!--========================================================================-->
 
-<section>
-
-<h3>4.1.2 - <span id="s4.1.2">Visual Studio 2010, 2012</span></h3>
-
-<p>
-There is a defect with all versions of Visual Studio up to and including
-Visual Studio 2012 which prevents the implicit conversion operator from
-being applied when it is used as an operand in a boolean operator:
-</p>
-
-<pre>
-LuaRef v1 (L);
-LuaRef v2 (L);
-
-if (v1 || v2) { } // Compile error in Visual Studio
-
-// Work-arounds:
-if (v1.cast &lt;bool&gt; () || v2.cast &lt;bool&gt; ()) { }
-if (bool (v1) || bool (v2)) { }
-</pre>
-
-</section>
-
-<!--========================================================================-->
-
 </section>
 
 <section>
@@ -1898,6 +1863,417 @@ LuaBridge will never result in undefined behavior.
 
 <!--========================================================================-->
 
+<section>
+
+<h1>Appendix - <span id="appendix">API Reference</span></h1>
+
+<h2>Free Functions</h2>
+
+<pre>
+/// Gets a global Lua variable reference.
+///
+LuaRef getGlobal(lua_State* L, const char* name);
+</pre>
+
+<pre>
+/// Sets a global Lua variable.
+///
+template&lt;class V&gt;
+void setGlobal(lua_State* L, V* varPtr, const char* name);
+</pre>
+
+<pre>
+/// Gets the global namespace registration object.
+///
+Namespace getGlobalNamespace(lua_State* L);
+</pre>
+
+<h2>Namespace Registration - Namespace</h2>
+
+<pre>
+/// Begins or continues class registration, returns this class object.
+///
+template&lt;class T&gt;
+Class&lt;T&gt; beginClass(const char* name);
+</pre>
+
+<pre>
+/// Begins derived class registration, returns this class object.
+///
+template&lt;class T, class Base&gt;
+Class&lt;T&gt; deriveClass(const char* name);
+</pre>
+
+<pre>
+/// Begin or continues namespace registration, returns this namespace object.
+///
+template&lt;class T&gt;
+Namespace beginNamespace(const char* name);
+</pre>
+
+<pre>
+/// Ends namespace registration, returns the parent namespace object.
+///
+template&lt;class T&gt;
+Namespace endNamespace();
+</pre>
+
+<pre>
+/// Registers a function.
+///
+template&lt;class R, class... Params>&gt;
+Namespace addFunction(const char* name,
+                      R (*fn)(Params...));
+</pre>
+
+<pre>
+/// Registers a function.
+///
+template&lt;class R, class... Params>&gt;
+Namespace addFunction(const char* name,
+                      std::function&lt;R (Params...)&gt; fn);
+</pre>
+
+<pre>
+/// Registers a function with an extra Lua state parameter.
+///
+template&lt;class R, class... Params>&gt;
+Namespace addFunction(const char* name,
+                      R (*fn)(Params..., lua_State*))
+</pre>
+
+<pre>
+/// Registers a C-function.
+///
+Namespace addFunction(const char* name,
+                      int (*fn)(lua_State*));
+</pre>
+
+<pre>
+/// Registers a property with a getter and setter.
+///
+template&lt;class V&gt;
+Namespace addProperty(const char* name,
+                      V (*getFn)(),
+                      void (*setFn)(V));
+</pre>
+
+<pre>
+/// Registers a property with a getter and setter.
+///
+template&lt;class V&gt;
+Namespace addProperty(const char* name,
+                      std::function&lt;V ()&gt; getFn,
+                      std::function&lt;void (V)&gt; setFn);
+</pre>
+
+<pre>
+/// Registers a property with a C-function getter and setter.
+///
+Namespace addProperty(const char* name,
+                      int (*getFn)(lua_State*),
+                      int (*setFn)(lua_State*));
+</pre>
+
+<pre>
+/// Registers a read-only property with a getter function.
+///
+template&lt;class V&gt;
+Namespace addProperty(const char* name,
+                      V (*getFn)());
+</pre>
+
+<pre>
+/// Registers a read-only property with a getter function.
+///
+template&lt;class V&gt;
+Namespace addProperty(const char* name,
+                      std::function&lt;V ()&gt; getFn);
+</pre>
+
+<pre>
+/// Registers a read-only property with a C-function getter.
+///
+Namespace addProperty(const char* name,
+                      int (*getFn)(lua_State*));
+</pre>
+
+<pre>
+/// Registers a variable, writable or read-only.
+///
+template&lt;class V&gt;
+Namespace addVariable(const char* name,
+                      V* varPtr,
+                      bool isWritable = true);
+</pre>
+
+<h2>Class Registration - Class&lt;T&gt;</h2>
+
+<pre>
+/// Ends class registration, returns the parent namespace object.
+///
+template&lt;class T&gt;
+Namespace endClass();
+</pre>
+
+<h3>Member Function Registration</h3>
+
+<pre>
+/// Registers a member function.
+///
+template&lt;class R, class... Params>&gt;
+Namespace addFunction(const char* name,
+                      R (T::* fn)(Params...));
+</pre>
+
+<pre>
+/// Registers a function.
+///
+template&lt;class R, class... Params>&gt;
+Namespace addFunction(const char* name,
+                      std::function&lt;R (Params...)&gt; fn);
+</pre>
+
+<pre>
+/// Registers a function with an extra Lua state parameter.
+///
+template&lt;class R, class... Params>&gt;
+Namespace addFunction(const char* name,
+                      R (T::* fn)(Params..., lua_State*))
+</pre>
+
+<pre>
+/// Registers a C-function.
+///
+Namespace addFunction(const char* name,
+                      int (*fn)(lua_State*));
+</pre>
+
+<h3>Member Property Registration</h3>
+
+<pre>
+/// Registers a property with a getter and setter.
+///
+template&lt;class V&gt;
+Namespace addProperty(const char* name,
+                      V (T::* getFn)(),
+                      void (T::* setFn)(V));
+</pre>
+
+<pre>
+/// Registers a property with a getter and setter.
+///
+template&lt;class V&gt;
+Namespace addProperty(const char* name,
+                      std::function&lt;V ()&gt; getFn,
+                      std::function&lt;void (V)&gt; setFn);
+</pre>
+
+<pre>
+/// Registers a property with a C-function getter and setter.
+///
+Namespace addProperty(const char* name,
+                      int (*getFn)(lua_State*),
+                      int (*setFn)(lua_State*));
+</pre>
+
+<pre>
+/// Registers a read-only property with a getter member function.
+///
+template&lt;class V&gt;
+Namespace addProperty(const char* name,
+                      V (T::* getFn)());
+</pre>
+
+<pre>
+/// Registers a read-only property with a getter function.
+///
+template&lt;class V&gt;
+Namespace addProperty(const char* name,
+                      std::function&lt;V ()&gt; getFn);
+</pre>
+
+<pre>
+/// Registers a read-only property with a C-function getter.
+///
+Namespace addProperty(const char* name,
+                      int (*getFn)(lua_State*));
+</pre>
+
+<pre>
+/// Registers a member variable, writable or read-only.
+///
+template&lt;class V&gt;
+Namespace addData(const char* name,
+                  V T::* varPtr,
+                  bool isWritable = true);
+</pre>
+
+<h3>Static Function Registration</h3>
+
+<pre>
+/// Registers a function.
+///
+template&lt;class R, class... Params>&gt;
+Namespace addStaticFunction(const char* name,
+                            R (*fn)(Params...));
+</pre>
+
+<pre>
+/// Registers a function.
+///
+template&lt;class R, class... Params>&gt;
+Namespace addStaticFunction(const char* name,
+                            std::function&lt;R (Params...)&gt; fn);
+</pre>
+
+<pre>
+/// Registers a function with an extra Lua state parameter.
+///
+template&lt;class R, class... Params>&gt;
+Namespace addStaticFunction(const char* name,
+                            R (*fn)(Params..., lua_State*))
+</pre>
+
+<pre>
+/// Registers a C-function.
+///
+Namespace addStaticFunction(const char* name,
+                            int (*fn)(lua_State*));
+</pre>
+
+<h3>Static Property Registration</h3>
+
+<pre>
+/// Registers a property with a getter and setter.
+///
+template&lt;class V&gt;
+Namespace addStaticProperty(const char* name,
+                            V (*getFn)(),
+                            void (*setFn)(V));
+</pre>
+
+<pre>
+/// Registers a property with a getter and setter.
+///
+template&lt;class V&gt;
+Namespace addStaticProperty(const char* name,
+                            std::function&lt;V ()&gt; getFn,
+                            std::function&lt;void (V)&gt; setFn);
+</pre>
+
+<pre>
+/// Registers a property with a C-function getter and setter.
+///
+Namespace addStaticProperty(const char* name,
+                            int (*getFn)(lua_State*),
+                            int (*setFn)(lua_State*));
+</pre>
+
+<pre>
+/// Registers a read-only property with a getter function.
+///
+template&lt;class V&gt;
+Namespace addStaticProperty(const char* name,
+                            V (*getFn)());
+</pre>
+
+<pre>
+/// Registers a read-only property with a getter function.
+///
+template&lt;class V&gt;
+Namespace addStaticProperty(const char* name,
+                            std::function&lt;V ()&gt; getFn);
+</pre>
+
+<pre>
+/// Registers a read-only property with a C-function getter.
+///
+Namespace addStaticProperty(const char* name,
+                            int (*getFn)(lua_State*));
+</pre>
+
+<pre>
+/// Registers a variable, writable or read-only.
+///
+Namespace addStaticData(const char* name,
+                        T* varPtr,
+                        bool isWritable = true);
+</pre>
+
+<h2>Lua Variable Reference - LuaRef</h2>
+
+<pre>
+/// Creates a nil reference.
+///
+LuaRef(lua_State* L);
+</pre>
+
+<pre>
+/// Returns native Lua string representation.
+///
+std::string tostring() const;
+</pre>
+
+<pre>
+/// Dumps reference to a stream.
+///
+void print(std::ostream& stream) const;
+</pre>
+
+<pre>
+/// Returns the Lua state.
+///
+lua_State* state() const;
+</pre>
+
+<pre>
+/// Place the object onto the Lua stack.
+///
+void push(lua_State* L);
+</pre>
+
+<pre>
+/// Return the lua_type.
+///
+int type() const;
+</pre>
+
+<pre>
+/// Perform the explicit type conversion.
+///
+template&lt;class T&gt;
+T cast() const;
+</pre>
+
+<pre>
+/// Check if the Lua value is convertible to the type T.
+///
+template&lt;class T&gt;
+bool isInstance() const;
+</pre>
+
+<h2>Stack Traits - Stack&lt;T&gt;</h2>
+
+<pre>
+/// Converts the C++ value into the Lua value at the top of the Lua stack.
+///
+void put (lua_State* L, T value);
+</pre>
+
+<pre>
+/// Converts the Lua value at the index into the C++ value of the type T.
+///
+T get (lua_State* L, int index);
+</pre>
+
+<pre>
+/// Checks if the Lua value at the index is convertible into the C++ value of the type T.
+///
+bool isInstance (lua_State* L, int index);
+</pre>
+
+</section>
+
 </body>
 </html>
-

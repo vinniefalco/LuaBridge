@@ -53,6 +53,8 @@
 
 namespace luabridge {
 
+namespace detail {
+
 /**
   None type means void parameters or return value.
 */
@@ -214,5 +216,7 @@ struct ArgList <TypeList <Head, Tail>, Start>
   {
   }
 };
+
+} // namespace detail
 
 } // namespace luabridge
