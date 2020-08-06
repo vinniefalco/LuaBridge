@@ -37,6 +37,10 @@
 
 namespace luabridge {
 
+/// Lua stack traits for C++ types.
+///
+/// @tparam T A C++ type.
+///
 template <class T>
 struct Stack;
 
@@ -63,7 +67,7 @@ struct Stack <lua_State*>
 
 //------------------------------------------------------------------------------
 /**
-    Push a lua_CFunction.
+    Stack specialization for a lua_CFunction.
 */
 template <>
 struct Stack <lua_CFunction>
@@ -445,6 +449,7 @@ struct Stack <std::string>
   }
 };
 
+namespace detail {
 
 template <class T>
 struct StackOpSelector <T&, false>
@@ -530,11 +535,12 @@ struct StackOpSelector <const T*, false>
   }
 };
 
+} // namespace detail
 
 template <class T>
 struct Stack <T&>
 {
-  typedef StackOpSelector <T&, IsUserdata <T>::value> Helper;
+  typedef detail::StackOpSelector <T&, detail::IsUserdata <T>::value> Helper;
   typedef typename Helper::ReturnType ReturnType;
 
   static void push (lua_State* L, T& value)
@@ -551,7 +557,7 @@ struct Stack <T&>
 template <class T>
 struct Stack <const T&>
 {
-  typedef StackOpSelector <const T&, IsUserdata <T>::value> Helper;
+  typedef detail::StackOpSelector <const T&, detail::IsUserdata <T>::value> Helper;
   typedef typename Helper::ReturnType ReturnType;
 
   static void push (lua_State* L, const T& value)
@@ -568,7 +574,7 @@ struct Stack <const T&>
 template <class T>
 struct Stack <T*>
 {
-  typedef StackOpSelector <T*, IsUserdata <T>::value> Helper;
+  typedef detail::StackOpSelector <T*, detail::IsUserdata <T>::value> Helper;
   typedef typename Helper::ReturnType ReturnType;
 
   static void push (lua_State* L, T* value)
@@ -585,7 +591,7 @@ struct Stack <T*>
 template <class T>
 struct Stack <const T*>
 {
-  typedef StackOpSelector <const T*, IsUserdata <T>::value> Helper;
+  typedef detail::StackOpSelector <const T*, detail::IsUserdata <T>::value> Helper;
   typedef typename Helper::ReturnType ReturnType;
 
   static void push (lua_State* L, const T* value)

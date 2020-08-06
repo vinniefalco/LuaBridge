@@ -30,10 +30,13 @@
 
 #pragma once
 
+#include <LuaBridge/RefCountedObject.h>
+
 #include <unordered_map>
-#include "RefCountedObject.h"
 
 namespace luabridge {
+
+namespace detail {
 
 //==============================================================================
 /**
@@ -51,6 +54,8 @@ protected:
     return refcounts ;
   }
 };
+
+} // namespace detail
 
 //==============================================================================
 /**
@@ -72,7 +77,7 @@ protected:
   @todo Provide an intrusive version of RefCountedPtr.
 */
 template <class T>
-class RefCountedPtr : private RefCountedPtrBase
+class RefCountedPtr : private detail::RefCountedPtrBase
 {
 public:
   template <typename Other>
@@ -103,8 +108,8 @@ public:
 
       @invariant A pointer to U must be convertible to a pointer to T.
 
-      @param  rhs The RefCountedPtr to assign from.
       @tparam U   The other object type.
+      @param  rhs The RefCountedPtr to assign from.
   */
   template <typename U>
   RefCountedPtr (RefCountedPtr <U> const& rhs) : m_p (static_cast <T*> (rhs.get()))
@@ -124,7 +129,7 @@ public:
   /** Assign from another RefCountedPtr.
 
       @param  rhs The RefCountedPtr to assign from.
-      @return     A reference to the RefCountedPtr.
+      @returns     A reference to the RefCountedPtr.
   */
   RefCountedPtr <T>& operator= (RefCountedPtr <T> const& rhs)
   {
@@ -143,7 +148,7 @@ public:
 
       @tparam U   The other object type.
       @param  rhs The other RefCountedPtr to assign from.
-      @return     A reference to the RefCountedPtr.
+      @returns     A reference to the RefCountedPtr.
   */
   template <typename U>
   RefCountedPtr <T>& operator= (RefCountedPtr <U> const& rhs)
@@ -156,7 +161,7 @@ public:
 
   /** Retrieve the raw pointer.
 
-      @return A pointer to the object.
+      @returns A pointer to the object.
   */
   T* get () const
   {
@@ -165,7 +170,7 @@ public:
 
   /** Retrieve the raw pointer.
 
-      @return A pointer to the object.
+      @returns A pointer to the object.
   */
   T* operator* () const
   {
@@ -174,7 +179,7 @@ public:
 
   /** Retrieve the raw pointer.
 
-      @return A pointer to the object.
+      @returns A pointer to the object.
   */
   T* operator-> () const
   {
@@ -185,7 +190,7 @@ public:
 
       @note This is not thread-safe.
 
-      @return The number of active references.
+      @returns The number of active references.
   */
   long use_count () const
   {

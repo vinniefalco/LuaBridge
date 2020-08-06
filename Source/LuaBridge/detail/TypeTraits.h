@@ -29,8 +29,9 @@
 
 #pragma once
 
-#include <string>
+#include <LuaBridge/detail/Config.h>
 
+#include <string>
 
 namespace luabridge {
 
@@ -64,6 +65,8 @@ struct ContainerTraits
   typedef bool isNotContainer;
   typedef T Type;
 };
+
+namespace detail {
 
 //------------------------------------------------------------------------------
 /**
@@ -128,8 +131,6 @@ struct TypeTraits
   /**@}*/
 };
 
-
-template <class T>
-struct Stack;
+} // namespace detail
 
 } // namespace luabridge

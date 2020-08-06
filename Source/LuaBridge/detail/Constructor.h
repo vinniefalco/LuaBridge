@@ -30,6 +30,7 @@
 #pragma once
 
 namespace luabridge {
+namespace detail {
 
 /*
 * Constructor generators.  These templates allow you to call operator new and
@@ -201,5 +202,7 @@ struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
       tvl.tl.tl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.tl.tl.hd);
   }
 };
+
+} // namespace detail
 
 } // namespace luabridge
