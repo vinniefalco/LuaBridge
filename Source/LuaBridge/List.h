@@ -1,6 +1,5 @@
 // https://github.com/vinniefalco/LuaBridge
-//
-// Copyright 2018, Dmitry Tarakanov
+// Copyright 2020, Dmitry Tarakanov
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -12,7 +11,7 @@
 namespace luabridge {
 
 template <class T>
-struct Stack <std::list <T> >
+struct Stack <std::list <T>>
 {
   static void push (lua_State* L, std::list <T> const& list)
   {

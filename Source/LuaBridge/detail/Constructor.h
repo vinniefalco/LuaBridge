@@ -62,41 +62,41 @@ struct Constructor <T, None>
 };
 
 template <class T, class P1>
-struct Constructor <T, TypeList <P1> >
+struct Constructor <T, TypeList <P1>>
 {
-  static T* call (const TypeListValues<TypeList <P1> > &tvl)
+  static T* call (const TypeListValues<TypeList <P1>> &tvl)
   {
     return new T(tvl.hd);
   }
-  static T* call (void* mem, const TypeListValues<TypeList <P1> > &tvl)
+  static T* call (void* mem, const TypeListValues<TypeList <P1>> &tvl)
   {
     return new (mem) T(tvl.hd);
   }
 };
 
 template <class T, class P1, class P2>
-struct Constructor <T, TypeList <P1, TypeList <P2> > >
+struct Constructor <T, TypeList <P1, TypeList <P2>>>
 {
-  static T* call (const TypeListValues<TypeList <P1, TypeList <P2> > > &tvl)
+  static T* call (const TypeListValues<TypeList <P1, TypeList <P2>>> &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd);
   }
-  static T* call (void* mem, const TypeListValues<TypeList <P1, TypeList <P2> > > &tvl)
+  static T* call (void* mem, const TypeListValues<TypeList <P1, TypeList <P2>>> &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd);
   }
 };
 
 template <class T, class P1, class P2, class P3>
-struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3> > > >
+struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3>>>>
 {
   static T* call (const TypeListValues<TypeList <P1, TypeList <P2,
-    TypeList <P3> > > > &tvl)
+    TypeList <P3>>>> &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
   static T* call (void* mem, const TypeListValues<TypeList <P1, TypeList <P2,
-    TypeList <P3> > > > &tvl)
+    TypeList <P3>>>> &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd);
   }
@@ -104,15 +104,15 @@ struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3> > > >
 
 template <class T, class P1, class P2, class P3, class P4>
 struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
-  TypeList <P4> > > > >
+  TypeList <P4>>>>>
 {
   static T* call (const TypeListValues<TypeList <P1, TypeList <P2,
-    TypeList <P3, TypeList <P4> > > > > &tvl)
+    TypeList <P3, TypeList <P4>>>>> &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
   static T* call (void* mem, const TypeListValues<TypeList <P1, TypeList <P2,
-    TypeList <P3, TypeList <P4> > > > > &tvl)
+    TypeList <P3, TypeList <P4>>>>> &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd);
   }
@@ -121,16 +121,16 @@ struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
 template <class T, class P1, class P2, class P3, class P4,
   class P5>
 struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
-  TypeList <P4, TypeList <P5> > > > > >
+  TypeList <P4, TypeList <P5>>>>>>
 {
   static T* call (const TypeListValues<TypeList <P1, TypeList <P2,
-    TypeList <P3, TypeList <P4, TypeList <P5> > > > > > &tvl)
+    TypeList <P3, TypeList <P4, TypeList <P5>>>>>> &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
   }
   static T* call (void* mem, const TypeListValues<TypeList <P1, TypeList <P2,
-    TypeList <P3, TypeList <P4, TypeList <P5> > > > > > &tvl)
+    TypeList <P3, TypeList <P4, TypeList <P5>>>>>> &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd);
@@ -140,16 +140,16 @@ struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
 template <class T, class P1, class P2, class P3, class P4,
   class P5, class P6>
 struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
-  TypeList <P4, TypeList <P5, TypeList <P6> > > > > > >
+  TypeList <P4, TypeList <P5, TypeList <P6>>>>>>>
 {
   static T* call (const TypeListValues<TypeList <P1, TypeList <P2,
-    TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > > &tvl)
+    TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6>>>>>>> &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
   }
   static T* call (void* mem, const TypeListValues<TypeList <P1, TypeList <P2,
-    TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6> > > > > > > &tvl)
+    TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6>>>>>>> &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd);
@@ -159,11 +159,11 @@ struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
 template <class T, class P1, class P2, class P3, class P4,
   class P5, class P6, class P7>
 struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
-  TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7> > > > > > > >
+  TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7>>>>>>>>
 {
   static T* call (const TypeListValues<TypeList <P1, TypeList <P2,
     TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6,
-    TypeList <P7> > > > > > > > &tvl)
+    TypeList <P7>>>>>>>> &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -171,7 +171,7 @@ struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
   }
   static T* call (void* mem, const TypeListValues<TypeList <P1, TypeList <P2,
     TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6,
-    TypeList <P7> > > > > > > > &tvl)
+    TypeList <P7>>>>>>>> &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -183,11 +183,11 @@ template <class T, class P1, class P2, class P3, class P4,
   class P5, class P6, class P7, class P8>
 struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
   TypeList <P4, TypeList <P5, TypeList <P6, TypeList <P7, 
-  TypeList <P8> > > > > > > > >
+  TypeList <P8>>>>>>>>>
 {
   static T* call (const TypeListValues<TypeList <P1, TypeList <P2,
     TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6,
-    TypeList <P7, TypeList <P8> > > > > > > > > &tvl)
+    TypeList <P7, TypeList <P8>>>>>>>>> &tvl)
   {
     return new T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,
@@ -195,7 +195,7 @@ struct Constructor <T, TypeList <P1, TypeList <P2, TypeList <P3,
   }
   static T* call (void* mem, const TypeListValues<TypeList <P1, TypeList <P2,
     TypeList <P3, TypeList <P4, TypeList <P5, TypeList <P6,
-    TypeList <P7, TypeList <P8> > > > > > > > > &tvl)
+    TypeList <P7, TypeList <P8>>>>>>>>> &tvl)
   {
     return new (mem) T(tvl.hd, tvl.tl.hd, tvl.tl.tl.hd, tvl.tl.tl.tl.hd,
       tvl.tl.tl.tl.tl.hd, tvl.tl.tl.tl.tl.tl.hd,

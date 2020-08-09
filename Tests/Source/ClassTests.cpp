@@ -6,9 +6,7 @@
 #include "TestBase.h"
 
 #include <exception>
-#ifdef LUABRIDGE_CXX11
 #include <functional>
-#endif
 #include <map>
 #include <memory>
 
@@ -454,8 +452,6 @@ TEST_F (ClassFunctions, ConstMemberFunctions)
   ASSERT_EQ (5, result <int> ());
 }
 
-#ifdef LUABRIDGE_CXX11
-
 namespace {
 
 template <class T, class Base>
@@ -695,8 +691,6 @@ TEST_F (ClassFunctions, ConstStdFunctions)
 
   ASSERT_TRUE (data.expired());
 }
-
-#endif // LUABRIDGE_CXX11
 
 struct ClassProperties : ClassTests
 {
@@ -1108,8 +1102,6 @@ TEST_F (ClassProperties, ProxyCFunctions_Overridden)
   ASSERT_EQ (7, derived.data);
 }
 
-#ifdef LUABRIDGE_CXX11
-
 TEST_F (ClassProperties, StdFunctions)
 {
   using Int = Class <int, EmptyBase>;
@@ -1192,8 +1184,6 @@ TEST_F (ClassProperties, StdFunctions_ReadOnly)
   ASSERT_TRUE (getterData.expired ());
 }
 
-#endif // LUABRIDGE_CXX11
-
 struct ClassStaticFunctions : ClassTests
 {
 };
@@ -1251,8 +1241,6 @@ TEST_F (ClassStaticFunctions, Functions_Overridden)
   ASSERT_EQ (123, result <Derived> ().data);
 }
 
-#ifdef LUABRIDGE_CXX11
-
 TEST_F (ClassStaticFunctions, StdFunctions)
 {
   using Int = Class <int, EmptyBase>;
@@ -1266,8 +1254,6 @@ TEST_F (ClassStaticFunctions, StdFunctions)
   runLua ("result = Int.static (Int (35))");
   ASSERT_EQ (35, result <Int> ().data);
 }
-
-#endif // LUABRIDGE_CXX11
 
 struct ClassStaticProperties : ClassTests
 {
