@@ -6,6 +6,7 @@
 #pragma once
 
 #include <LuaBridge/detail/Config.h>
+#include <LuaBridge/detail/TypeList.h>
 
 #include <functional>
 

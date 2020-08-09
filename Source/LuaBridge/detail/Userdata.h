@@ -6,6 +6,7 @@
 #pragma once
 
 #include <LuaBridge/detail/ClassInfo.h>
+#include <LuaBridge/detail/TypeTraits.h>
 
 #include <cassert>
 #include <stdexcept>
