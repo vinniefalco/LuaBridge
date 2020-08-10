@@ -1,32 +1,8 @@
-//==============================================================================
-/*
-  https://github.com/vinniefalco/LuaBridge
-  
-  Copyright 2019, Dmitry Tarakanov
-  Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
-  Copyright 2007, Nathan Reed
-
-  License: The MIT License (http://www.opensource.org/licenses/mit-license.php)
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
-*/
-//==============================================================================
+// https://github.com/vinniefalco/LuaBridge
+// Copyright 2019, Dmitry Tarakanov
+// Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+// Copyright 2007, Nathan Reed
+// SPDX-License-Identifier: MIT
 
 #pragma once
 
@@ -44,15 +20,15 @@ namespace detail {
 */
 struct RefCountedPtrBase
 {
-  // Declaration of container for the refcounts
-  typedef std::unordered_map <const void *, int> RefCountsType;
+    // Declaration of container for the refcounts
+    typedef std::unordered_map<const void*, int> RefCountsType;
 
 protected:
-  RefCountsType& getRefCounts () const
-  {
-    static RefCountsType refcounts;
-    return refcounts ;
-  }
+    RefCountsType& getRefCounts() const
+    {
+        static RefCountsType refcounts;
+        return refcounts;
+    }
 };
 
 } // namespace detail
@@ -76,174 +52,150 @@ protected:
 
   @todo Provide an intrusive version of RefCountedPtr.
 */
-template <class T>
+template<class T>
 class RefCountedPtr : private detail::RefCountedPtrBase
 {
 public:
-  template <typename Other>
-  struct rebind
-  {
-    typedef RefCountedPtr <Other> other;
-  };
-
-  /** Construct as nullptr or from existing pointer to T.
-
-      @param p The optional, existing pointer to assign from.
-  */
-  RefCountedPtr (T* p = 0) : m_p (p)
-  {
-    ++getRefCounts () [m_p];
-  }
-
-  /** Construct from another RefCountedPtr.
-
-      @param rhs The RefCountedPtr to assign from.
-  */
-  RefCountedPtr (RefCountedPtr <T> const& rhs) : m_p (rhs.get())
-  {
-    ++getRefCounts () [m_p];
-  }
-
-  /** Construct from a RefCountedPtr of a different type.
-
-      @invariant A pointer to U must be convertible to a pointer to T.
-
-      @tparam U   The other object type.
-      @param  rhs The RefCountedPtr to assign from.
-  */
-  template <typename U>
-  RefCountedPtr (RefCountedPtr <U> const& rhs) : m_p (static_cast <T*> (rhs.get()))
-  {
-    ++getRefCounts () [m_p];
-  }
-
-  /** Release the object.
-
-      If there are no more references then the object is deleted.
-  */
-  ~RefCountedPtr ()
-  {
-    reset();
-  }
-
-  /** Assign from another RefCountedPtr.
-
-      @param  rhs The RefCountedPtr to assign from.
-      @returns     A reference to the RefCountedPtr.
-  */
-  RefCountedPtr <T>& operator= (RefCountedPtr <T> const& rhs)
-  {
-    if (m_p != rhs.m_p)
+    template<typename Other>
+    struct rebind
     {
-      reset ();
-      m_p = rhs.m_p;
-      ++getRefCounts () [m_p];
-    }
-    return *this;
-  }
+        typedef RefCountedPtr<Other> other;
+    };
 
-  /** Assign from another RefCountedPtr of a different type.
+    /** Construct as nullptr or from existing pointer to T.
 
-      @note A pointer to U must be convertible to a pointer to T.
+        @param p The optional, existing pointer to assign from.
+    */
+    RefCountedPtr(T* p = 0) : m_p(p) { ++getRefCounts()[m_p]; }
 
-      @tparam U   The other object type.
-      @param  rhs The other RefCountedPtr to assign from.
-      @returns     A reference to the RefCountedPtr.
-  */
-  template <typename U>
-  RefCountedPtr <T>& operator= (RefCountedPtr <U> const& rhs)
-  {
-    reset ();
-    m_p = static_cast <T*> (rhs.get());
-    ++getRefCounts () [m_p];
-    return *this;
-  }
+    /** Construct from another RefCountedPtr.
 
-  /** Retrieve the raw pointer.
+        @param rhs The RefCountedPtr to assign from.
+    */
+    RefCountedPtr(RefCountedPtr<T> const& rhs) : m_p(rhs.get()) { ++getRefCounts()[m_p]; }
 
-      @returns A pointer to the object.
-  */
-  T* get () const
-  {
-    return m_p;
-  }
+    /** Construct from a RefCountedPtr of a different type.
 
-  /** Retrieve the raw pointer.
+        @invariant A pointer to U must be convertible to a pointer to T.
 
-      @returns A pointer to the object.
-  */
-  T* operator* () const
-  {
-    return m_p;
-  }
-
-  /** Retrieve the raw pointer.
-
-      @returns A pointer to the object.
-  */
-  T* operator-> () const
-  {
-    return m_p;
-  }
-
-  /** Determine the number of references.
-
-      @note This is not thread-safe.
-
-      @returns The number of active references.
-  */
-  long use_count () const
-  {
-    return getRefCounts () [m_p];
-  }
-
-  /** Release the pointer.
-
-      The reference count is decremented. If the reference count reaches
-      zero, the object is deleted.
-  */
-  void reset ()
-  {
-    if (m_p != 0)
+        @tparam U   The other object type.
+        @param  rhs The RefCountedPtr to assign from.
+    */
+    template<typename U>
+    RefCountedPtr(RefCountedPtr<U> const& rhs) : m_p(static_cast<T*>(rhs.get()))
     {
-      if (--getRefCounts () [m_p] <= 0)
-        delete m_p;
-
-      m_p = 0;
+        ++getRefCounts()[m_p];
     }
-  }
+
+    /** Release the object.
+
+        If there are no more references then the object is deleted.
+    */
+    ~RefCountedPtr() { reset(); }
+
+    /** Assign from another RefCountedPtr.
+
+        @param  rhs The RefCountedPtr to assign from.
+        @returns     A reference to the RefCountedPtr.
+    */
+    RefCountedPtr<T>& operator=(RefCountedPtr<T> const& rhs)
+    {
+        if (m_p != rhs.m_p)
+        {
+            reset();
+            m_p = rhs.m_p;
+            ++getRefCounts()[m_p];
+        }
+        return *this;
+    }
+
+    /** Assign from another RefCountedPtr of a different type.
+
+        @note A pointer to U must be convertible to a pointer to T.
+
+        @tparam U   The other object type.
+        @param  rhs The other RefCountedPtr to assign from.
+        @returns     A reference to the RefCountedPtr.
+    */
+    template<typename U>
+    RefCountedPtr<T>& operator=(RefCountedPtr<U> const& rhs)
+    {
+        reset();
+        m_p = static_cast<T*>(rhs.get());
+        ++getRefCounts()[m_p];
+        return *this;
+    }
+
+    /** Retrieve the raw pointer.
+
+        @returns A pointer to the object.
+    */
+    T* get() const { return m_p; }
+
+    /** Retrieve the raw pointer.
+
+        @returns A pointer to the object.
+    */
+    T* operator*() const { return m_p; }
+
+    /** Retrieve the raw pointer.
+
+        @returns A pointer to the object.
+    */
+    T* operator->() const { return m_p; }
+
+    /** Determine the number of references.
+
+        @note This is not thread-safe.
+
+        @returns The number of active references.
+    */
+    long use_count() const { return getRefCounts()[m_p]; }
+
+    /** Release the pointer.
+
+        The reference count is decremented. If the reference count reaches
+        zero, the object is deleted.
+    */
+    void reset()
+    {
+        if (m_p != 0)
+        {
+            if (--getRefCounts()[m_p] <= 0)
+                delete m_p;
+
+            m_p = 0;
+        }
+    }
 
 private:
-  T* m_p;
+    T* m_p;
 };
 
-template <class T>
-bool operator== (const RefCountedPtr <T>& lhs, const RefCountedPtr <T>& rhs)
+template<class T>
+bool operator==(const RefCountedPtr<T>& lhs, const RefCountedPtr<T>& rhs)
 {
-  return lhs.get () == rhs.get ();
+    return lhs.get() == rhs.get();
 }
 
-template <class T>
-bool operator!= (const RefCountedPtr <T>& lhs, const RefCountedPtr <T>& rhs)
+template<class T>
+bool operator!=(const RefCountedPtr<T>& lhs, const RefCountedPtr<T>& rhs)
 {
-  return lhs.get() != rhs.get();
+    return lhs.get() != rhs.get();
 }
 
 //==============================================================================
 
 // forward declaration
-template <class T>
+template<class T>
 struct ContainerTraits;
 
-template <class T>
-struct ContainerTraits <RefCountedPtr <T>>
+template<class T>
+struct ContainerTraits<RefCountedPtr<T>>
 {
-  typedef T Type;
+    typedef T Type;
 
-  static T* get (RefCountedPtr <T> const& c)
-  {
-    return c.get ();
-  }
+    static T* get(RefCountedPtr<T> const& c) { return c.get(); }
 };
 
 } // namespace luabridge
