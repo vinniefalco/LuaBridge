@@ -22,7 +22,6 @@ LuaBridge offers the following features:
 - Automatic function parameter type binding.
 - Easy access to Lua objects like tables and functions.
 - Written in a clear and easy to debug style.
-- Does not require C++11.
 
 Please read the [LuaBridge Reference Manual][5] for more details on the API.
 
