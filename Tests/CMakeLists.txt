@@ -77,6 +77,10 @@ macro (add_test_app LUABRIDGE_TEST_NAME LUABRIDGE_TEST_LUA_LIBRARY)
     JuceLibraryCode
   )
 
+  add_test (${LUABRIDGE_TEST_NAME}
+    ${LUABRIDGE_TEST_NAME}
+  )
+
 endmacro (add_test_app)
 
 add_test_app (Tests51 Lua51)

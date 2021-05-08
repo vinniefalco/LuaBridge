@@ -15,6 +15,7 @@ if (LUABRIDGE_TESTING)
     set (gtest_force_shared_crt ON CACHE BOOL "Use /MD and /MDd" FORCE)
     add_subdirectory (third_party/gtest)
 
+    enable_testing ()
     add_subdirectory (Tests)
 endif ()
 
