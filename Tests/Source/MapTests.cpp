@@ -138,7 +138,7 @@ TEST_F(MapTests, PassFromLua)
 
     {
         resetResult();
-        runLua("result = processValues ({[Data (3)] = Data (-4)})");
+        runLua("result = processPointers ({[Data (3)] = Data (-4)})");
         std::map<Data, Data> expected{{Data(3), Data(-4)}};
         const auto actual = result<std::map<Data, Data>>();
         ASSERT_EQ(expected, actual);
