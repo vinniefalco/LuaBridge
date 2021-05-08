@@ -30,7 +30,6 @@ struct Stack<std::array<T, s>>
         if (!lua_istable(L, index))
         {
             luaL_error(L, "#%d argments must be table", index);
-            throw std::runtime_error("Array get () must receive a table");
         }
 
         std::size_t const tableSize = static_cast<std::size_t>(get_length(L, index));
