@@ -1,4 +1,5 @@
 set (LUABRIDGE_TEST_SOURCE_FILES
+  Source/ArrayTests.cpp
   Source/ClassTests.cpp
   Source/IssueTests.cpp
   Source/IteratorTests.cpp
