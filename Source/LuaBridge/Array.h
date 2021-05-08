@@ -44,12 +44,12 @@ struct Stack<std::array<T, s>>
 
         int const absindex = lua_absindex(L, index);
         lua_pushnil(L);
-        int arr_index = 0;
+        int arrayIndex = 0;
         while (lua_next(L, absindex) != 0)
         {
-            array[arr_index] = Stack<T>::get(L, -1);
+            array[arrayIndex] = Stack<T>::get(L, -1);
             lua_pop(L, 1);
-            arr_index++;
+            ++arrayIndex;
         }
         return array;
     }
