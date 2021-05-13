@@ -19,6 +19,12 @@ set (LUABRIDGE_TEST_SOURCE_FILES
   Source/VectorTests.cpp
 )
 
+if (LUABRIDGE_CXX17)
+  set (LUABRIDGE_TEST_SOURCE_FILES
+    ${LUABRIDGE_TEST_SOURCE_FILES}
+    Source/OptionalTests.cpp)
+endif ()
+
 source_group ("Source" FILES ${LUABRIDGE_TEST_SOURCE_FILES})
 
 set (LUABRIDGE_TEST_JUICE_FILES
