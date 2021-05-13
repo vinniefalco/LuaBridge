@@ -21,7 +21,8 @@ using TestTypes = ::testing::Types<bool,
                                    long long,
                                    unsigned long long,
                                    float,
-                                   double>;
+                                   double,
+                                   std::string>;
 
 template<class T>
 struct TypeTraits;
@@ -115,4 +116,11 @@ struct TypeTraits<double>
 {
     static std::vector<double> values() { return {1.2, -2.5, 3.14}; }
     static std::string list() { return "1.2, -2.5, 3.14"; }
+};
+
+template<>
+struct TypeTraits<std::string>
+{
+    static std::vector<std::string> values() { return {"", "a", "xyz"}; }
+    static std::string list() { return "'', 'a', 'xyz'"; }
 };
