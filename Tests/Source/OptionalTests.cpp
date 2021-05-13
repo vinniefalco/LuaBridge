@@ -147,6 +147,7 @@ bool operator==(std::optional<T> const& lhs, std::optional<T> const& rhs)
         return lhs.value() == rhs.value();
     }
 
+    assert(!lhs.has_value());
     assert(!rhs.has_value());
     return true;
 }
