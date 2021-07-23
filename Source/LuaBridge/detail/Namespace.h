@@ -1165,7 +1165,7 @@ public:
 
         return *this;
     }
-    
+    template<class T>
     Namespace& addConstant(char const* name, T value)
     {
         if (m_stackSize == 1)
