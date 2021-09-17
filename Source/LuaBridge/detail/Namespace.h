@@ -1165,6 +1165,21 @@ public:
 
         return *this;
     }
+    template<class T>
+    Namespace& addConstant(char const* name, T value)
+    {
+        if (m_stackSize == 1)
+        {
+            throw std::logic_error("addConstant () called on global namespace");
+        }
+
+        assert(lua_istable(L, -1)); // Stack: namespace table (ns)
+
+        Stack<T>::push(L,value); // Stack: ns, value
+        rawsetfield(L, -2, name); // Stack: ns
+
+        return *this;
+    }
 
     //----------------------------------------------------------------------------
     /**
