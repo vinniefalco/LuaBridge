@@ -1,5 +1,5 @@
 <a href="http://lua.org">
-<img src="http://vinniefalco.github.com/LuaBridgeDemo/powered-by-lua.png">
+<img src="http://vinniefalco.github.io/LuaBridgeDemo/powered-by-lua.png">
 </a><br>
 
 # LuaBridge 2.6
@@ -84,7 +84,7 @@ This is what the GUI application looks like, along with the C++ code snippet
 for registering the two classes:
 
 <a href="https://github.com/vinniefalco/LuaBridgeDemo">
-<img src="http://vinniefalco.github.com/LuaBridgeDemo/LuaBridgeDemoScreenshot1.0.2.png">
+<img src="http://vinniefalco.github.io/LuaBridgeDemo/LuaBridgeDemoScreenshot1.0.2.png">
 </a><br>
 
 ## Official Repository
@@ -114,7 +114,7 @@ BSD 3-Clause License. See the corresponding license file in those versions
 [2]:  http://lua.org "The Lua Programming Language"
 [3]:  http://luajit.org/ "The LuaJIT Probject"
 [4]:  http://www.opensource.org/licenses/mit-license.html "The MIT License"
-[5]:  http://vinniefalco.github.com/LuaBridge "LuaBridge Reference Manual"
+[5]:  http://vinniefalco.github.io/LuaBridge "LuaBridge Reference Manual"
 [6]:  https://github.com/vinniefalco/LuaBridgeDemo "LuaBridge Demo"
 [7]:  https://github.com/vinniefalco "Vinnie Falco's Github"
 [8]:  mailto:vinnie.falco@gmail.com "Vinnie Falco (Email)"
