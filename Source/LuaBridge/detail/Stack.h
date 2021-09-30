@@ -23,7 +23,7 @@ struct Stack;
 template<>
 struct Stack<void>
 {
-    static void push(lua_State* L) {}
+    static void push(lua_State* ) {}
 };
 
 //------------------------------------------------------------------------------
