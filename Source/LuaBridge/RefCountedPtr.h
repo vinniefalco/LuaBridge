@@ -166,8 +166,6 @@ public:
             {
                 if (m_p != 0)
                     delete m_p;
-                else
-                    int x = 1;
                 getRefCounts().erase(m_p);
                 m_p = 0;
             }
