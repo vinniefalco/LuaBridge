@@ -159,15 +159,18 @@ public:
     */
     void reset()
     {
-        if (m_p != 0)
+        auto myCount_it = getRefCounts().find(m_p); // use find() to avoid adding a spurious pointer to getRefCounts()
+        if (myCount_it != getRefCounts().end())
         {
-            if (--getRefCounts()[m_p] <= 0)
+            if (--myCount_it->second <= 0)
             {
-                delete m_p;
+                if (m_p != 0)
+                    delete m_p;
+                else
+                    int x = 1;
                 getRefCounts().erase(m_p);
+                m_p = 0;
             }
-
-            m_p = 0;
         }
     }
 
