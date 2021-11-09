@@ -167,9 +167,9 @@ public:
                 if (m_p != 0)
                     delete m_p;
                 getRefCounts().erase(m_p);
-                m_p = 0;
             }
         }
+        m_p = 0;
     }
 
 private:
