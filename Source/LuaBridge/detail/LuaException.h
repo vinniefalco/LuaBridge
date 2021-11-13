@@ -67,6 +67,12 @@ public:
     */
     static void enableExceptions(lua_State* L) { lua_atpanic(L, throwAtPanic); }
 
+    /** Retrieve the lua_State associated with the exception.
+
+      @returns A Lua state.
+    */
+    lua_State* state() const { return m_L; }
+
 protected:
     void whatFromStack()
     {
