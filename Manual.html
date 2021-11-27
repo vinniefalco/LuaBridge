@@ -300,8 +300,9 @@ LuaBridge does not support:
 <li>Global variables (variables must be wrapped in a named scope).
 <li>Automatic conversion between STL container types and Lua tables
     (conversion can be enabled for <code>std::list</code>, <code>std::vector</code>,
-    <code>std::map</code>, <code>std::unordered_map</code> or <code>std::optional</code>
-    by including <code>List.h</code>, <code>Vector.h</code>, <code>Map.h</code>,
+    <code>std::array</code>, <code>std::map</code>, <code>std::unordered_map</code>
+    or <code>std::optional</code> by including <code>List.h</code>,
+    <code>Vector.h</code>, <code>Array.h</code>, <code>Map.h</code>,
     <code>UnorderedMap.h</code> or <code>Optional.h</code> respectively)
 <li>Inheriting Lua classes from C++ classes.
 <li>Passing nil to a C++ function that expects a pointer or reference.
