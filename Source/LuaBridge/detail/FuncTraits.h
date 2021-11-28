@@ -42,7 +42,7 @@ template<class ReturnType>
 struct Caller<ReturnType, 0>
 {
     template<class Fn, class Params>
-    static ReturnType f(Fn& fn, TypeListValues<Params>& params)
+    static ReturnType f(Fn& fn, TypeListValues<Params>& )
     {
         return fn();
     }
