@@ -159,7 +159,7 @@ public:
     */
     void reset()
     {
-        auto myCount_it = getRefCounts().find(m_p); // use find() to avoid adding a spurious pointer to getRefCounts()
+        auto myCount_it = getRefCounts().find(m_p); // use find() to avoid looking up m_p more than once
         if (myCount_it != getRefCounts().end())
         {
             if (--myCount_it->second <= 0)
