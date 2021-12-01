@@ -6,8 +6,7 @@
 
 #pragma once
 
-#include <LuaBridge/RefCountedObject.h>
-
+#include <cassert>
 #include <unordered_map>
 
 namespace luabridge {
