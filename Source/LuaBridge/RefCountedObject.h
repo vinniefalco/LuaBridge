@@ -38,9 +38,6 @@
 
 #pragma once
 
-#include <LuaBridge/detail/Config.h>
-#include <LuaBridge/detail/TypeTraits.h>
-
 #include <cassert>
 
 namespace luabridge {
@@ -351,6 +348,10 @@ bool operator!=(ReferenceCountedObjectClass* object1,
 }
 
 //==============================================================================
+
+// forward declaration
+template<class T>
+struct ContainerTraits;
 
 template<class T>
 struct ContainerTraits<RefCountedObjectPtr<T>>
