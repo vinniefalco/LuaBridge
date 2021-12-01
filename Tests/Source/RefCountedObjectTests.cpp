@@ -123,7 +123,7 @@ TEST_F(RefCountedObjectTests, AssignOperator)
     bool deletedNew = false;
     RefCounted* const rawPtr = new RefCounted(deletedNew);
 
-    luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = rawPtr);
+    const luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = rawPtr);
 
     ASSERT_EQ(&returnValue, &ptr);
     ASSERT_EQ(ptr, rawPtr);
@@ -132,14 +132,55 @@ TEST_F(RefCountedObjectTests, AssignOperator)
     ASSERT_FALSE(deletedNew);
 }
 
-TEST_F(RefCountedObjectTests, AssignOperatorSelfAssignment)
+TEST_F(RefCountedObjectTests, AssignOperatorRef)
+{
+    bool deletedPrevious = false;
+    luabridge::RefCountedObjectPtr<RefCounted> ptr(new RefCounted(deletedPrevious));
+
+    bool deletedNew = false;
+    RefCounted* const rawPtrNew = new RefCounted(deletedNew);
+    const luabridge::RefCountedObjectPtr<RefCounted> ptrNew(rawPtrNew);
+
+    const luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = ptrNew);
+
+    ASSERT_EQ(&returnValue, &ptr);
+    ASSERT_EQ(ptr, rawPtrNew);
+    ASSERT_EQ(rawPtrNew->getReferenceCount(), 2);
+    ASSERT_TRUE(deletedPrevious);
+    ASSERT_FALSE(deletedNew);
+}
+
+TEST_F(RefCountedObjectTests, AssignOperatorRefPolymorph)
+{
+    struct RefCountedSpecialized : public RefCounted
+    {
+        explicit RefCountedSpecialized(bool& deleted) : RefCounted(deleted) {}
+    };
+
+    bool deletedPrevious = false;
+    luabridge::RefCountedObjectPtr<RefCounted> ptr(new RefCounted(deletedPrevious));
+
+    bool deletedNew = false;
+    RefCountedSpecialized* const rawPtrNew = new RefCountedSpecialized(deletedNew);
+    const luabridge::RefCountedObjectPtr<RefCountedSpecialized> ptrNew(rawPtrNew);
+
+    const luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = ptrNew);
+
+    ASSERT_EQ(&returnValue, &ptr);
+    ASSERT_EQ(ptr, rawPtrNew);
+    ASSERT_EQ(rawPtrNew->getReferenceCount(), 2);
+    ASSERT_TRUE(deletedPrevious);
+    ASSERT_FALSE(deletedNew);
+}
+
+TEST_F(RefCountedObjectTests, AssignOperatorRefSelfAssignment)
 {
     bool deleted = false;
     RefCounted* const rawPtr = new RefCounted(deleted);
 
     luabridge::RefCountedObjectPtr<RefCounted> ptr(rawPtr);
 
-    luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = ptr);
+    const luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = ptr);
 
     ASSERT_EQ(&returnValue, &ptr);
     ASSERT_EQ(ptr, rawPtr);
@@ -154,7 +195,7 @@ TEST_F(RefCountedObjectTests, AssignOperatorSameObject)
 
     luabridge::RefCountedObjectPtr<RefCounted> ptr(rawPtr);
 
-    luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = rawPtr);
+    const luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = rawPtr);
 
     ASSERT_EQ(&returnValue, &ptr);
     ASSERT_EQ(ptr, rawPtr);
@@ -181,7 +222,7 @@ private:
 
 } // namespace
 
-TEST_F(RefCountedObjectTests, AssignOperatorNestedObjects)
+TEST_F(RefCountedObjectTests, AssignOperatorRefNestedObjects)
 {
     // Test assignment operator in the case that the previous referenced object is
     // part of the new referenced object. This nested situation can only be handled
