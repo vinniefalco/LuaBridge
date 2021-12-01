@@ -66,13 +66,13 @@ public:
 
         @param p The optional, existing pointer to assign from.
     */
-    RefCountedPtr(T* p = 0) : m_p(p) { ++getRefCounts()[m_p]; }
+    RefCountedPtr(T* const p = nullptr) : m_p(nullptr) { *this = p; }
 
     /** Construct from another RefCountedPtr.
 
         @param rhs The RefCountedPtr to assign from.
     */
-    RefCountedPtr(RefCountedPtr<T> const& rhs) : m_p(rhs.get()) { ++getRefCounts()[m_p]; }
+    RefCountedPtr(RefCountedPtr<T> const& rhs) : RefCountedPtr(rhs.get()) {}
 
     /** Construct from a RefCountedPtr of a different type.
 
@@ -82,16 +82,15 @@ public:
         @param  rhs The RefCountedPtr to assign from.
     */
     template<typename U>
-    RefCountedPtr(RefCountedPtr<U> const& rhs) : m_p(static_cast<T*>(rhs.get()))
+    RefCountedPtr(RefCountedPtr<U> const& rhs) : RefCountedPtr(rhs.get())
     {
-        ++getRefCounts()[m_p];
     }
 
     /** Release the object.
 
         If there are no more references then the object is deleted.
     */
-    ~RefCountedPtr() { reset(); }
+    ~RefCountedPtr() { *this = nullptr; }
 
     /** Assign from another RefCountedPtr.
 
@@ -100,12 +99,8 @@ public:
     */
     RefCountedPtr<T>& operator=(RefCountedPtr<T> const& rhs)
     {
-        if (m_p != rhs.m_p)
-        {
-            reset();
-            m_p = rhs.m_p;
-            ++getRefCounts()[m_p];
-        }
+        // NOTE Self assignment is handled gracefully
+        *this = rhs.get();
         return *this;
     }
 
@@ -120,9 +115,41 @@ public:
     template<typename U>
     RefCountedPtr<T>& operator=(RefCountedPtr<U> const& rhs)
     {
-        reset();
-        m_p = static_cast<T*>(rhs.get());
-        ++getRefCounts()[m_p];
+        // NOTE Self assignment is handled gracefully
+        *this = rhs.get();
+        return *this;
+    }
+
+    RefCountedPtr<T>& operator=(T* const p)
+    {
+        if (p != m_p)
+        {
+            // First increment the counter of the new object to avoid issues with nested objects
+            if (p)
+            {
+                // NOTE Insertion takes only place if not already existing
+                const RefCountsType::iterator itCounterNew =
+                    getRefCounts().insert(std::make_pair(p, 0)).first;
+                ++itCounterNew->second;
+            }
+
+            // Decrease counter of the previous object
+            if (m_p)
+            {
+                const RefCountsType::iterator itCounterPrevious = getRefCounts().find(m_p);
+                assert(itCounterPrevious != getRefCounts().end());
+
+                // Delete object and counter if this was the last user
+                if (--itCounterPrevious->second <= 0)
+                {
+                    delete m_p;
+                    getRefCounts().erase(itCounterPrevious);
+                }
+            }
+
+            m_p = p;
+        }
+
         return *this;
     }
 
@@ -156,24 +183,24 @@ public:
 
         @returns The number of active references.
     */
-    RefCountsType::mapped_type use_count() const { return getRefCounts()[m_p]; }
+    RefCountsType::mapped_type use_count() const
+    {
+        if (!m_p)
+        {
+            return 0;
+        }
+
+        const RefCountsType::iterator itCounter = getRefCounts().find(m_p);
+        assert(itCounter != getRefCounts().end());
+        return itCounter->second;
+    }
 
     /** Release the pointer.
 
         The reference count is decremented. If the reference count reaches
         zero, the object is deleted.
     */
-    void reset()
-    {
-        const RefCountsType::iterator itCounter = getRefCounts().find(m_p);
-        assert(itCounter != getRefCounts().end());
-        if (--itCounter->second <= 0)
-        {
-            delete m_p; // delete nullptr is allowed
-            getRefCounts().erase(itCounter);
-        }
-        m_p = 0;
-    }
+    void reset() { *this = nullptr; }
 
 private:
     T* m_p;
