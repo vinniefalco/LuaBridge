@@ -43,6 +43,9 @@ TEST_F(RefCountedObjectTests, CompareOperators)
     RefCounted* const raw_ptr2 = new RefCounted(deleted);
     luabridge::RefCountedObjectPtr<RefCounted> ptr2(raw_ptr2);
 
+    ASSERT_TRUE(ptr1 == ptr1);
+    ASSERT_TRUE(ptr1 != ptr2);
+
     ASSERT_TRUE(raw_ptr1 == ptr1);
     ASSERT_TRUE(ptr1 == raw_ptr1);
 

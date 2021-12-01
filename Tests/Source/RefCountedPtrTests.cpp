@@ -190,6 +190,9 @@ TEST_F(RefCountedPtrTests, CompareOperators)
     int* const rawPtr2 = new int;
     luabridge::RefCountedPtr<int> ptr2(rawPtr2);
 
+    ASSERT_TRUE(ptr1 == ptr1);
+    ASSERT_TRUE(ptr1 != ptr2);
+
     ASSERT_TRUE(rawPtr1 == ptr1);
     ASSERT_TRUE(ptr1 == rawPtr1);
 
