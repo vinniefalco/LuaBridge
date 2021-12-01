@@ -162,6 +162,8 @@ TEST_F(RefCountedObjectTests, AssignOperatorSameObject)
     ASSERT_FALSE(deleted);
 }
 
+namespace {
+
 class TestObjectNested final : public luabridge::RefCountedObject
 {
 public:
@@ -176,6 +178,8 @@ private:
 
     luabridge::RefCountedObjectPtr<TestObjectNested> m_child;
 };
+
+} // namespace
 
 TEST_F(RefCountedObjectTests, AssignOperatorNestedObjects)
 {

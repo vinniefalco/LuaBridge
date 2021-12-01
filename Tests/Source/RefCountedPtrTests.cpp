@@ -77,6 +77,8 @@ TEST_F(RefCountedPtrTests, ConstructorCopyPolymorph)
     ASSERT_EQ(ptrCopy.use_count(), 2);
 }
 
+namespace {
+
 class TestObject
 {
 public:
@@ -87,6 +89,8 @@ public:
 private:
     bool& m_deleted;
 };
+
+} // namespace
 
 TEST_F(RefCountedPtrTests, Destructor)
 {
@@ -146,6 +150,8 @@ TEST_F(RefCountedPtrTests, AssignOperatorSameObject)
     ASSERT_FALSE(deleted);
 }
 
+namespace {
+
 class TestObjectNested
 {
 public:
@@ -160,6 +166,8 @@ private:
 
     luabridge::RefCountedPtr<TestObjectNested> m_child;
 };
+
+} // namespace
 
 TEST_F(RefCountedPtrTests, AssignOperatorNestedObjects)
 {
