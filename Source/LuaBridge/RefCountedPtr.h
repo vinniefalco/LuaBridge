@@ -149,7 +149,7 @@ public:
 
         @returns The number of active references.
     */
-    long use_count() const { return getRefCounts()[m_p]; }
+    RefCountsType::mapped_type use_count() const { return getRefCounts()[m_p]; }
 
     /** Release the pointer.
 
@@ -158,13 +158,14 @@ public:
     */
     void reset()
     {
-        if (m_p != 0)
+        const RefCountsType::iterator itCounter = getRefCounts().find(m_p);
+        assert(itCounter != getRefCounts().end());
+        if (--itCounter->second <= 0)
         {
-            if (--getRefCounts()[m_p] <= 0)
-                delete m_p;
-
-            m_p = 0;
+            delete m_p; // delete nullptr is allowed
+            getRefCounts().erase(itCounter);
         }
+        m_p = 0;
     }
 
 private:
