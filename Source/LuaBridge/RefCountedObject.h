@@ -151,7 +151,7 @@ public:
 
     //==============================================================================
     /** Creates a pointer to a null object. */
-    inline RefCountedObjectPtr() : referencedObject(0) {}
+    inline RefCountedObjectPtr() : referencedObject(nullptr) {}
 
     /** Creates a pointer to an object.
         This will increment the object's reference-count if it is non-null.
@@ -161,7 +161,7 @@ public:
     inline RefCountedObjectPtr(ReferenceCountedObjectClass* const refCountedObject)
         : referencedObject(refCountedObject)
     {
-        if (refCountedObject != 0)
+        if (refCountedObject != nullptr)
             refCountedObject->incReferenceCount();
     }
 
@@ -173,7 +173,7 @@ public:
     inline RefCountedObjectPtr(const RefCountedObjectPtr& other)
         : referencedObject(other.referencedObject)
     {
-        if (referencedObject != 0)
+        if (referencedObject != nullptr)
             referencedObject->incReferenceCount();
     }
 
@@ -185,7 +185,7 @@ public:
     inline RefCountedObjectPtr(RefCountedObjectPtr&& other)
         : referencedObject(other.referencedObject)
     {
-        other.referencedObject = 0;
+        other.referencedObject = nullptr;
     }
 
     /** Copies another pointer.
@@ -197,7 +197,7 @@ public:
     inline RefCountedObjectPtr(const RefCountedObjectPtr<DerivedClass>& other)
         : referencedObject(static_cast<ReferenceCountedObjectClass*>(other.getObject()))
     {
-        if (referencedObject != 0)
+        if (referencedObject != nullptr)
             referencedObject->incReferenceCount();
     }
 
@@ -250,13 +250,13 @@ public:
     {
         if (referencedObject != newObject)
         {
-            if (newObject != 0)
+            if (newObject != nullptr)
                 newObject->incReferenceCount();
 
             ReferenceCountedObjectClass* const oldObject = referencedObject;
             referencedObject = newObject;
 
-            if (oldObject != 0)
+            if (oldObject != nullptr)
                 oldObject->decReferenceCount();
         }
 
@@ -269,7 +269,7 @@ public:
     */
     ~RefCountedObjectPtr()
     {
-        if (referencedObject != 0)
+        if (referencedObject != nullptr)
             referencedObject->decReferenceCount();
     }
 
