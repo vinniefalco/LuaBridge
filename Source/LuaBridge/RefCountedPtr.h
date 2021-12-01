@@ -1,4 +1,5 @@
 // https://github.com/vinniefalco/LuaBridge
+// Copyright 2021, Stefan Frings
 // Copyright 2019, Dmitry Tarakanov
 // Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 // Copyright 2007, Nathan Reed
@@ -131,6 +132,12 @@ public:
     */
     T* get() const { return m_p; }
 
+    /** Retrieve the raw pointer by conversion.
+
+        @returns A pointer to the object.
+    */
+    operator T*() const { return m_p; }
+
     /** Retrieve the raw pointer.
 
         @returns A pointer to the object.
@@ -171,18 +178,6 @@ public:
 private:
     T* m_p;
 };
-
-template<class T>
-bool operator==(const RefCountedPtr<T>& lhs, const RefCountedPtr<T>& rhs)
-{
-    return lhs.get() == rhs.get();
-}
-
-template<class T>
-bool operator!=(const RefCountedPtr<T>& lhs, const RefCountedPtr<T>& rhs)
-{
-    return lhs.get() != rhs.get();
-}
 
 //==============================================================================
 
