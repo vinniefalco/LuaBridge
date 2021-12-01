@@ -299,54 +299,6 @@ private:
     ReferenceCountedObjectClass* referencedObject;
 };
 
-/** Compares two ReferenceCountedObjectPointers. */
-template<class ReferenceCountedObjectClass>
-bool operator==(const RefCountedObjectPtr<ReferenceCountedObjectClass>& object1,
-                ReferenceCountedObjectClass* const object2)
-{
-    return object1.getObject() == object2;
-}
-
-/** Compares two ReferenceCountedObjectPointers. */
-template<class ReferenceCountedObjectClass>
-bool operator==(const RefCountedObjectPtr<ReferenceCountedObjectClass>& object1,
-                const RefCountedObjectPtr<ReferenceCountedObjectClass>& object2)
-{
-    return object1.getObject() == object2.getObject();
-}
-
-/** Compares two ReferenceCountedObjectPointers. */
-template<class ReferenceCountedObjectClass>
-bool operator==(ReferenceCountedObjectClass* object1,
-                RefCountedObjectPtr<ReferenceCountedObjectClass>& object2)
-{
-    return object1 == object2.getObject();
-}
-
-/** Compares two ReferenceCountedObjectPointers. */
-template<class ReferenceCountedObjectClass>
-bool operator!=(const RefCountedObjectPtr<ReferenceCountedObjectClass>& object1,
-                const ReferenceCountedObjectClass* object2)
-{
-    return object1.getObject() != object2;
-}
-
-/** Compares two ReferenceCountedObjectPointers. */
-template<class ReferenceCountedObjectClass>
-bool operator!=(const RefCountedObjectPtr<ReferenceCountedObjectClass>& object1,
-                RefCountedObjectPtr<ReferenceCountedObjectClass>& object2)
-{
-    return object1.getObject() != object2.getObject();
-}
-
-/** Compares two ReferenceCountedObjectPointers. */
-template<class ReferenceCountedObjectClass>
-bool operator!=(ReferenceCountedObjectClass* object1,
-                RefCountedObjectPtr<ReferenceCountedObjectClass>& object2)
-{
-    return object1 != object2.getObject();
-}
-
 //==============================================================================
 
 // forward declaration
