@@ -10,6 +10,7 @@ set (LUABRIDGE_TEST_SOURCE_FILES
   Source/NamespaceTests.cpp
   Source/PerformanceTests.cpp
   Source/RefCountedObjectTests.cpp
+  Source/RefCountedPtrTests.cpp
   Source/StackTests.cpp
   Source/Tests.cpp
   Source/TestBase.h
