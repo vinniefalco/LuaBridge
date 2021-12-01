@@ -4,7 +4,7 @@
 
 #include "TestBase.h"
 
-#include "LuaBridge/RefCountedPtr.h"
+#include "LuaBridge/RefCountedObject.h"
 
 struct RefCountedPtrTests : TestBase
 {
@@ -18,31 +18,48 @@ struct RefCountedPtrTests : TestBase
 
 namespace {
 
-struct RefCounted : luabridge::RefCountedObject
+class RefCounted : public luabridge::RefCountedObject
 {
-    explicit RefCounted(bool& deleted) : deleted(deleted) { deleted = false; }
+public:
+    explicit RefCounted(bool& deleted) : m_deleted(deleted) { m_deleted = false; }
 
-    ~RefCounted() { deleted = true; }
+    ~RefCounted() { m_deleted = true; }
 
-    bool isDeleted() const { return deleted; }
+    bool isDeleted() const { return m_deleted; }
 
-    bool& deleted;
+private:
+    bool& m_deleted;
 };
 
 } // namespace
 
-TEST_F(RefCountedPtrTests, Operators)
+TEST_F(RefCountedPtrTests, CompareOperators)
 {
-    bool deleted1 = false;
-    auto* raw_ptr1 = new RefCounted(deleted1);
+    bool deleted = false;
+
+    RefCounted* const raw_ptr1 = new RefCounted(deleted);
     luabridge::RefCountedObjectPtr<RefCounted> ptr1(raw_ptr1);
 
-    bool deleted2 = false;
-    auto* raw_ptr2 = new RefCounted(deleted2);
+    RefCounted* const raw_ptr2 = new RefCounted(deleted);
     luabridge::RefCountedObjectPtr<RefCounted> ptr2(raw_ptr2);
 
     ASSERT_TRUE(raw_ptr1 == ptr1.getObject());
     ASSERT_TRUE(ptr1.getObject() == raw_ptr1);
+
+    ASSERT_FALSE(raw_ptr2 == ptr1.getObject());
+    ASSERT_FALSE(ptr1.getObject() == raw_ptr2);
+}
+
+TEST_F(RefCountedPtrTests, Destructor)
+{
+    bool deleted = false;
+    {
+        RefCounted* const raw_ptr = new RefCounted(deleted);
+        luabridge::RefCountedObjectPtr<RefCounted> ptr(raw_ptr);
+
+        ASSERT_FALSE(deleted);
+    }
+    ASSERT_TRUE(deleted);
 }
 
 TEST_F(RefCountedPtrTests, LastReferenceInLua)
@@ -53,7 +70,6 @@ TEST_F(RefCountedPtrTests, LastReferenceInLua)
         .endClass();
 
     bool deleted = false;
-
     luabridge::RefCountedObjectPtr<RefCounted> object(new RefCounted(deleted));
 
     luabridge::setGlobal(L, object, "object");
@@ -81,7 +97,6 @@ TEST_F(RefCountedPtrTests, LastReferenceInCpp)
         .endClass();
 
     bool deleted = false;
-
     luabridge::RefCountedObjectPtr<RefCounted> object(new RefCounted(deleted));
 
     luabridge::setGlobal(L, object, "object");
@@ -95,4 +110,87 @@ TEST_F(RefCountedPtrTests, LastReferenceInCpp)
 
     object = nullptr;
     ASSERT_EQ(true, deleted);
+}
+
+TEST_F(RefCountedPtrTests, AssignOperator)
+{
+    bool deletedPrevious = false;
+    luabridge::RefCountedObjectPtr<RefCounted> ptr(new RefCounted(deletedPrevious));
+
+    bool deletedNew = false;
+    RefCounted* const rawPtr = new RefCounted(deletedNew);
+
+    luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = rawPtr);
+
+    ASSERT_EQ(&returnValue, &ptr);
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(rawPtr->getReferenceCount(), 1);
+    ASSERT_TRUE(deletedPrevious);
+    ASSERT_FALSE(deletedNew);
+}
+
+TEST_F(RefCountedPtrTests, AssignOperatorSelfAssignment)
+{
+    bool deleted = false;
+    RefCounted* const rawPtr = new RefCounted(deleted);
+
+    luabridge::RefCountedObjectPtr<RefCounted> ptr(rawPtr);
+
+    luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = ptr);
+
+    ASSERT_EQ(&returnValue, &ptr);
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(rawPtr->getReferenceCount(), 1);
+    ASSERT_FALSE(deleted);
+}
+
+TEST_F(RefCountedPtrTests, AssignOperatorSameObject)
+{
+    bool deleted = false;
+    RefCounted* const rawPtr = new RefCounted(deleted);
+
+    luabridge::RefCountedObjectPtr<RefCounted> ptr(rawPtr);
+
+    luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = rawPtr);
+
+    ASSERT_EQ(&returnValue, &ptr);
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(rawPtr->getReferenceCount(), 1);
+    ASSERT_FALSE(deleted);
+}
+
+class TestObjectNested final : public luabridge::RefCountedObject
+{
+public:
+    explicit TestObjectNested(const uint64_t value) : m_value(value) {}
+
+    uint64_t getValue() const { return m_value; }
+
+    luabridge::RefCountedObjectPtr<TestObjectNested>& getChild() { return m_child; }
+
+private:
+    const uint64_t m_value;
+
+    luabridge::RefCountedObjectPtr<TestObjectNested> m_child;
+};
+
+TEST_F(RefCountedPtrTests, AssignOperatorNestedObjects)
+{
+    // Test assignment operator in the case that the previous referenced object is
+    // part of the new referenced object. This nested situation can only be handled
+    // if the reference count of the new object is FIRST increased and after that
+    // the count of the old object is decreased. If this happens vice versa the
+    // stored pointer is invalid after the assignment because it points to an already
+    // deleted object.
+    const uint64_t parentValue = 123, childValue = 456;
+
+    luabridge::RefCountedObjectPtr<TestObjectNested> ref = new TestObjectNested(parentValue);
+    ref->getChild() = new TestObjectNested(childValue);
+
+    ASSERT_EQ(ref->getValue(), parentValue);
+    ASSERT_EQ(ref->getChild()->getValue(), childValue);
+
+    const luabridge::RefCountedObjectPtr<TestObjectNested>& returnValue = (ref = ref->getChild());
+    ASSERT_EQ(&returnValue, &ref);
+    ASSERT_EQ(ref->getValue(), childValue);
 }
