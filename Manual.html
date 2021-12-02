@@ -723,6 +723,26 @@ getGlobalNamespace (L)
 </pre>
 
 <p>
+You can alternatively add property setters separately with <code>addPropertySetter</code>
+as follows.
+</p>
+
+<pre>
+getGlobalNamespace (L)
+ .beginNamespace ("test")
+    .beginClass &lt;A&gt; ("A")
+      .addProperty ("prop", &amp;A::getProperty)
+      .addPropertySetter ("prop", &amp;A::setProperty)
+    .endClass ()
+  .endNameSpace ();
+</pre>
+
+<p>
+This allows you to add your property setters and getters in any order. It is not required
+to add a getter if you want a write-only property.
+</p>
+
+<p>
 Method registration works just like function registration.  Virtual methods
 work normally; no special syntax is needed. const methods are detected and
 const-correctness is enforced, so if a function returns a const object (or
