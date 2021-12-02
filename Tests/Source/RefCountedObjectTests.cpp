@@ -33,86 +33,15 @@ private:
 
 } // namespace
 
-TEST_F(RefCountedObjectTests, CompareOperators)
-{
-    bool deleted = false;
-
-    RefCounted* const raw_ptr1 = new RefCounted(deleted);
-    luabridge::RefCountedObjectPtr<RefCounted> ptr1(raw_ptr1);
-
-    RefCounted* const raw_ptr2 = new RefCounted(deleted);
-    luabridge::RefCountedObjectPtr<RefCounted> ptr2(raw_ptr2);
-
-    ASSERT_TRUE(ptr1 == ptr1);
-    ASSERT_TRUE(ptr1 != ptr2);
-
-    ASSERT_TRUE(raw_ptr1 == ptr1);
-    ASSERT_TRUE(ptr1 == raw_ptr1);
-
-    ASSERT_TRUE(raw_ptr2 != ptr1);
-    ASSERT_TRUE(ptr1 != raw_ptr2);
-}
-
 TEST_F(RefCountedObjectTests, Destructor)
 {
     bool deleted = false;
     {
-        RefCounted* const raw_ptr = new RefCounted(deleted);
-        luabridge::RefCountedObjectPtr<RefCounted> ptr(raw_ptr);
-
+        luabridge::RefCountedObjectPtr<RefCounted> ptr(new RefCounted(deleted));
         ASSERT_FALSE(deleted);
     }
+
     ASSERT_TRUE(deleted);
-}
-
-TEST_F(RefCountedObjectTests, LastReferenceInLua)
-{
-    luabridge::getGlobalNamespace(L)
-        .beginClass<RefCounted>("Class")
-        .addProperty("deleted", &RefCounted::isDeleted)
-        .endClass();
-
-    bool deleted = false;
-    luabridge::RefCountedObjectPtr<RefCounted> object(new RefCounted(deleted));
-
-    luabridge::setGlobal(L, object, "object");
-    runLua("result = object.deleted");
-    ASSERT_EQ(true, result().isBool());
-    ASSERT_EQ(false, result<bool>());
-
-    object = nullptr;
-    runLua("result = object.deleted");
-    ASSERT_EQ(true, result().isBool());
-    ASSERT_EQ(false, result<bool>());
-    ASSERT_EQ(false, deleted);
-
-    runLua("object = nil");
-    lua_gc(L, LUA_GCCOLLECT, 1);
-
-    ASSERT_EQ(true, deleted);
-}
-
-TEST_F(RefCountedObjectTests, LastReferenceInCpp)
-{
-    luabridge::getGlobalNamespace(L)
-        .beginClass<RefCounted>("Class")
-        .addProperty("deleted", &RefCounted::isDeleted)
-        .endClass();
-
-    bool deleted = false;
-    luabridge::RefCountedObjectPtr<RefCounted> object(new RefCounted(deleted));
-
-    luabridge::setGlobal(L, object, "object");
-    runLua("result = object.deleted");
-    ASSERT_EQ(true, result().isBool());
-    ASSERT_EQ(false, result<bool>());
-
-    runLua("object = nil");
-    lua_gc(L, LUA_GCCOLLECT, 1);
-    ASSERT_EQ(false, deleted);
-
-    object = nullptr;
-    ASSERT_EQ(true, deleted);
 }
 
 TEST_F(RefCountedObjectTests, AssignOperator)
@@ -130,6 +59,21 @@ TEST_F(RefCountedObjectTests, AssignOperator)
     ASSERT_EQ(rawPtr->getReferenceCount(), 1);
     ASSERT_TRUE(deletedPrevious);
     ASSERT_FALSE(deletedNew);
+}
+
+TEST_F(RefCountedObjectTests, AssignOperatorSameObject)
+{
+    bool deleted = false;
+    RefCounted* const rawPtr = new RefCounted(deleted);
+
+    luabridge::RefCountedObjectPtr<RefCounted> ptr(rawPtr);
+
+    const luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = rawPtr);
+
+    ASSERT_EQ(&returnValue, &ptr);
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(rawPtr->getReferenceCount(), 1);
+    ASSERT_FALSE(deleted);
 }
 
 TEST_F(RefCountedObjectTests, AssignOperatorRef)
@@ -205,21 +149,6 @@ TEST_F(RefCountedObjectTests, AssignOperatorRefSameObject)
     ASSERT_FALSE(deleted);
 }
 
-TEST_F(RefCountedObjectTests, AssignOperatorSameObject)
-{
-    bool deleted = false;
-    RefCounted* const rawPtr = new RefCounted(deleted);
-
-    luabridge::RefCountedObjectPtr<RefCounted> ptr(rawPtr);
-
-    const luabridge::RefCountedObjectPtr<RefCounted>& returnValue = (ptr = rawPtr);
-
-    ASSERT_EQ(&returnValue, &ptr);
-    ASSERT_EQ(ptr, rawPtr);
-    ASSERT_EQ(rawPtr->getReferenceCount(), 1);
-    ASSERT_FALSE(deleted);
-}
-
 namespace {
 
 class TestObjectNested final : public luabridge::RefCountedObject
@@ -258,4 +187,74 @@ TEST_F(RefCountedObjectTests, AssignOperatorRefNestedObjects)
     const luabridge::RefCountedObjectPtr<TestObjectNested>& returnValue = (ref = ref->getChild());
     ASSERT_EQ(&returnValue, &ref);
     ASSERT_EQ(ref->getValue(), childValue);
+}
+
+TEST_F(RefCountedObjectTests, CompareOperators)
+{
+    bool deleted = false;
+
+    RefCounted* const rawPtr1 = new RefCounted(deleted);
+    luabridge::RefCountedObjectPtr<RefCounted> ptr1(rawPtr1);
+
+    RefCounted* const rawPtr2 = new RefCounted(deleted);
+    luabridge::RefCountedObjectPtr<RefCounted> ptr2(rawPtr2);
+
+    ASSERT_TRUE(ptr1 == ptr1);
+    ASSERT_TRUE(ptr1 != ptr2);
+
+    ASSERT_TRUE(rawPtr1 == ptr1);
+    ASSERT_TRUE(ptr1 == rawPtr1);
+
+    ASSERT_TRUE(rawPtr2 != ptr1);
+    ASSERT_TRUE(ptr1 != rawPtr2);
+}
+
+TEST_F(RefCountedObjectTests, LastReferenceInLua)
+{
+    luabridge::getGlobalNamespace(L)
+        .beginClass<RefCounted>("Class")
+        .addProperty("deleted", &RefCounted::isDeleted)
+        .endClass();
+
+    bool deleted = false;
+    luabridge::RefCountedObjectPtr<RefCounted> object(new RefCounted(deleted));
+
+    luabridge::setGlobal(L, object, "object");
+    runLua("result = object.deleted");
+    ASSERT_EQ(true, result().isBool());
+    ASSERT_EQ(false, result<bool>());
+
+    object = nullptr;
+    runLua("result = object.deleted");
+    ASSERT_EQ(true, result().isBool());
+    ASSERT_EQ(false, result<bool>());
+    ASSERT_EQ(false, deleted);
+
+    runLua("object = nil");
+    lua_gc(L, LUA_GCCOLLECT, 1);
+
+    ASSERT_EQ(true, deleted);
+}
+
+TEST_F(RefCountedObjectTests, LastReferenceInCpp)
+{
+    luabridge::getGlobalNamespace(L)
+        .beginClass<RefCounted>("Class")
+        .addProperty("deleted", &RefCounted::isDeleted)
+        .endClass();
+
+    bool deleted = false;
+    luabridge::RefCountedObjectPtr<RefCounted> object(new RefCounted(deleted));
+
+    luabridge::setGlobal(L, object, "object");
+    runLua("result = object.deleted");
+    ASSERT_EQ(true, result().isBool());
+    ASSERT_EQ(false, result<bool>());
+
+    runLua("object = nil");
+    lua_gc(L, LUA_GCCOLLECT, 1);
+    ASSERT_EQ(false, deleted);
+
+    object = nullptr;
+    ASSERT_EQ(true, deleted);
 }

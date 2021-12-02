@@ -120,6 +120,21 @@ TEST_F(RefCountedPtrTests, AssignOperator)
     ASSERT_FALSE(deletedNew);
 }
 
+TEST_F(RefCountedPtrTests, AssignOperatorSameObject)
+{
+    bool deleted = false;
+    TestObject* const rawPtr = new TestObject(deleted);
+
+    luabridge::RefCountedPtr<TestObject> ptr(rawPtr);
+
+    const luabridge::RefCountedPtr<TestObject>& returnValue = (ptr = rawPtr);
+
+    ASSERT_EQ(&returnValue, &ptr);
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(ptr.use_count(), 1);
+    ASSERT_FALSE(deleted);
+}
+
 TEST_F(RefCountedPtrTests, AssignOperatorRef)
 {
     bool deletedPrevious = false;
@@ -193,21 +208,6 @@ TEST_F(RefCountedPtrTests, AssignOperatorRefSameObject)
     ASSERT_EQ(ptr2, rawPtr);
     ASSERT_EQ(ptr1.use_count(), 2);
     ASSERT_EQ(ptr2.use_count(), 2);
-    ASSERT_FALSE(deleted);
-}
-
-TEST_F(RefCountedPtrTests, AssignOperatorSameObject)
-{
-    bool deleted = false;
-    TestObject* const rawPtr = new TestObject(deleted);
-
-    luabridge::RefCountedPtr<TestObject> ptr(rawPtr);
-
-    const luabridge::RefCountedPtr<TestObject>& returnValue = (ptr = rawPtr);
-
-    ASSERT_EQ(&returnValue, &ptr);
-    ASSERT_EQ(ptr, rawPtr);
-    ASSERT_EQ(ptr.use_count(), 1);
     ASSERT_FALSE(deleted);
 }
 
