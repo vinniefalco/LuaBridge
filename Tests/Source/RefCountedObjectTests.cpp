@@ -33,6 +33,56 @@ private:
 
 } // namespace
 
+TEST_F(RefCountedObjectTests, ConstructorDefault)
+{
+    const luabridge::RefCountedObjectPtr<RefCounted> ptr;
+
+    ASSERT_EQ(ptr, nullptr);
+}
+
+TEST_F(RefCountedObjectTests, ConstructorObject)
+{
+    bool deleted = false;
+    RefCounted* const rawPtr = new RefCounted(deleted);
+    const luabridge::RefCountedObjectPtr<RefCounted> ptr(rawPtr);
+
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(rawPtr->getReferenceCount(), 1);
+    ASSERT_FALSE(deleted);
+}
+
+TEST_F(RefCountedObjectTests, ConstructorCopy)
+{
+    bool deleted = false;
+    RefCounted* const rawPtr = new RefCounted(deleted);
+    const luabridge::RefCountedObjectPtr<RefCounted> ptr(rawPtr);
+    const luabridge::RefCountedObjectPtr<RefCounted> ptrCopy(ptr);
+
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(ptrCopy, rawPtr);
+    ASSERT_EQ(rawPtr->getReferenceCount(), 2);
+    ASSERT_FALSE(deleted);
+}
+
+TEST_F(RefCountedObjectTests, ConstructorCopyPolymorph)
+{
+    struct RefCountedSpecialized : public RefCounted
+    {
+        explicit RefCountedSpecialized(bool& deleted) : RefCounted(deleted) {}
+    };
+
+    bool deleted = false;
+    RefCountedSpecialized* const rawPtr = new RefCountedSpecialized(deleted);
+
+    const luabridge::RefCountedObjectPtr<RefCountedSpecialized> ptr(rawPtr);
+    const luabridge::RefCountedObjectPtr<RefCounted> ptrCopy(ptr);
+
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(ptrCopy, rawPtr);
+    ASSERT_EQ(rawPtr->getReferenceCount(), 2);
+    ASSERT_FALSE(deleted);
+}
+
 TEST_F(RefCountedObjectTests, Destructor)
 {
     bool deleted = false;
