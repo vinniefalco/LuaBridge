@@ -29,29 +29,29 @@ TEST_F(RefCountedPtrTests, ConstructorDefault)
 {
     const luabridge::RefCountedPtr<int> ptr;
 
-    ASSERT_EQ(ptr.get(), nullptr);
+    ASSERT_EQ(ptr, nullptr);
     ASSERT_EQ(getNumRefCounts(), 0);
     ASSERT_EQ(ptr.use_count(), 0);
 }
 
 TEST_F(RefCountedPtrTests, ConstructorObject)
 {
-    int* const object = new int(123);
-    const luabridge::RefCountedPtr<int> ptr(object);
+    int* const rawPtr = new int(123);
+    const luabridge::RefCountedPtr<int> ptr(rawPtr);
 
-    ASSERT_EQ(ptr.get(), object);
+    ASSERT_EQ(ptr, rawPtr);
     ASSERT_EQ(getNumRefCounts(), 1);
     ASSERT_EQ(ptr.use_count(), 1);
 }
 
 TEST_F(RefCountedPtrTests, ConstructorCopy)
 {
-    int* const object = new int(123);
-    const luabridge::RefCountedPtr<int> ptr(object);
+    int* const rawPtr = new int(123);
+    const luabridge::RefCountedPtr<int> ptr(rawPtr);
     const luabridge::RefCountedPtr<int> ptrCopy(ptr);
 
-    ASSERT_EQ(ptr.get(), object);
-    ASSERT_EQ(ptrCopy.get(), object);
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(ptrCopy, rawPtr);
     ASSERT_EQ(getNumRefCounts(), 1);
     ASSERT_EQ(ptr.use_count(), 2);
     ASSERT_EQ(ptrCopy.use_count(), 2);
@@ -65,13 +65,13 @@ TEST_F(RefCountedPtrTests, ConstructorCopyPolymorph)
     struct Specialized : public Base
     {
     };
-    Specialized* const object = new Specialized;
+    Specialized* const rawPtr = new Specialized;
 
-    const luabridge::RefCountedPtr<Specialized> ptr(object);
+    const luabridge::RefCountedPtr<Specialized> ptr(rawPtr);
     const luabridge::RefCountedPtr<Base> ptrCopy(ptr);
 
-    ASSERT_EQ(ptr.get(), object);
-    ASSERT_EQ(ptrCopy.get(), object);
+    ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(ptrCopy, rawPtr);
     ASSERT_EQ(getNumRefCounts(), 1);
     ASSERT_EQ(ptr.use_count(), 2);
     ASSERT_EQ(ptrCopy.use_count(), 2);
@@ -115,6 +115,7 @@ TEST_F(RefCountedPtrTests, AssignOperator)
 
     ASSERT_EQ(&returnValue, &ptr);
     ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(getNumRefCounts(), 1);
     ASSERT_EQ(ptr.use_count(), 1);
     ASSERT_TRUE(deletedPrevious);
     ASSERT_FALSE(deletedNew);
@@ -131,6 +132,7 @@ TEST_F(RefCountedPtrTests, AssignOperatorSameObject)
 
     ASSERT_EQ(&returnValue, &ptr);
     ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(getNumRefCounts(), 1);
     ASSERT_EQ(ptr.use_count(), 1);
     ASSERT_FALSE(deleted);
 }
@@ -148,6 +150,7 @@ TEST_F(RefCountedPtrTests, AssignOperatorRef)
 
     ASSERT_EQ(&returnValue, &ptr);
     ASSERT_EQ(ptr, rawPtrNew);
+    ASSERT_EQ(getNumRefCounts(), 1);
     ASSERT_EQ(ptr.use_count(), 2);
     ASSERT_EQ(ptrNew.use_count(), 2);
     ASSERT_TRUE(deletedPrevious);
@@ -172,6 +175,7 @@ TEST_F(RefCountedPtrTests, AssignOperatorRefPolymorph)
 
     ASSERT_EQ(&returnValue, &ptr);
     ASSERT_EQ(ptr, rawPtrNew);
+    ASSERT_EQ(getNumRefCounts(), 1);
     ASSERT_EQ(ptr.use_count(), 2);
     ASSERT_EQ(ptrNew.use_count(), 2);
     ASSERT_TRUE(deletedPrevious);
@@ -189,6 +193,7 @@ TEST_F(RefCountedPtrTests, AssignOperatorRefSelfAssignment)
 
     ASSERT_EQ(&returnValue, &ptr);
     ASSERT_EQ(ptr, rawPtr);
+    ASSERT_EQ(getNumRefCounts(), 1);
     ASSERT_EQ(ptr.use_count(), 1);
     ASSERT_FALSE(deleted);
 }
@@ -206,6 +211,7 @@ TEST_F(RefCountedPtrTests, AssignOperatorRefSameObject)
     ASSERT_EQ(&returnValue, &ptr2);
     ASSERT_EQ(ptr1, rawPtr);
     ASSERT_EQ(ptr2, rawPtr);
+    ASSERT_EQ(getNumRefCounts(), 1);
     ASSERT_EQ(ptr1.use_count(), 2);
     ASSERT_EQ(ptr2.use_count(), 2);
     ASSERT_FALSE(deleted);
