@@ -78,13 +78,13 @@ public:
         This is done automatically by the smart pointer, but is public just
         in case it's needed for nefarious purposes.
     */
-    inline void incReferenceCount() const { ++refCount; }
+    void incReferenceCount() const { ++refCount; }
 
     /** Decreases the object's reference count.
 
         If the count gets to zero, the object will be deleted.
     */
-    inline void decReferenceCount() const
+    void decReferenceCount() const
     {
         assert(getReferenceCount() > 0);
 
@@ -95,7 +95,7 @@ public:
     /** Returns the object's current reference count.
      * @returns The reference count.
      */
-    inline int getReferenceCount() const { return static_cast<int>(refCount); }
+    int getReferenceCount() const { return static_cast<int>(refCount); }
 
 protected:
     //==============================================================================
@@ -151,14 +151,14 @@ public:
 
     //==============================================================================
     /** Creates a pointer to a null object. */
-    inline RefCountedObjectPtr() : referencedObject(nullptr) {}
+    RefCountedObjectPtr() : referencedObject(nullptr) {}
 
     /** Creates a pointer to an object.
         This will increment the object's reference-count if it is non-null.
 
         @param refCountedObject A reference counted object to own.
     */
-    inline RefCountedObjectPtr(ReferenceCountedObjectClass* const refCountedObject)
+    RefCountedObjectPtr(ReferenceCountedObjectClass* const refCountedObject)
         : referencedObject(refCountedObject)
     {
         if (refCountedObject != nullptr)
@@ -170,8 +170,7 @@ public:
 
         @param other Another pointer.
     */
-    inline RefCountedObjectPtr(const RefCountedObjectPtr& other)
-        : referencedObject(other.referencedObject)
+    RefCountedObjectPtr(const RefCountedObjectPtr& other) : referencedObject(other.referencedObject)
     {
         if (referencedObject != nullptr)
             referencedObject->incReferenceCount();
@@ -182,8 +181,7 @@ public:
 
       @param other Another pointer.
     */
-    inline RefCountedObjectPtr(RefCountedObjectPtr&& other)
-        : referencedObject(other.referencedObject)
+    RefCountedObjectPtr(RefCountedObjectPtr&& other) : referencedObject(other.referencedObject)
     {
         other.referencedObject = nullptr;
     }
@@ -194,7 +192,7 @@ public:
         @param other Another pointer.
     */
     template<class DerivedClass>
-    inline RefCountedObjectPtr(const RefCountedObjectPtr<DerivedClass>& other)
+    RefCountedObjectPtr(const RefCountedObjectPtr<DerivedClass>& other)
         : referencedObject(static_cast<ReferenceCountedObjectClass*>(other.getObject()))
     {
         if (referencedObject != nullptr)

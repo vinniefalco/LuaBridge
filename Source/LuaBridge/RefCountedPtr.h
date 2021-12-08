@@ -127,16 +127,13 @@ public:
             // First increment the counter of the new object to avoid issues with nested objects
             if (p)
             {
-                // NOTE Insertion takes only place if not already existing
-                const RefCountsType::iterator itCounterNew =
-                    getRefCounts().insert(std::make_pair(p, 0)).first;
-                ++itCounterNew->second;
+                ++getRefCounts()[p];
             }
 
             // Decrease counter of the previous object
             if (m_p)
             {
-                const RefCountsType::iterator itCounterPrevious = getRefCounts().find(m_p);
+                const auto itCounterPrevious = getRefCounts().find(m_p);
                 assert(itCounterPrevious != getRefCounts().end());
 
                 // Delete object and counter if this was the last user
@@ -190,7 +187,7 @@ public:
             return 0;
         }
 
-        const RefCountsType::iterator itCounter = getRefCounts().find(m_p);
+        const auto itCounter = getRefCounts().find(m_p);
         assert(itCounter != getRefCounts().end());
         return itCounter->second;
     }
