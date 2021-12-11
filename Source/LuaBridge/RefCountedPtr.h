@@ -176,6 +176,8 @@ public:
 
         const auto itCounter = getRefCounts().find(m_p);
         assert(itCounter != getRefCounts().end());
+        assert(itCounter->second > 0);
+
         return itCounter->second;
     }
 
@@ -190,8 +192,9 @@ public:
         {
             const auto itCounter = getRefCounts().find(m_p);
             assert(itCounter != getRefCounts().end());
+            assert(itCounter->second > 0);
 
-            if (--itCounter->second <= 0)
+            if (--itCounter->second == 0)
             {
                 delete m_p;
                 getRefCounts().erase(itCounter);
