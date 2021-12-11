@@ -103,6 +103,27 @@ TEST_F(RefCountedPtrTests, Destructor)
     ASSERT_TRUE(deleted);
 }
 
+TEST_F(RefCountedPtrTests, ResetObject)
+{
+    bool deleted = false;
+    luabridge::RefCountedPtr<TestObject> ptr(new TestObject(deleted));
+    ASSERT_FALSE(deleted);
+
+    ptr.reset();
+
+    ASSERT_EQ(ptr, nullptr);
+    ASSERT_TRUE(deleted);
+}
+
+TEST_F(RefCountedPtrTests, ResetNull)
+{
+    luabridge::RefCountedPtr<TestObject> ptr;
+
+    ptr.reset();
+
+    ASSERT_EQ(ptr, nullptr);
+}
+
 TEST_F(RefCountedPtrTests, AssignOperator)
 {
     bool deletedPrevious = false;
