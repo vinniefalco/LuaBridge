@@ -66,7 +66,13 @@ public:
 
         @param p The optional, existing pointer to assign from.
     */
-    RefCountedPtr(T* const p = nullptr) : m_p(nullptr) { *this = p; }
+    RefCountedPtr(T* const p = nullptr) : m_p(p)
+    {
+        if (m_p)
+        {
+            ++getRefCounts()[m_p];
+        }
+    }
 
     /** Construct from another RefCountedPtr.
 
@@ -90,7 +96,7 @@ public:
 
         If there are no more references then the object is deleted.
     */
-    ~RefCountedPtr() { *this = nullptr; }
+    ~RefCountedPtr() { reset(); }
 
     /** Assign from another RefCountedPtr.
 
@@ -124,27 +130,8 @@ public:
     {
         if (p != m_p)
         {
-            // First increment the counter of the new object to avoid issues with nested objects
-            if (p)
-            {
-                ++getRefCounts()[p];
-            }
-
-            // Decrease counter of the previous object
-            if (m_p)
-            {
-                const auto itCounterPrevious = getRefCounts().find(m_p);
-                assert(itCounterPrevious != getRefCounts().end());
-
-                // Delete object and counter if this was the last user
-                if (--itCounterPrevious->second <= 0)
-                {
-                    delete m_p;
-                    getRefCounts().erase(itCounterPrevious);
-                }
-            }
-
-            m_p = p;
+            RefCountedPtr<T> tmp(p);
+            std::swap(m_p, tmp.m_p);
         }
 
         return *this;
@@ -197,7 +184,22 @@ public:
         The reference count is decremented. If the reference count reaches
         zero, the object is deleted.
     */
-    void reset() { *this = nullptr; }
+    void reset()
+    {
+        if (m_p)
+        {
+            const auto itCounter = getRefCounts().find(m_p);
+            assert(itCounter != getRefCounts().end());
+
+            if (--itCounter->second <= 0)
+            {
+                delete m_p;
+                getRefCounts().erase(itCounter);
+            }
+
+            m_p = nullptr;
+        }
+    }
 
 private:
     T* m_p;
