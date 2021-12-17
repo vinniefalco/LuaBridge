@@ -1,4 +1,5 @@
 // https://github.com/vinniefalco/LuaBridge
+// Copyright 2021, Stefan Frings
 // Copyright 2019, Dmitry Tarakanov
 // Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 // Copyright 2007, Nathan Reed
@@ -6,8 +7,7 @@
 
 #pragma once
 
-#include <LuaBridge/RefCountedObject.h>
-
+#include <cassert>
 #include <unordered_map>
 
 namespace luabridge {
@@ -66,13 +66,19 @@ public:
 
         @param p The optional, existing pointer to assign from.
     */
-    RefCountedPtr(T* p = 0) : m_p(p) { ++getRefCounts()[m_p]; }
+    RefCountedPtr(T* const p = nullptr) : m_p(p)
+    {
+        if (m_p)
+        {
+            ++getRefCounts()[m_p];
+        }
+    }
 
     /** Construct from another RefCountedPtr.
 
         @param rhs The RefCountedPtr to assign from.
     */
-    RefCountedPtr(RefCountedPtr<T> const& rhs) : m_p(rhs.get()) { ++getRefCounts()[m_p]; }
+    RefCountedPtr(RefCountedPtr<T> const& rhs) : RefCountedPtr(rhs.get()) {}
 
     /** Construct from a RefCountedPtr of a different type.
 
@@ -82,9 +88,8 @@ public:
         @param  rhs The RefCountedPtr to assign from.
     */
     template<typename U>
-    RefCountedPtr(RefCountedPtr<U> const& rhs) : m_p(static_cast<T*>(rhs.get()))
+    RefCountedPtr(RefCountedPtr<U> const& rhs) : RefCountedPtr(rhs.get())
     {
-        ++getRefCounts()[m_p];
     }
 
     /** Release the object.
@@ -100,12 +105,8 @@ public:
     */
     RefCountedPtr<T>& operator=(RefCountedPtr<T> const& rhs)
     {
-        if (m_p != rhs.m_p)
-        {
-            reset();
-            m_p = rhs.m_p;
-            ++getRefCounts()[m_p];
-        }
+        // NOTE Self assignment is handled gracefully
+        *this = rhs.get();
         return *this;
     }
 
@@ -120,9 +121,19 @@ public:
     template<typename U>
     RefCountedPtr<T>& operator=(RefCountedPtr<U> const& rhs)
     {
-        reset();
-        m_p = static_cast<T*>(rhs.get());
-        ++getRefCounts()[m_p];
+        // NOTE Self assignment is handled gracefully
+        *this = rhs.get();
+        return *this;
+    }
+
+    RefCountedPtr<T>& operator=(T* const p)
+    {
+        if (p != m_p)
+        {
+            RefCountedPtr<T> tmp(p);
+            std::swap(m_p, tmp.m_p);
+        }
+
         return *this;
     }
 
@@ -131,6 +142,12 @@ public:
         @returns A pointer to the object.
     */
     T* get() const { return m_p; }
+
+    /** Retrieve the raw pointer by conversion.
+
+        @returns A pointer to the object.
+    */
+    operator T*() const { return m_p; }
 
     /** Retrieve the raw pointer.
 
@@ -150,7 +167,19 @@ public:
 
         @returns The number of active references.
     */
-    long use_count() const { return getRefCounts()[m_p]; }
+    RefCountsType::mapped_type use_count() const
+    {
+        if (!m_p)
+        {
+            return 0;
+        }
+
+        const auto itCounter = getRefCounts().find(m_p);
+        assert(itCounter != getRefCounts().end());
+        assert(itCounter->second > 0);
+
+        return itCounter->second;
+    }
 
     /** Release the pointer.
 
@@ -159,30 +188,25 @@ public:
     */
     void reset()
     {
-        if (m_p != 0)
+        if (m_p)
         {
-            if (--getRefCounts()[m_p] <= 0)
-                delete m_p;
+            const auto itCounter = getRefCounts().find(m_p);
+            assert(itCounter != getRefCounts().end());
+            assert(itCounter->second > 0);
 
-            m_p = 0;
+            if (--itCounter->second == 0)
+            {
+                delete m_p;
+                getRefCounts().erase(itCounter);
+            }
+
+            m_p = nullptr;
         }
     }
 
 private:
     T* m_p;
 };
-
-template<class T>
-bool operator==(const RefCountedPtr<T>& lhs, const RefCountedPtr<T>& rhs)
-{
-    return lhs.get() == rhs.get();
-}
-
-template<class T>
-bool operator!=(const RefCountedPtr<T>& lhs, const RefCountedPtr<T>& rhs)
-{
-    return lhs.get() != rhs.get();
-}
 
 //==============================================================================
 

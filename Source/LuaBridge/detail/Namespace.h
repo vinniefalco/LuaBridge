@@ -1175,7 +1175,7 @@ public:
 
         assert(lua_istable(L, -1)); // Stack: namespace table (ns)
 
-        Stack<T>::push(L,value); // Stack: ns, value
+        Stack<T>::push(L, value); // Stack: ns, value
         rawsetfield(L, -2, name); // Stack: ns
 
         return *this;
