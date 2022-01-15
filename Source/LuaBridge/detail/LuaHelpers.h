@@ -58,7 +58,7 @@ inline int lua_compare(lua_State* L, int idx1, int idx2, int op)
 
     default:
         return 0;
-    };
+    }
 }
 
 inline int get_length(lua_State* L, int idx)

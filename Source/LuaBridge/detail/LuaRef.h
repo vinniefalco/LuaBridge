@@ -375,7 +375,6 @@ public:
     {
         StackPop p(m_L, 2);
         impl().push();
-        ;
         Stack<T>::push(m_L, rhs);
         int lhsType = lua_type(m_L, -2);
         int rhsType = lua_type(m_L, -1);
@@ -398,7 +397,6 @@ public:
     {
         StackPop p(m_L, 2);
         impl().push();
-        ;
         Stack<T>::push(m_L, rhs);
         int lhsType = lua_type(m_L, -2);
         int rhsType = lua_type(m_L, -1);
@@ -421,7 +419,6 @@ public:
     {
         StackPop p(m_L, 2);
         impl().push();
-        ;
         Stack<T>::push(m_L, rhs);
         int lhsType = lua_type(m_L, -2);
         int rhsType = lua_type(m_L, -1);
@@ -444,7 +441,6 @@ public:
     {
         StackPop p(m_L, 2);
         impl().push();
-        ;
         Stack<T>::push(m_L, rhs);
         int lhsType = lua_type(m_L, -2);
         int rhsType = lua_type(m_L, -1);
@@ -467,7 +463,6 @@ public:
     {
         StackPop p(m_L, 2);
         impl().push();
-        ;
         Stack<T>::push(m_L, rhs);
         return lua_rawequal(m_L, -1, -2) == 1;
     }
@@ -484,7 +479,6 @@ public:
     void append(T const& v) const
     {
         impl().push();
-        ;
         Stack<T>::push(m_L, v);
         luaL_ref(m_L, -2);
         lua_pop(m_L, 1);
@@ -501,7 +495,6 @@ public:
     {
         StackPop p(m_L, 1);
         impl().push();
-        ;
         return get_length(m_L, -1);
     }
 
