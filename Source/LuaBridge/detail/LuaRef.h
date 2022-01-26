@@ -523,6 +523,7 @@ public:
         lua_pushcfunction(m_L, msghandler);
         lua_insert(m_L, msgh);
         LuaException::pcall(m_L, nargs, 1, msgh);
+        lua_remove(m_L, msgh);
         return LuaRef::fromStack(m_L);
     }
 
