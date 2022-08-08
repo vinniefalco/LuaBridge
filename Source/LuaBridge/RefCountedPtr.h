@@ -8,8 +8,8 @@
 #pragma once
 
 #include <cassert>
-#include <utility>
 #include <unordered_map>
+#include <utility>
 
 namespace luabridge {
 
