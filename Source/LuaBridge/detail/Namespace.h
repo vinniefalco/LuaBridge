@@ -1294,6 +1294,27 @@ public:
         return *this;
     }
 
+#ifdef _M_IX86 // Windows 32bit only
+
+    //----------------------------------------------------------------------------
+    /**
+        Add or replace a free __stdcall function.
+    */
+    template<class ReturnType, class... Params>
+    Namespace& addFunction(char const* name, ReturnType(__stdcall* fp)(Params...))
+    {
+        assert(lua_istable(L, -1)); // Stack: namespace table (ns)
+
+        using FnType = decltype(fp);
+        lua_pushlightuserdata(L, reinterpret_cast<void*>(fp)); // Stack: ns, function ptr
+        lua_pushcclosure(L, &CFunc::Call<FnType>::f, 1); // Stack: ns, function
+        rawsetfield(L, -2, name); // Stack: ns
+
+        return *this;
+    }
+
+#endif // _M_IX86
+
     //----------------------------------------------------------------------------
     /**
         Add or replace a lua_CFunction.
