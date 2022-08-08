@@ -24,6 +24,7 @@ if (LUABRIDGE_CXX17)
   set (LUABRIDGE_TEST_SOURCE_FILES
     ${LUABRIDGE_TEST_SOURCE_FILES}
     Source/OptionalTests.cpp)
+  add_compile_definitions(LUABRIDGE_CXX17)
 endif ()
 
 source_group ("Source" FILES ${LUABRIDGE_TEST_SOURCE_FILES})

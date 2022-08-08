@@ -4,10 +4,16 @@
 
 #pragma once
 
+#include "LuaBridge/detail/Config.h"
+
 #include <gtest/gtest.h>
 
 #include <string>
 #include <vector>
+
+#ifdef LUABRIDGE_CXX17
+#include <string_view>
+#endif
 
 using TestTypes = ::testing::Types<bool,
                                    char,
@@ -22,7 +28,11 @@ using TestTypes = ::testing::Types<bool,
                                    unsigned long long,
                                    float,
                                    double,
-                                   std::string>;
+                                   std::string,
+#ifdef LUABRIDGE_CXX17
+                                   std::string_view
+#endif
+                                   >;
 
 template<class T>
 struct TypeTraits;
@@ -124,3 +134,25 @@ struct TypeTraits<std::string>
     static std::vector<std::string> values() { return {"", "a", "xyz"}; }
     static std::string list() { return "'', 'a', 'xyz'"; }
 };
+
+#ifdef LUABRIDGE_STRING_VIEW
+
+template<>
+struct TypeTraits<std::string>
+{
+    static std::vector<std::string> values() { return {"", "a", "xyz"}; }
+    static std::string list() { return "'', 'a', 'xyz'"; }
+};
+
+#endif
+
+#ifdef LUABRIDGE_CXX17
+
+template<>
+struct TypeTraits<std::string_view>
+{
+    static std::vector<std::string_view> values() { return {"", "a", "xyz"}; }
+    static std::string list() { return "'', 'a', 'xyz'"; }
+};
+
+#endif

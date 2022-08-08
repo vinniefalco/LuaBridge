@@ -10,6 +10,9 @@
 #include <LuaBridge/detail/Userdata.h>
 
 #include <string>
+#ifdef LUABRIDGE_CXX17
+#include <string_view>
+#endif
 
 namespace luabridge {
 
@@ -357,6 +360,37 @@ struct Stack<std::string>
 
     static bool isInstance(lua_State* L, int index) { return lua_type(L, index) == LUA_TSTRING; }
 };
+
+#ifdef LUABRIDGE_CXX17
+
+//------------------------------------------------------------------------------
+/**
+    Stack specialization for `std::string`.
+*/
+template<>
+struct Stack<std::string_view>
+{
+    static void push(lua_State* L, std::string_view str)
+    {
+        lua_pushlstring(L, str.data(), str.size());
+    }
+
+    static std::string_view get(lua_State* L, int index)
+    {
+        size_t len;
+        if (lua_type(L, index) == LUA_TSTRING)
+        {
+            const char* str = lua_tolstring(L, index, &len);
+            return std::string_view(str, len);
+        }
+
+        return {};
+    }
+
+    static bool isInstance(lua_State* L, int index) { return lua_type(L, index) == LUA_TSTRING; }
+};
+
+#endif // LUABRIDGE_CXX17
 
 namespace detail {
 

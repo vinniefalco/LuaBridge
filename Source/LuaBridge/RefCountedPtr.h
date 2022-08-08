@@ -191,6 +191,11 @@ public:
     {
         if (m_p)
         {
+            if (getRefCounts().find(m_p) == getRefCounts().end())
+            {
+                int a = 0;
+                a;
+            }
             const auto itCounter = getRefCounts().find(m_p);
             assert(itCounter != getRefCounts().end());
             assert(itCounter->second > 0);

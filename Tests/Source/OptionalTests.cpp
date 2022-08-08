@@ -40,6 +40,16 @@ std::string toLuaSrcString(std::string const& value)
     return "'" + value + "'";
 }
 
+#ifdef LUABRIDGE_CXX17
+
+template<>
+std::string toLuaSrcString<std::string_view>(const std::string_view& value)
+{
+    return toLuaSrcString(std::string(value));
+}
+
+#endif // LUABRIDGE_CXX17
+
 template<typename T>
 std::optional<T> optCast(luabridge::LuaRef const& ref)
 {
