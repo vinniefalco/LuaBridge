@@ -31,7 +31,7 @@ Unit test build requires a CMake and C++11 compliant compiler.
 
 To enable C++17 features (`std::optional` and `std::string_view`) specify an extra option: `-DLUABRIDGE_CXX17=1`.
 
-There are 4 unit test flavors:
+There are 2 unit test flavors:
 * `Tests51` - uses Lua 5.1,
 * `Tests52` - uses Lua 5.2.
 
