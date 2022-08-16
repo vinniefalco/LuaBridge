@@ -1,95 +1,94 @@
-set (LUABRIDGE_TEST_SOURCE_FILES
-  Source/ArrayTests.cpp
-  Source/ClassTests.cpp
-  Source/IssueTests.cpp
-  Source/IteratorTests.cpp
-  Source/LegacyTests.cpp
-  Source/ListTests.cpp
-  Source/LuaRefTests.cpp
-  Source/MapTests.cpp
-  Source/NamespaceTests.cpp
-  Source/PerformanceTests.cpp
-  Source/RefCountedObjectTests.cpp
-  Source/RefCountedPtrTests.cpp
-  Source/StackTests.cpp
-  Source/Tests.cpp
-  Source/TestBase.h
-  Source/TestTypes.h
-  Source/TestsMain.cpp
-  Source/UnorderedMapTests.cpp
-  Source/VectorTests.cpp
+set(LUABRIDGE_TEST_SOURCE_FILES
+    Source/ArrayTests.cpp
+    Source/ClassTests.cpp
+    Source/IssueTests.cpp
+    Source/IteratorTests.cpp
+    Source/LegacyTests.cpp
+    Source/ListTests.cpp
+    Source/LuaRefTests.cpp
+    Source/MapTests.cpp
+    Source/NamespaceTests.cpp
+    Source/PerformanceTests.cpp
+    Source/RefCountedObjectTests.cpp
+    Source/RefCountedPtrTests.cpp
+    Source/StackTests.cpp
+    Source/Tests.cpp
+    Source/TestBase.h
+    Source/TestTypes.h
+    Source/TestsMain.cpp
+    Source/UnorderedMapTests.cpp
+    Source/VectorTests.cpp
 )
 
-if (LUABRIDGE_CXX17)
-  set (LUABRIDGE_TEST_SOURCE_FILES
-    ${LUABRIDGE_TEST_SOURCE_FILES}
-    Source/OptionalTests.cpp)
-endif ()
+if(LUABRIDGE_CXX17)
+    set(LUABRIDGE_TEST_SOURCE_FILES
+        ${LUABRIDGE_TEST_SOURCE_FILES}
+        Source/OptionalTests.cpp
+    )
+endif()
 
-source_group ("Source" FILES ${LUABRIDGE_TEST_SOURCE_FILES})
+source_group("Source" FILES ${LUABRIDGE_TEST_SOURCE_FILES})
 
-set (LUABRIDGE_TEST_JUICE_FILES
-  JuceLibraryCode/AppConfig.h
-  JuceLibraryCode/BinaryData.h
-  JuceLibraryCode/BinaryData.cpp
-  JuceLibraryCode/JuceHeader.h
+set(LUABRIDGE_TEST_JUICE_FILES
+    JuceLibraryCode/AppConfig.h
+    JuceLibraryCode/BinaryData.h
+    JuceLibraryCode/BinaryData.cpp
+    JuceLibraryCode/JuceHeader.h
 )
 
-add_library (JuceLibraryCode ${LUABRIDGE_TEST_JUICE_FILES})
+add_library(JuceLibraryCode ${LUABRIDGE_TEST_JUICE_FILES})
 
 
 # Lua 5.1
 
-file (GLOB_RECURSE LUABRIDGE_TEST_LUA51_FILES
-  LuaLibrary.h
-  Lua/LuaLibrary5.1.5.cpp
+file(GLOB_RECURSE LUABRIDGE_TEST_LUA51_FILES
+    LuaLibrary.h
+    Lua/LuaLibrary5.1.5.cpp
 )
 
-add_library (Lua51 ${LUABRIDGE_TEST_LUA51_FILES})
+add_library(Lua51 ${LUABRIDGE_TEST_LUA51_FILES})
 
-target_compile_options (Lua51
-  PUBLIC -DLUABRIDGEDEMO_LUA_VERSION=501
+target_compile_options(Lua51
+    PUBLIC -DLUABRIDGEDEMO_LUA_VERSION=501
 )
 
-target_include_directories (Lua51 PRIVATE .)
+target_include_directories(Lua51 PRIVATE .)
 
 
 # Lua 5.2, C++11
 
-file (GLOB_RECURSE LUABRIDGE_TEST_LUA52_FILES
-  Lua/LuaLibrary.h
-  Lua/LuaLibrary5.2.0.cpp
+file(GLOB_RECURSE LUABRIDGE_TEST_LUA52_FILES
+    Lua/LuaLibrary.h
+    Lua/LuaLibrary5.2.0.cpp
 )
 
-add_library (Lua52 ${LUABRIDGE_TEST_LUA52_FILES})
+add_library(Lua52 ${LUABRIDGE_TEST_LUA52_FILES})
 
-target_compile_options (Lua52
-  PUBLIC -DLUABRIDGEDEMO_LUA_VERSION=502
+target_compile_options(Lua52
+    PUBLIC -DLUABRIDGEDEMO_LUA_VERSION=502
 )
 
-target_include_directories (Lua52 PRIVATE .)
+target_include_directories(Lua52 PRIVATE .)
 
 
-macro (add_test_app LUABRIDGE_TEST_NAME LUABRIDGE_TEST_LUA_LIBRARY)
+macro(add_test_app LUABRIDGE_TEST_NAME LUABRIDGE_TEST_LUA_LIBRARY)
+    add_executable(${LUABRIDGE_TEST_NAME}
+        ${LUABRIDGE_TEST_SOURCE_FILES}
+    )
 
-  add_executable (${LUABRIDGE_TEST_NAME}
-    ${LUABRIDGE_TEST_SOURCE_FILES}
-  )
+    target_include_directories(${LUABRIDGE_TEST_NAME} PRIVATE .)
 
-  target_include_directories (${LUABRIDGE_TEST_NAME} PRIVATE . Source)
+    target_link_libraries(${LUABRIDGE_TEST_NAME}
+        LuaBridge
+        ${LUABRIDGE_TEST_LUA_LIBRARY}
+        gtest
+        JuceLibraryCode
+    )
 
-  target_link_libraries (${LUABRIDGE_TEST_NAME}
-    LuaBridge
-    ${LUABRIDGE_TEST_LUA_LIBRARY}
-    gtest
-    JuceLibraryCode
-  )
+    add_test(${LUABRIDGE_TEST_NAME}
+        ${LUABRIDGE_TEST_NAME}
+    )
+endmacro(add_test_app)
 
-  add_test (${LUABRIDGE_TEST_NAME}
-    ${LUABRIDGE_TEST_NAME}
-  )
-
-endmacro (add_test_app)
-
-add_test_app (Tests51 Lua51)
-add_test_app (Tests52 Lua52)
+add_test_app(Tests51 Lua51)
+add_test_app(Tests52 Lua52)

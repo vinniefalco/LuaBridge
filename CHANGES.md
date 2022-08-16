@@ -1,3 +1,9 @@
+## Version 2.7
+
+* Added  `std::string_view` stack traits (`LUABRIDGE_CXX17` must be defined).
+* Added  `std::optional` support (`Optional.h`).
+* Fixed `RefCountedPtr` issues.
+
 ## Version 2.6
 
 * Added namespace `addFunction()` accepting `std::function` (C++11 only).

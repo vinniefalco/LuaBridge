@@ -223,13 +223,13 @@ void testParamSharedPtrA(RefCountedPtr<A> a)
 
 RefCountedPtr<A> testRetSharedPtrA()
 {
-    static RefCountedPtr<A> sp_A(new A("from C"));
+    /*static*/ RefCountedPtr<A> sp_A(new A("from C"));
     return sp_A;
 }
 
 RefCountedPtr<A const> testRetSharedPtrConstA()
 {
-    static RefCountedPtr<A> sp_A(new A("const A"));
+    /*static*/ RefCountedPtr<A> sp_A(new A("const A"));
     return sp_A;
 }
 

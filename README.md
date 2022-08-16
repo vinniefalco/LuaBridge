@@ -2,12 +2,12 @@
 <img src="http://vinniefalco.github.io/LuaBridgeDemo/powered-by-lua.png">
 </a><br>
 
-# LuaBridge 2.6
+# LuaBridge 2.7
 
 [LuaBridge][1] is a lightweight and dependency-free library for mapping data,
 functions, and classes back and forth between C++ and [Lua][2] (a powerful,
-fast, lightweight, embeddable scripting language) . LuaBridge has been tested
-and works with Lua revisions starting from 5.1.5., although it should work in
+fast, lightweight, embeddable scripting language). LuaBridge has been tested
+and works with Lua revisions starting from 5.1.5, although it should work in
 any version of Lua from 5.1.0 as well as [LuaJit][3].
 
 LuaBridge offers the following features:
@@ -29,11 +29,11 @@ Please read the [LuaBridge Reference Manual][5] for more details on the API.
 
 Unit test build requires a CMake and C++11 compliant compiler.
 
-There are 4 unit test flavors:
-* `Tests51` - uses Lua 5.1, with C++11 features
-* `Tests51L` - uses Lua 5.1, no C++11 features
-* `Tests52` - uses Lua 5.2, with C++11 features
-* `Tests52L` - uses Lua 5.2, no C++11 features
+To enable C++17 features (`std::optional` and `std::string_view`) specify an extra option: `-DLUABRIDGE_CXX17=1`.
+
+There are 2 unit test flavors:
+* `Tests51` - uses Lua 5.1,
+* `Tests52` - uses Lua 5.2.
 
 Build using Make on Linux/MacOS:
 ```bash
@@ -60,7 +60,8 @@ clone --recurse-submodules git@github.com:vinniefalco/LuaBridge.git
 cd LuaBridge
 mkdir build
 cd build
-cmake -G "Visual Studio 15 2017 Win64" -B build
+cmake -G "Visual Studio 17 2022 Win64" -B build
+# or cmake -G "Visual Studio 15 2017 Win64" -B build
 # or cmake -G "Visual Studio 14 2015" -B build
 # or cmake -G "Visual Studio 15 2017 Win64" -B build
 # or cmake -G "Visual Studio 15 2017" -B build
