@@ -22,7 +22,7 @@ public:
         ASSERT_TRUE(getRefCounts().empty());
     }
 
-    int getNumRefCounts() const { return getRefCounts().size(); }
+    size_t getNumRefCounts() const { return getRefCounts().size(); }
 };
 
 TEST_F(RefCountedPtrTests, ConstructorDefault)
