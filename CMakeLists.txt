@@ -34,6 +34,7 @@ if(LUABRIDGE_TESTING)
 endif()
 
 add_custom_target(Documentation SOURCES
+    .github/workflows/cmake.yml
     CHANGES.md
     README.md
     Doxyfile
