@@ -1,3 +1,9 @@
+## Version 2.8
+
+* Added convenience `get()` function template.
+* Fixed inconsistent `Stack<int>::isInstance()` behavior.
+* Fixed bug in the `Stack<Nil>::isInstance()`.
+
 ## Version 2.7
 
 * Added  `std::string_view` stack traits (`LUABRIDGE_CXX17` must be defined).

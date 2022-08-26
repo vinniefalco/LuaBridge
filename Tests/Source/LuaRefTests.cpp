@@ -195,6 +195,8 @@ TEST_F(LuaRefTests, Comparison)
     ASSERT_FALSE(table2aMT == table1bMT);
 
 #if LUABRIDGE_TEST_LUA_VERSION < 503
+    // Despite its documentation Lua <= 5.2 compares
+    // the metamethods and ignores them if they differ
     ASSERT_FALSE(table2aMT == table2b);
 #else
     ASSERT_TRUE(table2aMT == table2b);
