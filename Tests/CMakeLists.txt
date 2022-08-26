@@ -90,4 +90,15 @@ macro(add_test_app LUABRIDGE_TEST_NAME LUABRIDGE_TEST_LUA_LIBRARY)
 endmacro(add_test_app)
 
 add_test_app(Tests51 Lua51)
+set_target_properties(Tests51 PROPERTIES CXX_STANDARD 14)
+
+add_test_app(Tests51Cxx17 Lua51)
+target_compile_definitions(Tests51Cxx17 PRIVATE LUABRIDGE_CXX17)
+set_target_properties(Tests51Cxx17 PROPERTIES CXX_STANDARD 17)
+
 add_test_app(Tests52 Lua52)
+set_target_properties(Tests52 PROPERTIES CXX_STANDARD 14)
+
+add_test_app(Tests52Cxx17 Lua52)
+target_compile_definitions(Tests52Cxx17 PRIVATE LUABRIDGE_CXX17)
+set_target_properties(Tests52Cxx17 PROPERTIES CXX_STANDARD 17)
