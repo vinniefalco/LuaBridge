@@ -28,9 +28,9 @@ using TestTypes = ::testing::Types<bool,
                                    unsigned long long,
                                    float,
                                    double,
-                                   std::string,
+                                   std::string
 #ifdef LUABRIDGE_CXX17
-                                   std::string_view
+                                   , std::string_view
 #endif
                                    >;
 
