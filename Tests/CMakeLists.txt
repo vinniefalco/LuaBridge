@@ -29,76 +29,105 @@ endif()
 
 source_group("Source" FILES ${LUABRIDGE_TEST_SOURCE_FILES})
 
-set(LUABRIDGE_TEST_JUICE_FILES
-    JuceLibraryCode/AppConfig.h
-    JuceLibraryCode/BinaryData.h
-    JuceLibraryCode/BinaryData.cpp
-    JuceLibraryCode/JuceHeader.h
-)
-
-add_library(JuceLibraryCode ${LUABRIDGE_TEST_JUICE_FILES})
-
-
 # Lua 5.1
 
-file(GLOB_RECURSE LUABRIDGE_TEST_LUA51_FILES
-    LuaLibrary.h
-    Lua/LuaLibrary5.1.5.cpp
+file(GLOB LUABRIDGE_TEST_LUA51_FILES
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    Lua/lua-5.1.5/src/*.c
+    Lua/lua-5.1.5/src/*.h
+    Lua/LuaLibrary.h
 )
 
 add_library(Lua51 ${LUABRIDGE_TEST_LUA51_FILES})
-
-target_compile_options(Lua51
-    PUBLIC -DLUABRIDGEDEMO_LUA_VERSION=501
-)
-
-target_include_directories(Lua51 PRIVATE .)
+target_compile_definitions(Lua51 PUBLIC LUABRIDGE_TEST_LUA_VERSION=501)
+target_include_directories(Lua51 PUBLIC Lua/lua-5.1.5/src)
+source_group("Source" FILES ${LUABRIDGE_TEST_LUA51_FILES})
 
 # Lua 5.2
 
-file(GLOB_RECURSE LUABRIDGE_TEST_LUA52_FILES
+file(GLOB LUABRIDGE_TEST_LUA52_FILES
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    Lua/lua-5.2.4/src/*.c
+    Lua/lua-5.2.4/src/*.h
+    Lua/lua-5.2.4/src/*.hpp
     Lua/LuaLibrary.h
-    Lua/LuaLibrary5.2.0.cpp
 )
 
 add_library(Lua52 ${LUABRIDGE_TEST_LUA52_FILES})
+target_compile_definitions(Lua52 PUBLIC LUABRIDGE_TEST_LUA_VERSION=502)
+target_include_directories(Lua52 PUBLIC Lua/lua-5.2.4/src)
+source_group("Source" FILES ${LUABRIDGE_TEST_LUA52_FILES})
 
-target_compile_options(Lua52
-    PUBLIC -DLUABRIDGEDEMO_LUA_VERSION=502
+# Lua 5.3
+
+file(GLOB LUABRIDGE_TEST_LUA53_FILES
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    Lua/lua-5.3.6/src/*.c
+    Lua/lua-5.3.6/src/*.h
+    Lua/lua-5.3.6/src/*.hpp
+    Lua/LuaLibrary.h
 )
 
-target_include_directories(Lua52 PRIVATE .)
+add_library(Lua53 ${LUABRIDGE_TEST_LUA53_FILES})
+target_compile_definitions(Lua53 PUBLIC LUABRIDGE_TEST_LUA_VERSION=503)
+target_include_directories(Lua53 PUBLIC Lua/lua-5.3.6/src)
+source_group("Source" FILES ${LUABRIDGE_TEST_LUA53_FILES})
 
+# Lua 5.4
 
-macro(add_test_app LUABRIDGE_TEST_NAME LUABRIDGE_TEST_LUA_LIBRARY)
-    add_executable(${LUABRIDGE_TEST_NAME}
+file(GLOB LUABRIDGE_TEST_LUA54_FILES
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    Lua/lua-5.4.4/src/*.c
+    Lua/lua-5.4.4/src/*.h
+    Lua/lua-5.4.4/src/*.hpp
+    Lua/LuaLibrary.h
+)
+
+add_library(Lua54 ${LUABRIDGE_TEST_LUA54_FILES})
+target_compile_definitions(Lua54 PUBLIC LUABRIDGE_TEST_LUA_VERSION=504)
+target_include_directories(Lua54 PUBLIC Lua/lua-5.4.4/src)
+source_group("Source" FILES ${LUABRIDGE_TEST_LUA54_FILES})
+
+# Common test app definitions
+
+macro(add_test_app APP_NAME LUA_LIBRARY CXX_VERSION)
+    add_executable(${APP_NAME}
         ${LUABRIDGE_TEST_SOURCE_FILES}
     )
+    
+    set_target_properties(${APP_NAME} PROPERTIES
+        CXX_STANDARD ${CXX_VERSION}
+    )
 
-    target_include_directories(${LUABRIDGE_TEST_NAME} PRIVATE .)
+    target_include_directories(${APP_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-    target_link_libraries(${LUABRIDGE_TEST_NAME}
+    target_link_libraries(${APP_NAME}
         LuaBridge
-        ${LUABRIDGE_TEST_LUA_LIBRARY}
+        ${LUA_LIBRARY}
         gtest
-        JuceLibraryCode
     )
 
-    add_test(${LUABRIDGE_TEST_NAME}
-        ${LUABRIDGE_TEST_NAME}
-    )
+    add_test(${APP_NAME} ${APP_NAME})
 endmacro(add_test_app)
 
-add_test_app(Tests51 Lua51)
-set_target_properties(Tests51 PROPERTIES CXX_STANDARD 14)
+# Concrete test apps
 
-add_test_app(Tests51Cxx17 Lua51)
+add_test_app(Tests51 Lua51 14)
+
+add_test_app(Tests51Cxx17 Lua51 17)
 target_compile_definitions(Tests51Cxx17 PRIVATE LUABRIDGE_CXX17)
-set_target_properties(Tests51Cxx17 PROPERTIES CXX_STANDARD 17)
 
-add_test_app(Tests52 Lua52)
-set_target_properties(Tests52 PROPERTIES CXX_STANDARD 14)
+add_test_app(Tests52 Lua52 14)
 
-add_test_app(Tests52Cxx17 Lua52)
+add_test_app(Tests52Cxx17 Lua52 17)
 target_compile_definitions(Tests52Cxx17 PRIVATE LUABRIDGE_CXX17)
-set_target_properties(Tests52Cxx17 PROPERTIES CXX_STANDARD 17)
+
+add_test_app(Tests53 Lua53 14)
+
+add_test_app(Tests53Cxx17 Lua53 17)
+target_compile_definitions(Tests53Cxx17 PRIVATE LUABRIDGE_CXX17)
+
+add_test_app(Tests54 Lua54 14)
+
+add_test_app(Tests54Cxx17 Lua54 17)
+target_compile_definitions(Tests54Cxx17 PRIVATE LUABRIDGE_CXX17)
