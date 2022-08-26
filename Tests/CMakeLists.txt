@@ -54,8 +54,7 @@ target_compile_options(Lua51
 
 target_include_directories(Lua51 PRIVATE .)
 
-
-# Lua 5.2, C++11
+# Lua 5.2
 
 file(GLOB_RECURSE LUABRIDGE_TEST_LUA52_FILES
     Lua/LuaLibrary.h
