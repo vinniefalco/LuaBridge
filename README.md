@@ -2,7 +2,7 @@
 <img src="http://vinniefalco.github.io/LuaBridgeDemo/powered-by-lua.png">
 </a><br>
 
-# LuaBridge 2.7
+# LuaBridge 2.8
 
 [LuaBridge][1] is a lightweight and dependency-free library for mapping data,
 functions, and classes back and forth between C++ and [Lua][2] (a powerful,
@@ -32,10 +32,14 @@ Unit test build requires a CMake and C++11 compliant compiler.
 To enable C++17 features (`std::optional` and `std::string_view`) specify an extra option: `-DLUABRIDGE_CXX17=1`.
 
 There are the following unit test flavors:
-* `Tests51` - uses Lua 5.1,
-* `Tests51Cxx17` - uses Lua 5.1 and C++17 features,
-* `Tests52` - uses Lua 5.2,
-* `Tests52Cxx17` - uses Lua 5.2 and C++17 features.
+* `Tests51` - uses Lua 5.1.5
+* `Tests51Cxx17` - uses Lua 5.1.5 and C++17 features
+* `Tests52` - uses Lua 5.2.4,
+* `Tests52Cxx17` - uses Lua 5.2.4 and C++17 features
+* `Tests53` - uses Lua 5.3.6
+* `Tests53Cxx17` - uses Lua 5.3.6 and C++17 features
+* `Tests54` - uses Lua 5.4.4
+* `Tests54Cxx17` - uses Lua 5.4.4 and C++17 features
 
 Build using Make on Linux/MacOS:
 ```bash

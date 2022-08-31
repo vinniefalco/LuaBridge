@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "TestBase.h"
+#include "LuaBridge/detail/dump.h"
 
 #include <sstream>
 
@@ -137,10 +138,11 @@ TEST_F(LuaRefTests, Comparison)
            "m.__eq = function (l, r) return l.a == r.a end "
            "m.__lt = function (l, r) return l.a < r.a end "
            "m.__le = function (l, r) return l.a <= r.a end "
-           "t1 = {a = 1} setmetatable (t1, m) "
-           "t2 = {a = 2} setmetatable (t2, m) "
-           "t3 = {a = 1} setmetatable (t3, m) "
-           "t4 = {a = 2} ");
+           "table1aMT = {a = 1} setmetatable (table1aMT, m) "
+           "table1bMT = {a = 1} setmetatable (table1bMT, m) "
+           "table2aMT = {a = 2} setmetatable (table2aMT, m) "
+           "table2b = {a = 2} "
+           "table2c = {a = 2}");
 
     luabridge::getGlobalNamespace(L).beginClass<Class>("Class").endClass();
 
@@ -151,10 +153,11 @@ TEST_F(LuaRefTests, Comparison)
     luabridge::LuaRef numPi(L, 3.14);
     luabridge::LuaRef stringA(L, 'a');
     luabridge::LuaRef stringAB(L, "ab");
-    luabridge::LuaRef t1 = luabridge::getGlobal(L, "t1");
-    luabridge::LuaRef t2 = luabridge::getGlobal(L, "t2");
-    luabridge::LuaRef t3 = luabridge::getGlobal(L, "t3");
-    luabridge::LuaRef t4 = luabridge::getGlobal(L, "t4");
+    luabridge::LuaRef table1aMT = luabridge::getGlobal(L, "table1aMT");
+    luabridge::LuaRef table1bMT = luabridge::getGlobal(L, "table1bMT");
+    luabridge::LuaRef table2aMT = luabridge::getGlobal(L, "table2aMT");
+    luabridge::LuaRef table2b = luabridge::getGlobal(L, "table2b");
+    luabridge::LuaRef table2c = luabridge::getGlobal(L, "table2c");
 
     ASSERT_TRUE(nil == nil);
 
@@ -181,38 +184,47 @@ TEST_F(LuaRefTests, Comparison)
     ASSERT_FALSE(stringA > stringAB);
     ASSERT_FALSE(stringA >= stringAB);
 
-    ASSERT_TRUE(stringA < t1);
+    ASSERT_TRUE(stringA < table1aMT);
 
-    ASSERT_TRUE(t1 == t1);
-    ASSERT_FALSE(t1 == t2);
-    ASSERT_TRUE(t1 == t3);
-    ASSERT_FALSE(t1.rawequal(t3));
-    ASSERT_FALSE(t1 == t4);
-    ASSERT_TRUE(t2 == t2);
-    ASSERT_FALSE(t2 == t3);
-    ASSERT_FALSE(t2 == t4);
-    ASSERT_TRUE(t3 == t3);
-    ASSERT_FALSE(t3 == t4);
+    ASSERT_TRUE(table1aMT == table1aMT);
+    ASSERT_TRUE(table1aMT == table1bMT);
+    ASSERT_FALSE(table1aMT == table2aMT);
+    ASSERT_FALSE(table1aMT.rawequal(table1bMT));
+    ASSERT_FALSE(table1aMT == table2b);
+    ASSERT_TRUE(table2aMT == table2aMT);
+    ASSERT_FALSE(table2aMT == table1bMT);
 
-    ASSERT_FALSE(t1 < t1);
-    ASSERT_TRUE(t1 < t2);
-    ASSERT_FALSE(t1 < t3);
-    ASSERT_FALSE(t2 < t3);
+#if LUABRIDGE_TEST_LUA_VERSION < 503
+    // Despite its documentation Lua <= 5.2 compares
+    // the metamethods and ignores them if they differ
+    ASSERT_FALSE(table2aMT == table2b);
+#else
+    ASSERT_TRUE(table2aMT == table2b);
+#endif
 
-    ASSERT_TRUE(t1 <= t1);
-    ASSERT_TRUE(t1 <= t2);
-    ASSERT_TRUE(t1 <= t3);
-    ASSERT_FALSE(t2 <= t3);
+    ASSERT_TRUE(table1bMT == table1bMT);
+    ASSERT_FALSE(table1bMT == table2b);
+    ASSERT_FALSE(table2b == table2c);
 
-    ASSERT_FALSE(t1 > t1);
-    ASSERT_FALSE(t1 > t2);
-    ASSERT_FALSE(t1 > t3);
-    ASSERT_TRUE(t2 > t3);
+    ASSERT_FALSE(table1aMT < table1aMT);
+    ASSERT_TRUE(table1aMT < table2aMT);
+    ASSERT_FALSE(table1aMT < table1bMT);
+    ASSERT_FALSE(table2aMT < table1bMT);
 
-    ASSERT_TRUE(t1 >= t1);
-    ASSERT_FALSE(t1 >= t2);
-    ASSERT_TRUE(t1 >= t3);
-    ASSERT_TRUE(t2 >= t3);
+    ASSERT_TRUE(table1aMT <= table1aMT);
+    ASSERT_TRUE(table1aMT <= table2aMT);
+    ASSERT_TRUE(table1aMT <= table1bMT);
+    ASSERT_FALSE(table2aMT <= table1bMT);
+
+    ASSERT_FALSE(table1aMT > table1aMT);
+    ASSERT_FALSE(table1aMT > table2aMT);
+    ASSERT_FALSE(table1aMT > table1bMT);
+    ASSERT_TRUE(table2aMT > table1bMT);
+
+    ASSERT_TRUE(table1aMT >= table1aMT);
+    ASSERT_FALSE(table1aMT >= table2aMT);
+    ASSERT_TRUE(table1aMT >= table1bMT);
+    ASSERT_TRUE(table2aMT >= table1bMT);
 }
 
 TEST_F(LuaRefTests, Assignment)
