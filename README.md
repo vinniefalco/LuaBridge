@@ -82,30 +82,13 @@ You can download and install LuaBridge using the [vcpkg](https://github.com/Micr
 ```Powershell or bash
 git clone https://github.com/Microsoft/vcpkg.git
 cd vcpkg
-./bootstrap-vcpkg.sh # The name of the script shuold be "./bootstrap-vcpkg.bat" for Powershell
+./bootstrap-vcpkg.sh # The name of the script should be "./bootstrap-vcpkg.bat" for Powershell
 ./vcpkg integrate install
 ./vcpkg install luabridge
 ```
 
 The LuaBridge port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
 
-# LuaBridge Demo
-
-LuaBridge provides both a command line program and a stand-alone graphical
-program for compiling and running the test suite. The graphical program brings
-up an interactive window where you can enter execute Lua statements in a
-persistent environment. This application is cross platform and works on
-Windows, Mac OS, iOS, Android, and GNU/Linux systems with X11. The stand-alone
-program should work anywhere. Both of these applications include LuaBridge,
-Lua version 5.2, and the code necessary to produce a cross platform graphic
-application. They are all together in a separate repository, with no
-additional dependencies, available on Github at [LuaBridge Demo and Tests][6].
-This is what the GUI application looks like, along with the C++ code snippet
-for registering the two classes:
-
-<a href="https://github.com/vinniefalco/LuaBridgeDemo">
-<img src="http://vinniefalco.github.io/LuaBridgeDemo/LuaBridgeDemoScreenshot1.0.2.png">
-</a><br>
 
 ## Official Repository
 
