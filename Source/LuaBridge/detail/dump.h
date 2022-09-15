@@ -23,9 +23,11 @@ inline void putIndent(std::ostream& stream, unsigned level)
     }
 }
 
-inline void dumpTable(lua_State* L, int index, std::ostream& stream, unsigned level);
+inline void
+dumpTable(lua_State* L, int index, std::ostream& stream, unsigned level, unsigned maxDepth);
 
-inline void dumpValue(lua_State* L, int index, std::ostream& stream, unsigned level = 0)
+inline void
+dumpValue(lua_State* L, int index, std::ostream& stream, unsigned maxDepth = 1, unsigned level = 0)
 {
     const int type = lua_type(L, index);
     switch (type)
@@ -66,7 +68,7 @@ inline void dumpValue(lua_State* L, int index, std::ostream& stream, unsigned le
         break;
 
     case LUA_TTABLE:
-        dumpTable(L, index, stream, level);
+        dumpTable(L, index, stream, level, maxDepth);
         break;
 
     case LUA_TUSERDATA:
@@ -80,11 +82,12 @@ inline void dumpValue(lua_State* L, int index, std::ostream& stream, unsigned le
     }
 }
 
-inline void dumpTable(lua_State* L, int index, std::ostream& stream, unsigned level)
+inline void
+dumpTable(lua_State* L, int index, std::ostream& stream, unsigned level, unsigned maxDepth)
 {
     stream << "table@" << lua_topointer(L, index);
 
-    if (level > 0)
+    if (level > maxDepth)
     {
         return;
     }
@@ -96,22 +99,23 @@ inline void dumpTable(lua_State* L, int index, std::ostream& stream, unsigned le
     {
         stream << "\n";
         putIndent(stream, level + 1);
-        dumpValue(L, -2, stream, level + 1); // Key
+        dumpValue(L, -2, stream, maxDepth, level + 1); // Key
         stream << ": ";
-        dumpValue(L, -1, stream, level + 1); // Value
+        dumpValue(L, -1, stream, maxDepth, level + 1); // Value
         lua_pop(L, 1); // Value
     }
+    stream << "\n";
     putIndent(stream, level);
-    stream << "\n}";
+    stream << "}";
 }
 
-inline void dumpState(lua_State* L, std::ostream& stream = std::cerr)
+inline void dumpState(lua_State* L, std::ostream& stream = std::cerr, unsigned maxDepth = 1)
 {
     int top = lua_gettop(L);
     for (int i = 1; i <= top; ++i)
     {
         stream << "stack #" << i << ": ";
-        dumpValue(L, i, stream, 0);
+        dumpValue(L, i, stream, maxDepth, 0);
         stream << "\n";
     }
 }
