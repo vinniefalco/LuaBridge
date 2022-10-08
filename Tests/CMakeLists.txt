@@ -104,7 +104,7 @@ macro(add_test_app APP_NAME LUA_LIBRARY CXX_VERSION)
     target_link_libraries(${APP_NAME}
         LuaBridge
         ${LUA_LIBRARY}
-        gtest
+        GTest::gtest
     )
 
     add_test(${APP_NAME} ${APP_NAME})
