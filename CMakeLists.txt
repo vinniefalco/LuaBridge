@@ -19,7 +19,7 @@ cmake_dependent_option(LUABRIDGE_TESTING "Build tests" ON
     "CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR" OFF
 )
 
-if(WIN32)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/MP)
 endif()
 
