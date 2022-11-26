@@ -29,14 +29,14 @@ struct Stack<std::array<T, s>>
     {
         if (!lua_istable(L, index))
         {
-            luaL_error(L, "#%d argments must be table", index);
+            luaL_error(L, "#%d argument must be table", index);
         }
 
         std::size_t const tableSize = static_cast<std::size_t>(get_length(L, index));
 
         if (tableSize != s)
         {
-            luaL_error(L, "array size should be %d ", s);
+            luaL_error(L, "array size must be %d ", s);
         }
 
         std::array<T, s> array;
