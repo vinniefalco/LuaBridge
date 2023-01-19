@@ -1041,6 +1041,12 @@ private:
             lua_newtable(L); // Stack: pns, ns, propset table (ps)
             lua_rawsetp(L, -2, detail::getPropsetKey()); // ns [propsetKey] = ps. Stack: pns, ns
 
+			if (Security::hideMetatables())
+			{
+				lua_pushboolean(L, 0);
+				rawsetfield(L, -2, "__metatable");
+			}
+
             // pns [name] = ns
             lua_pushvalue(L, -1); // Stack: pns, ns, ns
             rawsetfield(L, -3, name); // Stack: pns, ns
