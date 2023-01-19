@@ -155,7 +155,7 @@ class Namespace : public detail::Registrar
 
             if (Security::hideMetatables())
             {
-                lua_pushnil(L);
+                lua_pushboolean(L, 0);
                 rawsetfield(L, -2, "__metatable");
             }
         }
@@ -221,7 +221,7 @@ class Namespace : public detail::Registrar
 
             if (Security::hideMetatables())
             {
-                lua_pushnil(L);
+                lua_pushboolean(L, 0);
                 rawsetfield(L, -2, "__metatable");
             }
         }
