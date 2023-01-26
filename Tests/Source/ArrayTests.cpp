@@ -7,6 +7,7 @@
 
 #include "LuaBridge/Array.h"
 
+#include <algorithm>
 #include <array>
 
 template<class T>
