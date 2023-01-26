@@ -8,6 +8,7 @@ set(LUABRIDGE_TEST_SOURCE_FILES
     Source/LuaRefTests.cpp
     Source/MapTests.cpp
     Source/NamespaceTests.cpp
+    Source/PairTests.cpp
     Source/PerformanceTests.cpp
     Source/RefCountedObjectTests.cpp
     Source/RefCountedPtrTests.cpp
