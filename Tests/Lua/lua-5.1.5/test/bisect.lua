@@ -11,7 +11,7 @@ function bisect(f,a,b,fa,fb)
  if fa*fc<0 then return bisect(f,a,c,fa,fc) else return bisect(f,c,b,fc,fb) end
 end
 
--- find root of f in the inverval [a,b]. needs f(a)*f(b)<0
+-- find root of f in the interval [a,b]. needs f(a)*f(b)<0
 function solve(f,a,b)
  n=0
  local z,e=bisect(f,a,b,f(a),f(b))
