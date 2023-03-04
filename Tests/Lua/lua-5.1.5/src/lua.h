@@ -326,7 +326,7 @@ LUA_API void lua_setlevel	(lua_State *from, lua_State *to);
 typedef struct lua_Debug lua_Debug;  /* activation record */
 
 
-/* Functions to be called by the debuger in specific events */
+/* Functions to be called by the debugger in specific events */
 typedef void (*lua_Hook) (lua_State *L, lua_Debug *ar);
 
 

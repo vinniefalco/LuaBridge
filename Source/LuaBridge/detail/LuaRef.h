@@ -250,13 +250,13 @@ public:
 
     /// Indicate whether it is a nil reference.
     ///
-    /// @returns True if this is a nil reference, false otherwice.
+    /// @returns True if this is a nil reference, false otherwise.
     ///
     bool isNil() const { return type() == LUA_TNIL; }
 
     /// Indicate whether it is a reference to a boolean.
     ///
-    /// @returns True if it is a reference to a boolean, false otherwice.
+    /// @returns True if it is a reference to a boolean, false otherwise.
     ///
     bool isBool() const { return type() == LUA_TBOOLEAN; }
 
@@ -611,7 +611,7 @@ class LuaRef : public LuaRefBase<LuaRef, LuaRef>
             Assign a new value to this table key.
             This may invoke metamethods.
 
-            @tparam T The type of a value to assing.
+            @tparam T The type of a value to assign.
             @param  v A value to assign.
             @returns This reference.
         */
@@ -631,7 +631,7 @@ class LuaRef : public LuaRefBase<LuaRef, LuaRef>
             Assign a new value to this table key.
             The assignment is raw, no metamethods are invoked.
 
-            @tparam T The type of a value to assing.
+            @tparam T The type of a value to assign.
             @param  v A value to assign.
             @returns This reference.
         */

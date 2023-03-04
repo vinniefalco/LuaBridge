@@ -842,7 +842,7 @@ static int changedline (const Proto *p, int oldpc, int newpc) {
   if (p->lineinfo == NULL)  /* no debug information? */
     return 0;
   if (newpc - oldpc < MAXIWTHABS / 2) {  /* not too far apart? */
-    int delta = 0;  /* line diference */
+    int delta = 0;  /* line difference */
     int pc = oldpc;
     for (;;) {
       int lineinfo = p->lineinfo[++pc];

@@ -622,7 +622,7 @@ struct RefStackHelper<T, false>
 };
 
 /**
- * Voider class template. Used to force a comiler to instantiate
+ * Voider class template. Used to force a compiler to instantiate
  * an otherwise probably unused template parameter type T.
  * See the C++20 std::void_t <> for details.
  */
@@ -705,7 +705,7 @@ struct IsUserdata<T, typename Void<typename Stack<T>::IsUserdata>::Type>
 };
 
 /**
- * Trait class that selects a specific push/get implemenation.
+ * Trait class that selects a specific push/get implementation.
  */
 template<class T, bool isUserdata>
 struct StackOpSelector;

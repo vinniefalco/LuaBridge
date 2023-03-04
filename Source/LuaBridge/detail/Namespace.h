@@ -620,7 +620,7 @@ class Namespace : public detail::Registrar
             assertStackState(); // Stack: const table (co), class table (cl), static table (st)
 
             typedef TG (T::*get_t)() const;
-            new (lua_newuserdata(L, sizeof(get_t))) get_t(get); // Stack: co, cl, st, funcion ptr
+            new (lua_newuserdata(L, sizeof(get_t))) get_t(get); // Stack: co, cl, st, function ptr
             lua_pushcclosure(L, &CFunc::CallConstMember<get_t>::f, 1); // Stack: co, cl, st, getter
             lua_pushvalue(L, -1); // Stack: co, cl, st, getter, getter
             CFunc::addGetter(L, name, -5); // Stack: co, cl, st, getter
@@ -650,7 +650,7 @@ class Namespace : public detail::Registrar
             assertStackState(); // Stack: const table (co), class table (cl), static table (st)
 
             typedef TG (T::*get_t)(lua_State*) const;
-            new (lua_newuserdata(L, sizeof(get_t))) get_t(get); // Stack: co, cl, st, funcion ptr
+            new (lua_newuserdata(L, sizeof(get_t))) get_t(get); // Stack: co, cl, st, function ptr
             lua_pushcclosure(L, &CFunc::CallConstMember<get_t>::f, 1); // Stack: co, cl, st, getter
             lua_pushvalue(L, -1); // Stack: co, cl, st, getter, getter
             CFunc::addGetter(L, name, -5); // Stack: co, cl, st, getter

@@ -33,7 +33,7 @@ const TValue luaO_nilobject_ = {{NULL}, LUA_TNIL};
 ** eeeee != 0 and (xxx) otherwise.
 */
 int luaO_int2fb (unsigned int x) {
-  int e = 0;  /* expoent */
+  int e = 0;  /* exponent */
   while (x >= 16) {
     x = (x+1) >> 1;
     e++;
