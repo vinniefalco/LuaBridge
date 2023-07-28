@@ -116,14 +116,19 @@ public:
 
         @returns A string representation of the referred Lua value.
     */
-    std::string tostring() const
+    std::string tostring( void ) const
     {
-        lua_getglobal(m_L, "tostring");
-        impl().push();
-        lua_call(m_L, 1, 1);
-        const char* str = lua_tostring(m_L, -1);
-        lua_pop(m_L, 1);
-        return str;
+      lua_getglobal( mp_L, "tostring" );
+      this->push(    mp_L );
+      lua_call(      mp_L, 1, 1 );
+
+      size_t       s;
+      char const * str = lua_tolstring( mp_L,lua_gettop( mp_L ),&s ); // lua_gettop instead of 1, for lua->C->lua context
+      std::string  ret( str ? std::string(str,s) : std::string() );   // lua_pop invlidates str in case of GC
+
+      lua_pop(       mp_L, 1 );
+
+      return ret;
     }
 
     //----------------------------------------------------------------------------
