@@ -1,3 +1,10 @@
+## Version 2.9
+
+* Added stack traits for `std::pair` (`Pair.h`).
+* Added `isInstance()` function specialization for `std::array`.
+* Added Meson bulid support.
+* Added CMake rules for packaging.
+
 ## Version 2.8
 
 * Added convenience `get()` function template.
@@ -14,10 +21,10 @@
 
 * Added namespace `addFunction()` accepting `std::function` (C++11 only).
 * Added class `addStaticFunction()` accepting `std::function` (C++11 only).
-* Update the Doxygen documentation.
-* Add brief API reference into the manual.
-* Hide non-public `luabridge` members into the `detail` namespace.
-* Fix stack cleanup by `LuaRef::isInstance()` method.
+* Updated the Doxygen documentation.
+* Added brief API reference into the manual.
+* Hidden non-public `luabridge` members into the `detail` namespace.
+* Fixed stack cleanup by `LuaRef::isInstance()` method.
 
 ## Version 2.5
 
@@ -33,7 +40,7 @@
 
 * String stack get specialization doesn't change the stack value anymore.
 * Added namespace `addProperty()` accepting C-functions.
-* Introduce enableExceptions function.
+* Introduced enableExceptions function.
 
 ## Version 2.3.2
 
@@ -91,8 +98,8 @@
 ## Version 1.1.0
 
 * Split code up into several files.
-* Add Lua table and type representations (based on Nigel's code).
-* Reformat documentation as external HTML file.
+* Added Lua table and type representations (based on Nigel's code).
+* Reformatted documentation as external HTML file.
 
 ## Version 1.0.3
 
