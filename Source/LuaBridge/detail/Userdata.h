@@ -575,7 +575,11 @@ struct StackHelper<T, false>
 
     static inline T const& get(lua_State* L, int index)
     {
-        return *Userdata::get<T>(L, index, true);
+        const T* const t = Userdata::get<T>(L, index, true);
+
+        if (!t)
+            luaL_error(L, "nil passed instead of object");
+        return *t;
     }
 };
 
