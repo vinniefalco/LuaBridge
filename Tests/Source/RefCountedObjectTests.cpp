@@ -6,6 +6,8 @@
 
 #include "LuaBridge/RefCountedObject.h"
 
+#include <cinttypes>
+
 struct RefCountedObjectTests : TestBase
 {
     template<class T>
