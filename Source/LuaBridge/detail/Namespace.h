@@ -1226,6 +1226,40 @@ public:
         return *this;
     }
 
+    //--------------------------------------------------------------------------
+    /**
+        Add or replace a property member.
+        Custom property for lua_State
+    */
+    template<class TG, class TS = TG>
+    Namespace& addProperty(char const* name, TG (*get)(lua_State*), void (*set)(TS, lua_State*) = 0)
+    {
+        if (m_stackSize == 1)
+        {
+            throw std::logic_error("addProperty () called on global namespace");
+        }
+
+        typedef TG (*get_t)(lua_State*);
+        lua_pushlightuserdata(L, reinterpret_cast<void*>(get));
+        lua_pushcclosure(L, &CFunc::Call<get_t>::f, 1);
+        CFunc::addGetter(L, name, -2);
+
+        if (set != 0)
+        {
+            typedef void (*set_t)(TS, lua_State*);
+            lua_pushlightuserdata(L, reinterpret_cast<void*>(set));
+            lua_pushcclosure(L, &CFunc::Call<set_t>::f, 1);
+        }
+        else
+        {
+            lua_pushstring(L, name);
+            lua_pushcclosure(L, &CFunc::readOnlyError, 1);
+        }
+        CFunc::addSetter(L, name, -2);
+
+        return *this;
+    }
+
     //----------------------------------------------------------------------------
     /**
         Add or replace a property.
