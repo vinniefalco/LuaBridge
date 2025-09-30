@@ -38,10 +38,15 @@ file(GLOB LUABRIDGE_TEST_LUA51_FILES
     Lua/lua-5.1.5/src/*.h
     Lua/LuaLibrary.h
 )
+list(REMOVE_ITEM LUABRIDGE_TEST_LUA51_FILES
+    Lua/lua-5.1.5/src/lua.c
+    Lua/lua-5.1.5/src/luac.c
+)
 
 add_library(Lua51 ${LUABRIDGE_TEST_LUA51_FILES})
 target_compile_definitions(Lua51 PUBLIC LUABRIDGE_TEST_LUA_VERSION=501)
 target_include_directories(Lua51 PUBLIC Lua/lua-5.1.5/src)
+target_compile_options(Lua51 PRIVATE $<IF:${MSVC},/W0,-w>)
 source_group("Source" FILES ${LUABRIDGE_TEST_LUA51_FILES})
 
 # Lua 5.2
@@ -53,10 +58,15 @@ file(GLOB LUABRIDGE_TEST_LUA52_FILES
     Lua/lua-5.2.4/src/*.hpp
     Lua/LuaLibrary.h
 )
+list(REMOVE_ITEM LUABRIDGE_TEST_LUA52_FILES
+    Lua/lua-5.2.4/src/lua.c
+    Lua/lua-5.2.4/src/luac.c
+)
 
 add_library(Lua52 ${LUABRIDGE_TEST_LUA52_FILES})
 target_compile_definitions(Lua52 PUBLIC LUABRIDGE_TEST_LUA_VERSION=502)
 target_include_directories(Lua52 PUBLIC Lua/lua-5.2.4/src)
+target_compile_options(Lua52 PRIVATE $<IF:${MSVC},/W0,-w>)
 source_group("Source" FILES ${LUABRIDGE_TEST_LUA52_FILES})
 
 # Lua 5.3
@@ -68,10 +78,15 @@ file(GLOB LUABRIDGE_TEST_LUA53_FILES
     Lua/lua-5.3.6/src/*.hpp
     Lua/LuaLibrary.h
 )
+list(REMOVE_ITEM LUABRIDGE_TEST_LUA53_FILES
+    Lua/lua-5.3.6/src/lua.c
+    Lua/lua-5.3.6/src/luac.c
+)
 
 add_library(Lua53 ${LUABRIDGE_TEST_LUA53_FILES})
 target_compile_definitions(Lua53 PUBLIC LUABRIDGE_TEST_LUA_VERSION=503)
 target_include_directories(Lua53 PUBLIC Lua/lua-5.3.6/src)
+target_compile_options(Lua53 PRIVATE $<IF:${MSVC},/W0,-w>)
 source_group("Source" FILES ${LUABRIDGE_TEST_LUA53_FILES})
 
 # Lua 5.4
@@ -83,10 +98,15 @@ file(GLOB LUABRIDGE_TEST_LUA54_FILES
     Lua/lua-5.4.4/src/*.hpp
     Lua/LuaLibrary.h
 )
+list(REMOVE_ITEM LUABRIDGE_TEST_LUA54_FILES
+    Lua/lua-5.4.4/src/lua.c
+    Lua/lua-5.4.4/src/luac.c
+)
 
 add_library(Lua54 ${LUABRIDGE_TEST_LUA54_FILES})
 target_compile_definitions(Lua54 PUBLIC LUABRIDGE_TEST_LUA_VERSION=504)
 target_include_directories(Lua54 PUBLIC Lua/lua-5.4.4/src)
+target_compile_options(Lua54 PRIVATE $<IF:${MSVC},/W0,-w>)
 source_group("Source" FILES ${LUABRIDGE_TEST_LUA54_FILES})
 
 # Common test app definitions
