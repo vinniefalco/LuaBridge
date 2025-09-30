@@ -6,6 +6,8 @@
 
 #include "LuaBridge/RefCountedPtr.h"
 
+#include <cstdint>
+
 class RefCountedPtrTests : public ::testing::Test, private luabridge::detail::RefCountedPtrBase
 {
 public:
