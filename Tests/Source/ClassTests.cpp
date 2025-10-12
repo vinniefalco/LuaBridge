@@ -9,6 +9,10 @@
 #include <map>
 #include <memory>
 
+#if _MSC_VER && NDEBUG
+#pragma warning(once : 4702)
+#endif
+
 struct ClassTests : TestBase
 {
     template<class T>
