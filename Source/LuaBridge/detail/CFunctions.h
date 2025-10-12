@@ -46,7 +46,7 @@ struct CFunc
         Retrieves functions from metatables and properties from propget tables.
         Looks through the class hierarchy if inheritance is present.
     */
-    static int indexMetaMethod(lua_State* L)
+    static int indexMetaMethod(lua_State* L) noexcept
     {
         assert(lua_istable(L, 1) ||
                lua_isuserdata(L, 1)); // Stack (further not shown): table | userdata, name
@@ -112,16 +112,22 @@ struct CFunc
         __newindex metamethod for namespace or class static members.
         Retrieves properties from propset tables.
     */
-    static int newindexStaticMetaMethod(lua_State* L) { return newindexMetaMethod(L, false); }
+    static int newindexStaticMetaMethod(lua_State* L) noexcept
+    {
+        return newindexMetaMethod(L, false);
+    }
 
     //----------------------------------------------------------------------------
     /**
         __newindex metamethod for non-static members.
         Retrieves properties from propset tables.
     */
-    static int newindexObjectMetaMethod(lua_State* L) { return newindexMetaMethod(L, true); }
+    static int newindexObjectMetaMethod(lua_State* L) noexcept
+    {
+        return newindexMetaMethod(L, true);
+    }
 
-    static int newindexMetaMethod(lua_State* L, bool pushSelf)
+    static int newindexMetaMethod(lua_State* L, bool pushSelf) noexcept
     {
         assert(
             lua_istable(L, 1) ||
@@ -183,13 +189,18 @@ struct CFunc
 
         The name of the variable is in the first upvalue.
     */
-    static int readOnlyError(lua_State* L)
+    static int readOnlyError(lua_State* L) noexcept
     {
-        std::string s;
-
-        s = s + "'" + lua_tostring(L, lua_upvalueindex(1)) + "' is read-only";
-
-        return luaL_error(L, s.c_str());
+        try
+        {
+            std::string s;
+            s = s + "'" + lua_tostring(L, lua_upvalueindex(1)) + "' is read-only";
+            return luaL_error(L, s.c_str());
+        }
+        catch (...)
+        {
+            return luaL_error(L, "Property is read-only");
+        }
     }
 
     //----------------------------------------------------------------------------
@@ -308,7 +319,7 @@ struct CFunc
         static int f(lua_State* L)
         {
             assert(isfulluserdata(L, lua_upvalueindex(1)));
-            typedef int (T::*MFP)(lua_State * L);
+            typedef int (T::*MFP)(lua_State* L);
             T* const t = Userdata::get<T>(L, 1, false);
             MFP const& fnptr = *static_cast<MFP const*>(lua_touserdata(L, lua_upvalueindex(1)));
             assert(fnptr != 0);
@@ -322,7 +333,7 @@ struct CFunc
         static int f(lua_State* L)
         {
             assert(isfulluserdata(L, lua_upvalueindex(1)));
-            typedef int (T::*MFP)(lua_State * L);
+            typedef int (T::*MFP)(lua_State* L);
             T const* const t = Userdata::get<T>(L, 1, true);
             MFP const& fnptr = *static_cast<MFP const*>(lua_touserdata(L, lua_upvalueindex(1)));
             assert(fnptr != 0);

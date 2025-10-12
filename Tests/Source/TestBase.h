@@ -8,14 +8,7 @@
 
 #include "Lua/LuaLibrary.h"
 
-#if _MSC_VER && _NDEBUG
-#    pragma warning(push)
-#    pragma warning(disable : 4702)
-#endif
 #include "LuaBridge/LuaBridge.h"
-#if _MSC_VER && _NDEBUG
-#    pragma warning(pop)
-#endif
 
 #include <gtest/gtest.h>
 
@@ -24,7 +17,7 @@
 // traceback function, adapted from lua.c
 // when a runtime error occurs, this will append the call stack to the error message
 //
-inline int traceback(lua_State* L)
+inline int traceback(lua_State* L) noexcept
 {
     // look up Lua's 'debug.traceback' function
     lua_getglobal(L, "debug");

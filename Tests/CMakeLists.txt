@@ -48,7 +48,7 @@ macro(add_lua_lib LUA_LIB_NAME LUA_VERSION LUA_SOURCE_DIR)
 
     add_library(${LUA_LIB_NAME} ${LUA_SOURCES})
     target_compile_definitions(${LUA_LIB_NAME} PUBLIC LUABRIDGE_TEST_LUA_VERSION=${LUA_VERSION})
-    target_include_directories(${LUA_LIB_NAME} PUBLIC ${LUA_SOURCE_DIR})
+    target_include_directories(${LUA_LIB_NAME} SYSTEM PUBLIC ${LUA_SOURCE_DIR})
     target_compile_options(${LUA_LIB_NAME} PRIVATE $<IF:$<BOOL:${MSVC}>,/W0,-w>)
     target_compile_definitions(${LUA_LIB_NAME} PRIVATE $<IF:$<C_COMPILER_ID:GNU>,-D_GNU_SOURCE,>)
     source_group("Source" FILES ${LUA_SOURCES})
@@ -83,6 +83,15 @@ macro(add_test_app APP_NAME LUA_LIBRARY CXX_VERSION)
 
     target_include_directories(${APP_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_compile_options(${APP_NAME} PRIVATE $<IF:$<BOOL:${MSVC}>,/W4 /WX,-Wall -Werror>)
+    if(MSVC)
+        # Suppress C4702 which triggers for different compilation units using the same headers
+        # Suppress C4820 which can be fixed only by adding padding fields
+        target_compile_options(
+            ${APP_NAME}
+            PRIVATE
+            $<$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Release>>:/wd4702 /wd4820>
+        )
+    endif()
 
     target_link_libraries(${APP_NAME}
         LuaBridge

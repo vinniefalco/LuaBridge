@@ -37,7 +37,7 @@ struct hash<Data>
 template<>
 struct hash<::luabridge::LuaRef>
 {
-    size_t operator()(const ::luabridge::LuaRef& /*value*/) const
+    size_t operator()(const ::luabridge::LuaRef& /*value*/) const noexcept
     {
         return 0; // Don't care about hash collisions
     }
