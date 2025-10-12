@@ -579,7 +579,7 @@ class Namespace : public detail::Registrar
 
         //--------------------------------------------------------------------------
         template<class U>
-        Class<T>& addProperty(char const* name, U T::*mp, bool isWritable = true)
+        Class<T>& addProperty(char const* name, U T::* mp, bool isWritable = true)
         {
             return addData(name, mp, isWritable);
         }
@@ -589,11 +589,11 @@ class Namespace : public detail::Registrar
           Add or replace a data member.
         */
         template<class U>
-        Class<T>& addData(char const* name, U T::*mp, bool isWritable = true)
+        Class<T>& addData(char const* name, U T::* mp, bool isWritable = true)
         {
             assertStackState(); // Stack: const table (co), class table (cl), static table (st)
 
-            typedef const U T::*mp_t;
+            typedef const U T::* mp_t;
             new (lua_newuserdata(L, sizeof(mp_t))) mp_t(mp); // Stack: co, cl, st, field ptr
             lua_pushcclosure(L, &CFunc::getProperty<T, U>, 1); // Stack: co, cl, st, getter
             lua_pushvalue(L, -1); // Stack: co, cl, st, getter, getter
@@ -1041,11 +1041,11 @@ private:
             lua_newtable(L); // Stack: pns, ns, propset table (ps)
             lua_rawsetp(L, -2, detail::getPropsetKey()); // ns [propsetKey] = ps. Stack: pns, ns
 
-			if (Security::hideMetatables())
-			{
-				lua_pushboolean(L, 0);
-				rawsetfield(L, -2, "__metatable");
-			}
+            if (Security::hideMetatables())
+            {
+                lua_pushboolean(L, 0);
+                rawsetfield(L, -2, "__metatable");
+            }
 
             // pns [name] = ns
             lua_pushvalue(L, -1); // Stack: pns, ns, ns

@@ -329,7 +329,15 @@ public:
     /**
       Confirm object construction.
     */
+#if _MSC_VER && NDEBUG
+#pragma warning(push)
+#pragma warning(disable : 4702)
+#endif
+    // NOTE: Just believe in MSVC Release builds
     void commit() { m_p = getObject(); }
+#if _MSC_VER && NDEBUG
+#pragma warning(pop)
+#endif
 
     T* getObject()
     {
