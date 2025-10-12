@@ -41,28 +41,24 @@ struct Stack<std::pair<T1, T2>>
 
         std::pair<T1, T2> pair;
 
-        int const absindex = lua_absindex(L, index);
         lua_pushnil(L);
 
         {
-            int const next = lua_next(L, absindex);
-            assert(next != 0);
+            assert(lua_next(L, lua_absindex(L, index)) != 0);
 
             pair.first = Stack<T1>::get(L, -1);
             lua_pop(L, 1);
         }
 
         {
-            int const next = lua_next(L, absindex);
-            assert(next != 0);
+            assert(lua_next(L, lua_absindex(L, index)) != 0);
 
             pair.second = Stack<T2>::get(L, -1);
             lua_pop(L, 1);
         }
 
         {
-            int const next = lua_next(L, absindex);
-            assert(next == 0);
+            assert(lua_next(L, lua_absindex(L, index)) != 0);
         }
 
         return pair;
