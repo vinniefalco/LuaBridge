@@ -86,11 +86,11 @@ struct Class : Base
 
     T getData() const { return data; }
 
-    void setData(T data) { this->data = data; }
+    void setData(T value) { this->data = value; }
 
     T getDataState(lua_State*) const { return data; }
 
-    void setDataState(T data, lua_State*) { this->data = data; }
+    void setDataState(T value, lua_State*) { this->data = value; }
 
     mutable T data;
     static T staticData;
@@ -295,8 +295,6 @@ void addHelperFunctions(lua_State* L)
 
 TEST_F(ClassTests, PassingUnregisteredClassFromLuaThrows)
 {
-    using Unregistered = Class<int, EmptyBase>;
-
     addHelperFunctions(L);
 
     ASSERT_THROW(runLua("result = returnRef ()"), std::exception);
@@ -419,7 +417,7 @@ T proxyFunctionState(Class<T, Base>* object, T value, lua_State*)
 }
 
 template<class T, class Base>
-T proxyConstFunction(const Class<T, Base>* object, T value)
+T proxyConstFunction(const Class<T, Base>* /*object*/, T value)
 {
     return value;
 }
@@ -1588,8 +1586,6 @@ TEST_F(ClassMetaMethods, __index)
 
 TEST_F(ClassMetaMethods, __newindex)
 {
-    typedef Class<int, EmptyBase> Int;
-
     luabridge::getGlobalNamespace(L)
         .beginClass<Table>("Table")
         .addFunction("__newindex", &Table::newIndex)

@@ -7,7 +7,6 @@
 
 #include <LuaBridge/detail/Config.h>
 
-#include <string>
 
 namespace luabridge {
 

@@ -14,7 +14,7 @@ struct PairTest : TestBase
 {
 };
 
-TYPED_TEST_CASE_P(PairTest);
+TYPED_TEST_SUITE_P(PairTest);
 
 template<typename T>
 std::string toLuaSrcString(T const& value)
@@ -116,7 +116,7 @@ TYPED_TEST_P(PairTest, isInstance)
     }
 }
 
-REGISTER_TYPED_TEST_CASE_P(PairTest, push, get, isInstance);
+REGISTER_TYPED_TEST_SUITE_P(PairTest, push, get, isInstance);
 
 using TestTypesCartesianProduct = ::testing::Types<std::pair<bool, bool>,
                                                    std::pair<bool, int>,
@@ -155,4 +155,4 @@ using TestTypesCartesianProduct = ::testing::Types<std::pair<bool, bool>,
                                                    std::pair<std::string, double>,
                                                    std::pair<std::string, std::string>>;
 
-INSTANTIATE_TYPED_TEST_CASE_P(PairTest, PairTest, TestTypesCartesianProduct);
+INSTANTIATE_TYPED_TEST_SUITE_P(PairTest, PairTest, TestTypesCartesianProduct);
