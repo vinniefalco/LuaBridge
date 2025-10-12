@@ -36,9 +36,9 @@ inline void lua_rawsetp(lua_State* L, int idx, void const* p)
     lua_rawset(L, idx);
 }
 
-#define LUA_OPEQ 1
-#define LUA_OPLT 2
-#define LUA_OPLE 3
+#    define LUA_OPEQ 1
+#    define LUA_OPLT 2
+#    define LUA_OPLE 3
 
 inline int lua_compare(lua_State* L, int idx1, int idx2, int op)
 {
@@ -66,7 +66,8 @@ inline int get_length(lua_State* L, int idx)
     return int(lua_objlen(L, idx));
 }
 
-#else
+#else // LUA_VERSION_NUM < 502
+
 inline int get_length(lua_State* L, int idx)
 {
     lua_len(L, idx);
@@ -75,12 +76,12 @@ inline int get_length(lua_State* L, int idx)
     return len;
 }
 
-#endif
+#endif // LUA_VERSION_NUM >= 502
 
 #ifndef LUA_OK
-#define LUABRIDGE_LUA_OK 0
+#    define LUABRIDGE_LUA_OK 0
 #else
-#define LUABRIDGE_LUA_OK LUA_OK
+#    define LUABRIDGE_LUA_OK LUA_OK
 #endif
 
 /** Get a table value, bypassing metamethods.

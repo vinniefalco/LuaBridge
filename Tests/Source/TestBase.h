@@ -8,7 +8,14 @@
 
 #include "Lua/LuaLibrary.h"
 
+#if _MSC_VER && _NDEBUG
+#    pragma warning(push)
+#    pragma warning(disable : 4702)
+#endif
 #include "LuaBridge/LuaBridge.h"
+#if _MSC_VER && _NDEBUG
+#    pragma warning(pop)
+#endif
 
 #include <gtest/gtest.h>
 

@@ -39,6 +39,7 @@ if(LUABRIDGE_TESTING)
 endif()
 
 add_custom_target(Documentation SOURCES
+    .clang-format
     .github/workflows/cmake.yml
     CHANGES.md
     README.md
