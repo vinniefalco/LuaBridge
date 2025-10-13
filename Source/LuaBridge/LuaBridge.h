@@ -11,8 +11,8 @@
 //
 
 #define LUABRIDGE_MAJOR_VERSION 2
-#define LUABRIDGE_MINOR_VERSION 9
-#define LUABRIDGE_VERSION 209
+#define LUABRIDGE_MINOR_VERSION 10
+#define LUABRIDGE_VERSION 210
 
 #ifndef LUA_VERSION_NUM
 #error "Lua headers must be included prior to LuaBridge ones"
