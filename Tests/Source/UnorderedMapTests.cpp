@@ -28,7 +28,7 @@ namespace std {
 template<>
 struct hash<Data>
 {
-    size_t operator()(const Data& value) const noexcept
+    size_t operator()(const Data& /*value*/) const noexcept
     {
         return 0; // Don't care about hash collisions
     }
@@ -37,7 +37,7 @@ struct hash<Data>
 template<>
 struct hash<::luabridge::LuaRef>
 {
-    size_t operator()(const ::luabridge::LuaRef& value) const
+    size_t operator()(const ::luabridge::LuaRef& /*value*/) const noexcept
     {
         return 0; // Don't care about hash collisions
     }
@@ -102,11 +102,6 @@ namespace {
 bool operator==(const Data& lhs, const Data& rhs)
 {
     return lhs.i == rhs.i;
-}
-
-bool operator<(const Data& lhs, const Data& rhs)
-{
-    return lhs.i < rhs.i;
 }
 
 std::ostream& operator<<(std::ostream& lhs, const Data& rhs)

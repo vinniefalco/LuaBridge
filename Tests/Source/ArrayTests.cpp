@@ -15,7 +15,7 @@ struct ArrayTest : TestBase
 {
 };
 
-TYPED_TEST_CASE_P(ArrayTest);
+TYPED_TEST_SUITE_P(ArrayTest);
 
 TYPED_TEST_P(ArrayTest, LuaRef)
 {
@@ -30,9 +30,9 @@ TYPED_TEST_P(ArrayTest, LuaRef)
     ASSERT_EQ(expected, actual);
 }
 
-REGISTER_TYPED_TEST_CASE_P(ArrayTest, LuaRef);
+REGISTER_TYPED_TEST_SUITE_P(ArrayTest, LuaRef);
 
-INSTANTIATE_TYPED_TEST_CASE_P(ArrayTest, ArrayTest, TestTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(ArrayTest, ArrayTest, TestTypes);
 
 namespace {
 

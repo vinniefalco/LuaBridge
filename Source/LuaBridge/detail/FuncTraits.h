@@ -24,11 +24,11 @@ namespace detail {
     (defined(_MSC_VER) && (_MSC_VER >= 1700))
 // Do not define LUABRIDGE_THROWSPEC since the Xcode and gcc  compilers do not
 // distinguish the throw specification in the function signature.
-#define LUABRIDGE_THROWSPEC
+#    define LUABRIDGE_THROWSPEC
 #else
 // Visual Studio 10 and earlier pay too much mind to useless throw () spec.
 //
-#define LUABRIDGE_THROWSPEC throw()
+#    define LUABRIDGE_THROWSPEC throw()
 #endif
 
 //==============================================================================

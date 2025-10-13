@@ -870,12 +870,12 @@ with our member function. To do this, first we add a "helper" function:
 </p>
 
 <pre>
-void scale (float value)
+void scale (Vec* v, float value)
 {
-  value->coord [0] *= value;
-  value->coord [1] *= value;
-  value->coord [2] *= value;
-};
+  v->coord [0] *= value;
+  v->coord [1] *= value;
+  v->coord [2] *= value;
+}
 </pre>
 
 <p>

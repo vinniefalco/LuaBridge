@@ -25,19 +25,21 @@ endif()
 
 add_subdirectory(Source)
 
-if(LUABRIDGE_TESTING)
-    find_package(GTest)
-    if(NOT GTest_FOUND)
-        set(gtest_force_shared_crt ON CACHE BOOL "Use /MD and /MDd" FORCE)
-        add_subdirectory(third_party/gtest EXCLUDE_FROM_ALL)
-        add_library(GTest::gtest ALIAS gtest)
-    endif()
+if(LUABRIDGE_SANITIZE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+endif()
 
+if(LUABRIDGE_TESTING)
+    set(gtest_force_shared_crt ON CACHE BOOL "Use /MD and /MDd" FORCE)
+    add_subdirectory(third_party/gtest EXCLUDE_FROM_ALL)
+    add_library(GTest::gtest ALIAS gtest)
     enable_testing()
     add_subdirectory(Tests)
 endif()
 
 add_custom_target(Documentation SOURCES
+    .clang-format
     .github/workflows/cmake.yml
     CHANGES.md
     README.md

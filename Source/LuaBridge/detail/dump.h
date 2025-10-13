@@ -9,7 +9,6 @@
 #include "LuaBridge/detail/ClassInfo.h"
 
 #include <iostream>
-#include <string>
 
 namespace luabridge {
 

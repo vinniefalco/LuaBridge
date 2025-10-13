@@ -11,7 +11,7 @@
 
 #include <string>
 #ifdef LUABRIDGE_CXX17
-#include <string_view>
+#    include <string_view>
 #endif
 
 namespace luabridge {
@@ -50,7 +50,7 @@ struct Stack<lua_CFunction>
 
     static lua_CFunction get(lua_State* L, int index) { return lua_tocfunction(L, index); }
 
-    static bool isInstance(lua_State* L, int index) { return lua_iscfunction(L, index); }
+    static bool isInstance(lua_State* L, int index) { return lua_iscfunction(L, index) != 0; }
 };
 
 //------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ struct Stack<int>
 #else
         int isNumber;
         lua_tointegerx(L, index, &isNumber);
-        return isNumber;
+        return isNumber != 0;
 #endif
     }
 };
@@ -295,7 +295,7 @@ struct Stack<bool>
 {
     static void push(lua_State* L, bool value) { lua_pushboolean(L, value ? 1 : 0); }
 
-    static bool get(lua_State* L, int index) { return lua_toboolean(L, index) ? true : false; }
+    static bool get(lua_State* L, int index) { return lua_toboolean(L, index) != 0; }
 
     static bool isInstance(lua_State* L, int index) { return lua_isboolean(L, index); }
 };

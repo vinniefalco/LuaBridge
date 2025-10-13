@@ -39,7 +39,7 @@ struct Stack<std::array<T, s>>
             luaL_error(L, "array size must be %d ", s);
         }
 
-        std::array<T, s> array;
+        std::array<T, s> array = {};
 
         int const absindex = lua_absindex(L, index);
         lua_pushnil(L);

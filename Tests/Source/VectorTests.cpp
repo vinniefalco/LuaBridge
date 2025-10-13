@@ -14,7 +14,7 @@ struct VectorTest : TestBase
 {
 };
 
-TYPED_TEST_CASE_P(VectorTest);
+TYPED_TEST_SUITE_P(VectorTest);
 
 TYPED_TEST_P(VectorTest, LuaRef)
 {
@@ -27,9 +27,9 @@ TYPED_TEST_P(VectorTest, LuaRef)
     ASSERT_EQ(expected, actual);
 }
 
-REGISTER_TYPED_TEST_CASE_P(VectorTest, LuaRef);
+REGISTER_TYPED_TEST_SUITE_P(VectorTest, LuaRef);
 
-INSTANTIATE_TYPED_TEST_CASE_P(VectorTest, VectorTest, TestTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(VectorTest, VectorTest, TestTypes);
 
 namespace {
 

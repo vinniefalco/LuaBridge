@@ -25,7 +25,7 @@ struct ListTest : TestBase
 {
 };
 
-TYPED_TEST_CASE_P(ListTest);
+TYPED_TEST_SUITE_P(ListTest);
 
 TYPED_TEST_P(ListTest, LuaRef)
 {
@@ -38,9 +38,9 @@ TYPED_TEST_P(ListTest, LuaRef)
     ASSERT_EQ(expected, actual);
 }
 
-REGISTER_TYPED_TEST_CASE_P(ListTest, LuaRef);
+REGISTER_TYPED_TEST_SUITE_P(ListTest, LuaRef);
 
-INSTANTIATE_TYPED_TEST_CASE_P(ListTest, ListTest, TestTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(ListTest, ListTest, TestTypes);
 
 struct ListTests : TestBase
 {
