@@ -191,16 +191,7 @@ struct CFunc
     */
     static int readOnlyError(lua_State* L) noexcept
     {
-        try
-        {
-            std::string s;
-            s = s + "'" + lua_tostring(L, lua_upvalueindex(1)) + "' is read-only";
-            return luaL_error(L, s.c_str());
-        }
-        catch (...)
-        {
-            return luaL_error(L, "Property is read-only");
-        }
+        return luaL_error(L, "'%s' is read-only'", lua_tostring(L, lua_upvalueindex(1)));
     }
 
     //----------------------------------------------------------------------------
