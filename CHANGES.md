@@ -1,3 +1,12 @@
+## Version 2.10
+
+* Added `Namespace::addProperty()` with getter/setter accepting `lua_State`.
+* The `__metatable` is now set to `false` instead of `nil` where required.
+* Fixed crash where `nil` is on the stack while userdata is requested.
+* Fixed memory leak when read-only write is attempted.
+* Fixed CMake for MSYS2 environment.
+* Bumped CMake version to 3.10.
+
 ## Version 2.9
 
 * Added stack traits for `std::pair` (`Pair.h`).

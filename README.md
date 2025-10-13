@@ -2,7 +2,7 @@
 <img src="http://vinniefalco.github.io/LuaBridgeDemo/powered-by-lua.png">
 </a><br>
 
-# LuaBridge 2.8
+# LuaBridge 2.10
 
 [LuaBridge][1] is a lightweight and dependency-free library for mapping data,
 functions, and classes back and forth between C++ and [Lua][2] (a powerful,
@@ -41,38 +41,32 @@ There are the following unit test flavors:
 * `Tests54` - uses Lua 5.4.4
 * `Tests54Cxx17` - uses Lua 5.4.4 and C++17 features
 
-Build using Make on Linux/MacOS:
+Build using Make on Linux/MacOS/MinGW/WSL2:
 ```bash
-clone --recurse-submodules git@github.com:vinniefalco/LuaBridge.git
+clone --recurse-submodules https://github.com/vinniefalco/LuaBridge
 cd LuaBridge
 cmake -DCMAKE_BUILD_TYPE=Debug -B build
 # or cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -B build
 # or cmake -DCMAKE_BUILD_TYPE=Release -B build
-cd build
-make -j
+cmake --build build
 ```
 
 Generate XCode project on MacOS:
 ```bash
-clone --recurse-submodules git@github.com:vinniefalco/LuaBridge.git
+clone --recurse-submodules https://github.com/vinniefalco/LuaBridge
 cd LuaBridge
 cmake -G Xcode -B build
 # Generates XCode project build/LuaBridge.xcodeproj
 ```
 
 Generate MSVS solution on Windows:
-```cmd
-clone --recurse-submodules git@github.com:vinniefalco/LuaBridge.git
+```bash
+clone --recurse-submodules https://github.com/vinniefalco/LuaBridge
 cd LuaBridge
 mkdir build
 cd build
-cmake -G "Visual Studio 17 2022 Win64" -B build
-# or cmake -G "Visual Studio 15 2017 Win64" -B build
-# or cmake -G "Visual Studio 14 2015" -B build
-# or cmake -G "Visual Studio 15 2017 Win64" -B build
-# or cmake -G "Visual Studio 15 2017" -B build
-# or cmake -G "Visual Studio 15 2019" -A Win64 -B build
-# or cmake -G "Visual Studio 15 2019" -B build
+cmake -B build # 64-bit version
+# or cmake -A Win32 -B build
 # Generates MSVS solution build/LuaBridge.sln
 ```
 
