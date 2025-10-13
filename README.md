@@ -43,7 +43,7 @@ There are the following unit test flavors:
 
 Build using Make on Linux/MacOS/MinGW/WSL2:
 ```bash
-clone --recurse-submodules https://github.com/vinniefalco/LuaBridge
+clone --recurse-submodules https://github.com/vinniefalco/LuaBridge.git
 cd LuaBridge
 cmake -DCMAKE_BUILD_TYPE=Debug -B build
 # or cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -B build
@@ -53,7 +53,7 @@ cmake --build build
 
 Generate XCode project on MacOS:
 ```bash
-clone --recurse-submodules https://github.com/vinniefalco/LuaBridge
+clone --recurse-submodules https://github.com/vinniefalco/LuaBridge.git
 cd LuaBridge
 cmake -G Xcode -B build
 # Generates XCode project build/LuaBridge.xcodeproj
@@ -61,7 +61,7 @@ cmake -G Xcode -B build
 
 Generate MSVS solution on Windows:
 ```bash
-clone --recurse-submodules https://github.com/vinniefalco/LuaBridge
+clone --recurse-submodules https://github.com/vinniefalco/LuaBridge.git
 cd LuaBridge
 mkdir build
 cd build
